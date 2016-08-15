@@ -1,6 +1,7 @@
 import java.io.File
 
 import com.github.dronegator.nlp.component.splitter.Splitter
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{TokenMap, Token}
 import com.github.dronegator.nlp.component.tokenizer.{Tokenizer}
 import com.github.dronegator.nlp.utils.CFG
 
@@ -20,27 +21,39 @@ object NLPTMain extends App {
 
   val n = map.valuesIterator.flatten.max
 
-  source.
+  val (maps,tokenVariances) = source.
     map(splitter(_)).
     flatten.
     scanLeft((map, n, List[Tokenizer.Token]()))(tokenizer(_, _)).
-    zipWithIndex.
     map{
-      case ((map, _, x), n) =>
-        println(f"$n%-10d : ${x.mkString(" :: ")}")
-        map
-    }.
-    foldLeft(Option.empty[Tokenizer.TokenMap]) {
+      case (x, y, z) => ((x, y), z)
+    }.toStream.
+    unzip
+
+  tokenVariances.
+    toIterator.
+    zipWithIndex.
+    foreach{
+      case (tokens, n) =>
+        println(f"$n%-10d : ${tokens.mkString(" :: ")}")
+    }
+
+  maps.
+    toIterator.
+    foldLeft(Option.empty[(TokenMap, Token)]) {
       case (_, x) =>
         Option(x)
     }.
-    foreach { map =>
-      map.
-        toList.
-        sortBy(_._1).
-        foreach {
-        case (key, value :: _) =>
-          println(f"$key%-60s:$value%010d")
-      }
+    foreach {
+      case (map, token) =>
+        map.
+          toList.
+          sortBy(_._1).
+          foreach {
+            case (key, value :: _) =>
+              println(f"$key%-60s:$value%010d")
+          }
+
+        println(s"Lastt token = $token")
     }
 }
