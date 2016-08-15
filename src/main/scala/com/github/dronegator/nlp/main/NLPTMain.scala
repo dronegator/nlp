@@ -76,6 +76,6 @@ object NLPTMain extends App {
               println(f"$key%-60s:$value%010d")
           }
 
-        println(s"Lastt token = $token")
+        println(s"Last token = $token")
     }
 }
