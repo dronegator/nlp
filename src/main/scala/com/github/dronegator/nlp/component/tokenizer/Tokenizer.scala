@@ -47,23 +47,7 @@ class Tokenizer(cfgArg: => CFG, tokenMap: Option[TokenMap])
 
   def cfg = cfgArg
 
-  /*
-    (map, List[Tokenizer.Token])
-    val map = tokenMap getOrElse MapOfPredefs
-    val n = map.values.flatten.max
-
-    rSplit.split(s).scanLeft((map, n, List[Token]())) { case ((map, n, _), word) =>
-      map.get(word) match {
-        case Some(tokens) => (map, n, tokens)
-        case None =>
-          val nn = n + 1
-          val tokens = (nn :: Nil)
-          (map + (word -> tokens), nn, tokens)
-      }
-    }
-  */
-  //override
-  def apply(x: ((TokenMap, Token, List[Token]), Word)): (TokenMap, Token, List[Token]) =
+  override def apply(x: ((TokenMap, Token, List[Token]), Word)): (TokenMap, Token, List[Token]) =
     x match {
       case ((map, n, _), w) =>
         map.get(w) match {

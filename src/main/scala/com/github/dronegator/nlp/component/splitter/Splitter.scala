@@ -11,11 +11,14 @@ object Splitter {
 }
 
 class Splitter(cfgArg: => CFG) extends Component[String, Iterator[Word]] {
-  private val rSplit = """\s+""".r
+  private val rSplit = """\b|\s""".r
 
   def cfg = cfgArg
 
-  override def apply(s: String): Iterator[Word] = {
-    rSplit.split(s)
-  }.toIterator
+  override def apply(s: String): Iterator[Word] =
+    rSplit.
+      split(s).
+      toIterator.
+      map(_.trim).
+      filter(_.nonEmpty)
 }
