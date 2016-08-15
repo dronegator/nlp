@@ -10,12 +10,12 @@ import com.github.dronegator.nlp.utils.CFG
 object Splitter {
 }
 
-class Splitter(cfgArg: => CFG) extends Component[String, List[Word]] {
+class Splitter(cfgArg: => CFG) extends Component[String, Iterator[Word]] {
   private val rSplit = """\s+""".r
 
   def cfg = cfgArg
 
-  override def apply(s: String): List[Word] = {
+  override def apply(s: String): Iterator[Word] = {
     rSplit.split(s)
-  }.toList
+  }.toIterator
 }

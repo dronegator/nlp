@@ -20,10 +20,19 @@ object NLPTMain extends App {
 
   val n = map.valuesIterator.flatten.max
 
-  (source.map(splitter(_)).flatten.scanLeft((map, n, List[Tokenizer.Token]()))(tokenizer(_, _)) map { case (map, _, x) =>
-    println(x)
-    map
-  } toList).lastOption foreach { map =>
-    println(map)
-  }
+  source.
+    map(splitter(_)).
+    flatten.
+    scanLeft((map, n, List[Tokenizer.Token]()))(tokenizer(_, _)).
+    map{
+      case (map, _, x) =>
+        println(x)
+        map
+    }.
+    foldLeft(Option.empty[Tokenizer.TokenMap]) {
+      case (_, x) => Option(x)
+    }.
+    foreach { map =>
+      println(map)
+    }
 }
