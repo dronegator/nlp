@@ -15,10 +15,15 @@ object NPLTMain extends App {
 
   val tokenizer = new Tokenizer(cfg, None)
 
-  source.map(tokenizer.apply _).flatten foreach {
-    case (_, x) =>
-      println(x)
-      x
-  }
+  val map = Tokenizer.MapOfPredefs
 
+  val n = map.valuesIterator.flatten.max
+
+  (source.scanLeft((map, n, List[Tokenizer.Token]()))(tokenizer(_, _)) map {
+    case (map, _, x) =>
+      println(x)
+      map
+  } toList).lastOption foreach { map =>
+    println(map)
+  }
 }

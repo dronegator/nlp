@@ -40,12 +40,15 @@ object Tokenizer {
   val MapOfPredefs = Map("." -> (DEOP.value :: DEOW.value :: Nil))
 }
 
-class Tokenizer(cfgArg: => CFG, tokenMap: Option[TokenMap]) extends Component[String, List[(TokenMap, List[Token])]] {
+class Tokenizer(cfgArg: => CFG, tokenMap: Option[TokenMap])
+  extends Component[((TokenMap, Token, List[Token]), Word), (TokenMap, Token, List[Token])] {
+
   private val rSplit = """\s+""".r
 
   def cfg = cfgArg
 
-  override def apply(s: String): List[(TokenMap, List[Token])] = {
+  /*
+    (map, List[Tokenizer.Token])
     val map = tokenMap getOrElse MapOfPredefs
     val n = map.values.flatten.max
 
@@ -58,6 +61,18 @@ class Tokenizer(cfgArg: => CFG, tokenMap: Option[TokenMap]) extends Component[St
           (map + (word -> tokens), nn, tokens)
       }
     }
-  }.map { case (x, _, y) => (x, y)
-  }.toList
+  */
+  //override
+  def apply(x: ((TokenMap, Token, List[Token]), Word)): (TokenMap, Token, List[Token]) =
+    x match {
+      case ((map, n, _), w) =>
+        map.get(w) match {
+          case Some(tokens) =>
+            (map, n, tokens)
+
+          case None =>
+            val next = n + 1: Token
+            (map + (w -> List(next)), next, List(next))
+        }
+    }
 }
