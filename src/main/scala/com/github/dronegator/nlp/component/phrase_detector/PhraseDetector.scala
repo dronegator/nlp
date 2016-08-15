@@ -17,12 +17,13 @@ class PhraseDetector(cfgArg: => CFG) extends Component[List[List[Token]], Option
   override def apply(in: List[List[Token]]): Option[(List[Token], Seq[List[Token]])] =
     in.span{
       case tokens if tokens contains Tokenizer.TokenPreDef.DEOP.value => false
+      case _ => true
     } match {
       case (start, (dot :: rest)) =>
 
         val phrase = start.
-          map(_.headOption).
-          flatten :+ Tokenizer.TokenPreDef.DEOP.value
+          flatMap(_.headOption) :+
+          Tokenizer.TokenPreDef.DEOP.value
 
         Option((phrase, rest))
 

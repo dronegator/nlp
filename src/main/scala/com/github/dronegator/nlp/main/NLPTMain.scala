@@ -1,5 +1,6 @@
 import java.io.File
 
+import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
 import com.github.dronegator.nlp.component.splitter.Splitter
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{TokenMap, Token}
 import com.github.dronegator.nlp.component.tokenizer.{Tokenizer}
@@ -17,6 +18,8 @@ object NLPTMain extends App {
 
   val tokenizer = new Tokenizer(cfg, None)
 
+  val phraseDetector = new PhraseDetector(cfg)
+
   val map = Tokenizer.MapOfPredefs
 
   val n = map.valuesIterator.flatten.max
@@ -33,9 +36,28 @@ object NLPTMain extends App {
   tokenVariances.
     toIterator.
     zipWithIndex.
-    foreach{
+    map{
       case (tokens, n) =>
-        println(f"$n%-10d : ${tokens.mkString(" :: ")}")
+        //println(f"$n%-10d : ${tokens.mkString(" :: ")}")
+        tokens
+    }.
+    scanLeft((List.empty[List[Token]], Option.empty[List[Token]])){
+      case ((buffer, _), tokens) =>
+        val tokenizedText = buffer :+ tokens
+
+        phraseDetector(tokenizedText) match {
+          case Some((phrase, rest)) =>
+            (rest.toList, Some(phrase))
+
+          case None =>
+            (tokenizedText, None)
+        }
+    }.
+    collect{
+      case (_, Some(phrase)) => phrase
+    }.
+    foreach{ phrase =>
+       println(phrase)
     }
 
   maps.
