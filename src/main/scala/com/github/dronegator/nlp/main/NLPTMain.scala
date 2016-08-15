@@ -24,15 +24,23 @@ object NLPTMain extends App {
     map(splitter(_)).
     flatten.
     scanLeft((map, n, List[Tokenizer.Token]()))(tokenizer(_, _)).
+    zipWithIndex.
     map{
-      case (map, _, x) =>
-        println(x)
+      case ((map, _, x), n) =>
+        println(f"$n%-10d : ${x.mkString(" :: ")}")
         map
     }.
     foldLeft(Option.empty[Tokenizer.TokenMap]) {
-      case (_, x) => Option(x)
+      case (_, x) =>
+        Option(x)
     }.
     foreach { map =>
-      println(map)
+      map.
+        toList.
+        sortBy(_._1).
+        foreach {
+        case (key, value :: _) =>
+          println(f"$key%-60s:$value%010d")
+      }
     }
 }
