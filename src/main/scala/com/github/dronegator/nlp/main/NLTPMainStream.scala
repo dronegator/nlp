@@ -41,9 +41,9 @@ object NLTPMainStream extends App {
   val n = map.valuesIterator.flatten.max
 
   val tokenVariances =
-    Flow[((Map[String, List[Int]], Int), List[Tokenizer.Token])].
+    Flow[(Map[String, List[Int]], Int, List[Tokenizer.Token])].
       collect {
-        case (_, z) => z
+        case (_, _, z) => z
       }.
       zipWith(Source.fromIterator(() => Iterator.from(1))) {
         case (tokens, n) =>
@@ -69,9 +69,9 @@ object NLTPMainStream extends App {
     })(Keep.right)
 
   val maps =
-    Flow[((Map[String, List[Int]], Int), List[Tokenizer.Token])].
+    Flow[(Map[String, List[Int]], Int, List[Tokenizer.Token])].
       collect {
-        case ((x, y), _) => (x, y)
+        case (x, y, _) => (x, y)
       }.
       toMat(Sink.
         fold(Option.empty[(TokenMap, Token)]) {
@@ -83,9 +83,6 @@ object NLTPMainStream extends App {
       map(splitter(_)).
       mapConcat(_.toList).
       scan((map, n, List[Tokenizer.Token]()))(tokenizer(_, _)).
-      map {
-        case (x, y, z) => ((x, y), z)
-      }.
       alsoToMat(maps)(Keep.right).
       toMat(tokenVariances)(Keep.both).run())
 
