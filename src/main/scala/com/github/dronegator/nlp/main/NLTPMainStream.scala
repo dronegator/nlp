@@ -43,6 +43,27 @@ object NLTPMainStream extends App {
 
   val n = map.valuesIterator.flatten.max
 
+  val count1gramms = Flow[List[Token]].fold(Map[List[Token], Int]()){
+    case (map, phrase) =>
+      phrase.sliding(1).foldLeft(map){
+        case (map, token) => map + (token -> ( 1 + map.getOrElse(token, 0)))
+      }
+  }.toMat(Sink.headOption)(Keep.right)
+
+  val count2gramms = Flow[List[Token]].fold(Map[List[Token], Int]()){
+    case (map, phrase) =>
+      phrase.sliding(2).foldLeft(map){
+        case (map, token) => map + (token -> ( 1 + map.getOrElse(token, 0)))
+      }
+  }.toMat(Sink.headOption)(Keep.right)
+
+  val count3gramms = Flow[List[Token]].fold(Map[List[Token], Int]()){
+    case (map, phrase) =>
+      phrase.sliding(3).foldLeft(map){
+        case (map, token) => map + (token -> ( 1 + map.getOrElse(token, 0)))
+      }
+  }.toMat(Sink.headOption)(Keep.right)
+
   val tokenVariances =
     Flow[(Map[String, List[Int]], Int, List[Tokenizer.Token])].
       collect {
@@ -56,9 +77,13 @@ object NLTPMainStream extends App {
       scan((List.empty[List[Token]], Option.empty[List[Token]]))(accumulator(_,_)).
       collect {
         case (_, Some(phrase)) => phrase
-      }.toMat(Sink.fold(List.empty[List[Token]]) {
+      }.
+      alsoToMat(count1gramms)(Keep.right).
+      alsoToMat(count2gramms)(Keep.both).
+      alsoToMat(count3gramms)(Keep.both).
+      toMat(Sink.fold(List.empty[List[Token]]) {
       case (list, x) => x :: list
-    })(Keep.right)
+    })(Keep.both)
 
   val maps =
     Flow[(Map[String, List[Int]], Int, List[Tokenizer.Token])].
@@ -70,31 +95,65 @@ object NLTPMainStream extends App {
           case (_, x) => Option(x)
         })(Keep.right)
 
-  val (outcome, phrases) =
-    (Source.fromIterator(() => source).
-      map(splitter(_)).
-      mapConcat(_.toList).
-      scan((map, n, List[Tokenizer.Token]()))(tokenizer(_, _)).
-      alsoToMat(maps)(Keep.right).
-      toMat(tokenVariances)(Keep.both).run())
 
-  Await.result(phrases, 30 seconds) foreach { phrase =>
-    println(phrase.mkString("", " :: ", " :: Nil"))
+  try {
+    val (outcome, (((ng1, ng2), ng3), phrases)) =
+      (Source.fromIterator(() => source).
+        map { x =>
+          println(x)
+          x
+        }.
+        map(splitter(_)).
+        mapConcat(_.toList).
+        scan((map, n, List[Tokenizer.Token]()))(tokenizer(_, _)).
+        alsoToMat(maps)(Keep.right).
+        toMat(tokenVariances)(Keep.both).run())
+
+    implicit val ordering = Ordering.
+      fromLessThan((x: List[Int], y: List[Int]) => (x zip y).find(x => x._1 != x._2).map(x => x._1 < x._2).getOrElse(false))
+
+    Await.result(ng1, Duration.Inf) foreach { map =>
+      println("== 1 gramm ==")
+      map.toList.sortBy(_._1).foreach {
+        case (key, value) =>
+          println(s" ${key.map(_.toString).mkString("", " :: ", " :: Nil")} -> $value")
+      }
+    }
+
+    Await.result(ng2, Duration.Inf) foreach { map =>
+      println("== 2 gramm ==")
+      map.toList.sortBy(_._1).foreach {
+        case (key, value) =>
+          println(s" ${key.map(_.toString).mkString("", " :: ", " :: Nil")} -> $value")
+      }
+    }
+
+    Await.result(ng3, Duration.Inf) foreach { map =>
+      println("== 3 gramm ==")
+      map.toList.sortBy(_._1).foreach {
+        case (key, value) =>
+          println(s" ${key.map(_.toString).mkString("", " :: ", " :: Nil")} -> $value")
+      }
+    }
+
+    Await.result(phrases, Duration.Inf) foreach { phrase =>
+      println(phrase.mkString("", " :: ", " :: Nil"))
+    }
+
+    Await.result(outcome, Duration.Inf) foreach {
+      case (map, token) =>
+        map.
+          toList.
+          sortBy(_._1).
+          foreach {
+            case (key, value :: _) =>
+              println(f"$key%-60s:$value%010d")
+          }
+
+        println(s"Last token = $token")
+    }
+  } finally  {
+    mat.shutdown()
+    system.terminate()
   }
-
-  Await.result(outcome, 30 seconds) foreach {
-    case (map, token) =>
-      map.
-        toList.
-        sortBy(_._1).
-        foreach {
-          case (key, value :: _) =>
-            println(f"$key%-60s:$value%010d")
-        }
-
-      println(s"Last token = $token")
-  }
-
-  mat.shutdown()
-  system.terminate()
 }
