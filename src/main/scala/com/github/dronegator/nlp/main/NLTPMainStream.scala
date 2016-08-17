@@ -36,20 +36,6 @@ object NLTPMainStream
 
   implicit val mat = ActorMaterializer()
 
-  val splitter = new Splitter(cfg)
-
-  val tokenizer = new Tokenizer(cfg, None)
-
-  val phraseDetector = new PhraseDetector(cfg)
-
-  val accumulator = new Accumulator(cfg, phraseDetector)
-
-  val ngramms1 = new NGramsCounter(cfg, 1)
-
-  val ngramms2 = new NGramsCounter(cfg, 2)
-
-  val ngramms3 = new NGramsCounter(cfg, 3)
-
   val map = Tokenizer.MapOfPredefs
 
   val n = map.valuesIterator.flatten.max

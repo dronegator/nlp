@@ -17,23 +17,10 @@ object NLPTMain
 
   val Array(fileIn, fileOut) = args
 
-  val cfg = CFG()
-
   val source = io.Source.fromFile(new File(fileIn)).getLines()
 
-  val splitter = new Splitter(cfg)
+  val cfg = CFG()
 
-  val tokenizer = new Tokenizer(cfg, None)
-
-  val phraseDetector = new PhraseDetector(cfg)
-
-  val accumulator = new Accumulator(cfg, phraseDetector)
-
-  val ngramms1 = new NGramsCounter(cfg, 1)
-
-  val ngramms2 = new NGramsCounter(cfg, 2)
-
-  val ngramms3 = new NGramsCounter(cfg, 3)
 
   val map = Tokenizer.MapOfPredefs
 
