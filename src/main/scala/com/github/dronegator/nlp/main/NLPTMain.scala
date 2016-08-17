@@ -1,5 +1,7 @@
 import java.io.File
 
+import com.github.dronegator.nlp.component.accumulator.Accumulator
+import com.github.dronegator.nlp.component.ngramscounter.NGramsCounter
 import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
 import com.github.dronegator.nlp.component.splitter.Splitter
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{TokenMap, Token}
@@ -20,6 +22,14 @@ object NLPTMain extends App {
 
   val phraseDetector = new PhraseDetector(cfg)
 
+  val accumulator = new Accumulator(cfg, phraseDetector)
+
+  val ngramms1 = new NGramsCounter(cfg, 1)
+
+  val ngramms2 = new NGramsCounter(cfg, 2)
+
+  val ngramms3 = new NGramsCounter(cfg, 3)
+
   val map = Tokenizer.MapOfPredefs
 
   val n = map.valuesIterator.flatten.max
@@ -33,7 +43,7 @@ object NLPTMain extends App {
     }.toStream.
     unzip
 
-  tokenVariances.
+  val phrases = tokenVariances.
     toIterator.
     zipWithIndex.
     map{
@@ -41,24 +51,47 @@ object NLPTMain extends App {
         //println(f"$n%-10d : ${tokens.mkString(" :: ")}")
         tokens
     }.
-    scanLeft((List.empty[List[Token]], Option.empty[List[Token]])){
-      case ((buffer, _), tokens) =>
-        val tokenizedText = buffer :+ tokens
-
-        phraseDetector(tokenizedText) match {
-          case Some((phrase, rest)) =>
-            (rest.toList, Some(phrase))
-
-          case None =>
-            (tokenizedText, None)
-        }
-    }.
+    scanLeft((List.empty[List[Token]], Option.empty[List[Token]]))(accumulator(_, _)).
     collect{
       case (_, Some(phrase)) => phrase
     }.
-    foreach{ phrase =>
-       println(phrase)
-    }
+    toStream
+
+  implicit val ordering = Ordering.
+    fromLessThan((x: List[Int], y: List[Int]) => (x zip y).find(x => x._1 != x._2).map(x => x._1 < x._2).getOrElse(false))
+
+  phrases.
+    toIterator.
+    foldLeft(Map[List[Token], Int]())(ngramms1(_, _)) match {
+      case map =>
+        println("== 1 gramm ==")
+        map.toList.sortBy(_._1).foreach {
+          case (key, value) =>
+            println(s" ${key.map(_.toString).mkString("", " :: ", " :: Nil")} -> $value")
+        }
+      }
+
+  phrases.
+    toIterator.
+    foldLeft(Map[List[Token], Int]())(ngramms2(_, _)) match {
+    case map =>
+      println("== 2 gramm ==")
+      map.toList.sortBy(_._1).foreach {
+        case (key, value) =>
+          println(s" ${key.map(_.toString).mkString("", " :: ", " :: Nil")} -> $value")
+      }
+  }
+
+  phrases.
+    toIterator.
+    foldLeft(Map[List[Token], Int]())(ngramms3(_, _)) match {
+    case map =>
+      println("== 3 gramm ==")
+      map.toList.sortBy(_._1).foreach {
+        case (key, value) =>
+          println(s" ${key.map(_.toString).mkString("", " :: ", " :: Nil")} -> $value")
+      }
+  }
 
   maps.
     toIterator.
