@@ -5,6 +5,7 @@ import java.io.File
 import com.github.dronegator.nlp.utils.CFG
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
+import enumeratum.values.{ValueEnum, ValueEnumEntry}
 
 /**
  * Created by cray on 8/17/16.
@@ -14,32 +15,6 @@ object NLPTReplMain
   extends App
   with MainTools {
   lazy val cfg: CFG = CFG()
-
-  sealed trait Command extends EnumEntry with Lowercase with Command.EnumApply
-
-  object Command extends Enum[Command] {
-    override def values: Seq[Command] = findValues
-
-    trait EnumApply {
-      def unapply(name: String) = withNameOption(name) filter ( x => x == this) isDefined
-    }
-
-    case object NGram1 extends Command
-
-    case object NGram2 extends Command
-
-    case object NGram3 extends Command
-
-    case object Phrases extends Command
-
-    case object Tokens extends Command
-    
-    case object Probability extends Command
-
-    case object Everything extends Command
-
-    def unapply(name: String) = withNameOption(name)
-  }
 
   sealed trait SubCommand extends EnumEntry with Lowercase with SubCommand.EnumUnaply
 
@@ -58,6 +33,38 @@ object NLPTReplMain
   }
 
   import SubCommand._
+
+  sealed abstract class Command(val help: String, val subcommands: Set[SubCommand]) extends EnumEntry with Lowercase with Command.EnumApply
+
+  object Command extends Enum[Command] {
+    override def values: Seq[Command] = findValues
+
+    trait EnumApply {
+      def unapply(name: String) = withNameOption(name) filter ( x => x == this) isDefined
+    }
+
+    case object NGram1 extends Command("Dump or Stat 1-gram sequences in a vocabulary", Set(Dump, Stat))
+
+    case object NGram2 extends Command("Dump or Stat 1-gram sequences in a vocabulary", Set(Dump, Stat))
+
+    case object NGram3 extends Command("Dump or Stat 1-gram sequences in a vocabulary", Set(Dump, Stat))
+
+    case object Phrases extends Command("Dump or Stat phrases in a vocabulary", Set(Dump, Stat))
+
+    case object Tokens extends Command("Dump or Stat tokens sequences in a vocabulary", Set(Dump, Stat))
+    
+    case object Probability extends Command("Calculate a probability of the phrase", Set())
+
+    case object Everything extends Command("Statistic for all items of a vocabulary", Set(Dump, Stat))
+
+    def unapply(name: String): Option[(Command, String, Set[SubCommand])] = withNameOption(name) map {
+      case Command(x, y, z) => (x, y, z)
+    }
+
+    def unapply(x: Command) =
+      Some((x, x.help,x.subcommands))
+  }
+
   import Command._
 
   val Array(fileIn) = args
@@ -76,6 +83,13 @@ object NLPTReplMain
   }
 
   def exec(args: List[String]) = args match {
+    case Command(command, help, subcommands) :: Nil =>
+      println(
+        s"""
+          | >> ${command} ${subcommands mkString ("["," | ", "]")}
+          |    $help
+        """.stripMargin)
+
     case NGram1() :: Dump() :: _ =>
       println("== ngram1")
       dump(vocabulary.ngrams1)
@@ -132,9 +146,13 @@ object NLPTReplMain
       println(s"== phrase = ${phrase}")
 
     case _ =>
-      Command.values foreach { value =>
-        println(value)
+      Command.values foreach {
+        case Command(command, help, subcommands) =>
+          println(s""" >> ${command} ${subcommands mkString ("["," | ", "]")}
+                      |    $help
+                      |    """.stripMargin)
       }
+
   }
 
   try {
