@@ -20,7 +20,7 @@ import scala.concurrent.{Await, duration}
 /**
  * Created by cray on 8/15/16.
  */
-object NLTPMainStream 
+object NLPTMainStream
   extends App
   with MainTools {
 

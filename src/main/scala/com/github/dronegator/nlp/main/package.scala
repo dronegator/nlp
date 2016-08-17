@@ -43,7 +43,7 @@ package object main {
        output.close()
      }
 
-     def load(file: File, vocabulary: VocabularyRaw): VocabularyRaw = {
+     def load(file: File): VocabularyRaw = {
        val input = new ObjectInputStream(new FileInputStream(file))
        val vocabulary = input.readObject()
        input.close()

@@ -7,7 +7,7 @@ import com.github.dronegator.nlp.component.splitter.Splitter
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{TokenMap, Token}
 import com.github.dronegator.nlp.component.tokenizer.{Tokenizer}
 import com.github.dronegator.nlp.main.MainTools
-import com.github.dronegator.nlp.main.NLTPMainStream._
+import com.github.dronegator.nlp.main.NLPTMainStream._
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.vocabulary.VocabularyRawImpl
 
