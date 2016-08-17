@@ -21,7 +21,6 @@ object NLPTMain
 
   val cfg = CFG()
 
-
   val map = Tokenizer.MapOfPredefs
 
   val n = map.valuesIterator.flatten.max

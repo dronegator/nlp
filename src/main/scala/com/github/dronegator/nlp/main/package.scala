@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp
 
-import java.io.File
+import java.io._
 
 import com.github.dronegator.nlp.component.accumulator.Accumulator
 import com.github.dronegator.nlp.component.ngramscounter.NGramsCounter
@@ -34,14 +34,21 @@ package object main {
    }
 
    trait MainTools extends Combinators {
-
      private implicit val ordering = Ordering.
        fromLessThan((x: List[Int], y: List[Int]) => (x zip y).find(x => x._1 != x._2).map(x => x._1 < x._2).getOrElse(false))
 
+     def save(file: File, vocabulary: VocabularyRaw) =                            {
+       val output = new ObjectOutputStream(new FileOutputStream(file))
+       output.writeObject(vocabulary)
+       output.close()
+     }
 
-     def save(file: File, vocabulary: VocabularyRaw) = ???
-
-     def load(file: File, vocabulary: VocabularyRaw): VocabularyRaw = ???
+     def load(file: File, vocabulary: VocabularyRaw): VocabularyRaw = {
+       val input = new ObjectInputStream(new FileInputStream(file))
+       val vocabulary = input.readObject()
+       input.close()
+       vocabulary.asInstanceOf[VocabularyRaw]
+     }
 
      def dump(ngrams1: Map[List[Token], Int]) = {
        ngrams1.toList.sortBy(_._1).foreach {
