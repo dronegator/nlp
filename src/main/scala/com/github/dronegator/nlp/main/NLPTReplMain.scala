@@ -15,10 +15,14 @@ object NLPTReplMain
   with MainTools {
   lazy val cfg: CFG = CFG()
 
-  sealed trait Command extends EnumEntry with Lowercase
+  sealed trait Command extends EnumEntry with Lowercase with Command.EnumApply
 
   object Command extends Enum[Command] {
     override def values: Seq[Command] = findValues
+
+    trait EnumApply {
+      def unapply(name: String) = withNameOption(name) filter ( x => x == this) isDefined
+    }
 
     case object NGram1 extends Command
 
@@ -29,14 +33,20 @@ object NLPTReplMain
     case object Phrases extends Command
 
     case object Tokens extends Command
+    
+    case object Probability extends Command
 
     def unapply(name: String) = withNameOption(name)
   }
 
-  sealed trait SubCommand extends EnumEntry with Lowercase
+  sealed trait SubCommand extends EnumEntry with Lowercase with SubCommand.EnumUnaply
 
   object SubCommand extends Enum[SubCommand] {
     override def values: Seq[SubCommand] = findValues
+
+    trait EnumUnaply {
+      def unapply(name: String) = withNameOption(name) filter (this == _) isDefined
+    }
 
     case object Dump extends SubCommand
 
@@ -58,52 +68,55 @@ object NLPTReplMain
     case s : String => try {
       exec(s.split("\\s+").toList);
     } catch {
-      case x  => printf("\n* Comand failure: %s\n\n",x)
+      case x  => printf("\n* Command failure: %s\n\n",x)
     } finally task()
     case _ => {}
   }
 
   def exec(args: List[String]) = args match {
-    case Command(NGram1) :: SubCommand(Dump) :: _ =>
+    case NGram1() :: Dump() :: _ =>
       println("== ngram1")
       dump(vocabulary.ngrams1)
       println("==")
 
-    case Command(NGram2) :: SubCommand(Dump) :: _ =>
+    case NGram2() :: Dump() :: _ =>
       println("== ngram1")
       dump(vocabulary.ngrams2)
       println("==")
 
-    case Command(NGram3) :: SubCommand(Dump) :: _ =>
+    case NGram3() :: Dump() :: _ =>
       println("== ngram1")
       dump(vocabulary.ngrams3)
       println("==")
 
-    case Command(Phrases) :: SubCommand(Dump) :: _ =>
+    case Phrases() :: Dump() :: _ =>
       println("== phrases")
       dump(vocabulary.phrases)
       println("==")
 
-    case Command(Tokens) :: SubCommand(Dump) :: _ =>
+    case Tokens() :: Dump() :: _ =>
       println("== phrases")
       dump(vocabulary.toToken, vocabulary.toToken.size)
       println("==")
 
-    case Command(NGram1) :: _ =>
+    case NGram1() :: _ =>
       println(s"== ngram1 size = ${vocabulary.ngrams1.size}")
 
-    case Command(NGram2) :: _ =>
+    case NGram2() :: _ =>
       println(s"== ngram1 size = ${vocabulary.ngrams2.size}")
 
-    case Command(NGram3) :: _ =>
+    case NGram3() :: _ =>
       println(s"== ngram1 size = ${vocabulary.ngrams3.size}")
 
-    case Command(Phrases) :: _ =>
+    case Phrases() :: _ =>
       println(s"== phrases size = ${vocabulary.phrases.size}")
 
-    case Command(Tokens) :: SubCommand(Dump) :: _ =>
+    case Tokens() :: _ =>
       println(s"== tokens size = ${vocabulary.toToken.size}")
-      println("==")
+
+    case Probability() :: args =>
+      val phrase = args.mkString(" ")
+      println(s"== phrase = ${phrase}")
 
     case _ =>
       Command.values foreach { value =>
