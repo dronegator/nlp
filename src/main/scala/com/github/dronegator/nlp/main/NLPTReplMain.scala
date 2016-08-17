@@ -58,6 +58,8 @@ object NLPTReplMain
 
     case object Lookup extends Command("Show probability of n-gram", Set())
 
+    case object Continue extends Command("Show possible continuation of n-gram", Set())
+
     case object Everything extends Command("Statistic for all items of a vocabulary", Set(Dump, Stat))
 
     def unapply(name: String): Option[(Command, String, Set[SubCommand])] = withNameOption(name) map {
@@ -175,6 +177,51 @@ object NLPTReplMain
         x <- vocabulary.vngrams3.get(token1 :: token2 :: token3 :: Nil)
       } {
         println(s" - $token1 $token2 $token3 => $x")
+      }
+
+    case Continue() :: word1 :: Nil =>
+      println(s"$word1:")
+      for {
+        token1 <- vocabulary.toToken(word1)
+        (p, nextToken) <- vocabulary.vnext1(token1 :: Nil)
+        nextWord <- vocabulary.toWord.get(nextToken)
+      } {
+        println(s" - $nextWord ($nextToken), p = $p")
+      }
+
+    case Continue() :: word1 :: word2 :: Nil =>
+      println(s"$word1 $word2:")
+      for {
+        token1 <- vocabulary.toToken(word1)
+        token2 <- vocabulary.toToken(word2)
+        (p, nextToken) <- vocabulary.vnext2(token1 :: token2 :: Nil)
+        nextWord <- vocabulary.toWord.get(nextToken)
+      } {
+        println(s" - $nextWord ($nextToken), p = $p")
+      }
+
+    case /*Continue() ::*/ words @ (_ :: _)=>
+      words.takeRight(2) match {
+        case word1 :: word2 :: Nil =>
+          println(s"$word1 $word2:")
+          for {
+            token1 <- vocabulary.toToken(word1)
+            token2 <- vocabulary.toToken(word2)
+            (p, nextToken) <- vocabulary.vnext2(token1 :: token2 :: Nil)
+            nextWord <- vocabulary.toWord.get(nextToken)
+          } {
+            println(s" - $nextWord ($nextToken), p = $p")
+          }
+
+        case word1 :: Nil =>
+          println(s"$word1:")
+          for {
+            token1 <- vocabulary.toToken(word1)
+            (p, nextToken) <- vocabulary.vnext1(token1 :: Nil)
+            nextWord <- vocabulary.toWord.get(nextToken)
+          } {
+            println(s" - $nextWord ($nextToken), p = $p")
+          }
       }
 
     case _ =>

@@ -31,7 +31,5 @@ package object vocabulary {
     def vnext1: Map[List[Token], List[(Double,Token)]]
 
     def vnext2: Map[List[Token], List[(Double,Token)]]
-
-    def vnext3: Map[List[Token], List[(Double,Token)]]
   }
 }

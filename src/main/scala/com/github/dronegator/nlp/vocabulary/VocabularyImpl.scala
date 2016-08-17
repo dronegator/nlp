@@ -64,9 +64,37 @@ class VocabularyImpl(phrases: List[List[Token]],
     }
   }
 
-  override lazy val vnext1: Map[List[Token], List[(Double, Token)]] = ???
+  override lazy val vnext1: Map[List[Token], List[(Double, Token)]] = {
+    println("=>4")
+    vngrams2.
+      toList.
+      map{
+        case (w1 :: w2 :: _, p) =>
+          w1 -> (p -> w2)
+      }.
+      groupBy(_._1).
+      map{
+        case (key, value) =>
+          List(key) -> value.
+            map(_._2).
+            sortBy(_._1)
+      }
+  }
 
-  override lazy val vnext2: Map[List[Token], List[(Double,Token)]] = ???
-
-  override lazy val vnext3: Map[List[Token], List[(Double,Token)]] = ???
+  override lazy val vnext2: Map[List[Token], List[(Double,Token)]] = {
+    println("=>5")
+    vngrams3.
+      toList.
+      map{
+        case (w1 :: w2 :: w3 :: _, p) =>
+          (w1 :: w2 :: Nil)-> (p -> w3)
+      }.
+      groupBy(_._1).
+      map{
+        case (key,value) =>
+          key -> value.
+            map(_._2).
+            sortBy(_._1)
+      }
+  }
 }
