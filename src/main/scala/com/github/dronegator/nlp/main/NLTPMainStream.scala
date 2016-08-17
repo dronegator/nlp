@@ -10,8 +10,9 @@ import com.github.dronegator.nlp.component.ngramscounter.{NGramsCounter}
 import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
 import com.github.dronegator.nlp.component.splitter.Splitter
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenMap}
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Word, Token, TokenMap}
 import com.github.dronegator.nlp.utils.CFG
+import com.github.dronegator.nlp.vocabulary.VocabularyRawImpl
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, duration}
@@ -19,13 +20,15 @@ import scala.concurrent.{Await, duration}
 /**
  * Created by cray on 8/15/16.
  */
-object NLTPMainStream extends App {
+object NLTPMainStream 
+  extends App
+  with MainTools {
 
-  val Array(file) = args
+  val Array(fileIn, fileOut) = args
 
   val cfg = CFG()
 
-  val source = io.Source.fromFile(new File(file)).getLines()
+  val source = io.Source.fromFile(new File(fileIn)).getLines()
 
   implicit val context = scala.concurrent.ExecutionContext.global
 
@@ -96,7 +99,7 @@ object NLTPMainStream extends App {
 
 
   try {
-    val (outcome, (((ng1, ng2), ng3), phrases)) =
+    val (futureToToken, (((ng1, ng2), ng3), futurePhrases)) =
       (Source.fromIterator(() => source).
         /*map { x =>
           println(x)
@@ -108,49 +111,32 @@ object NLTPMainStream extends App {
         alsoToMat(maps)(Keep.right).
         toMat(tokenVariances)(Keep.both).run())
 
-    implicit val ordering = Ordering.
-      fromLessThan((x: List[Int], y: List[Int]) => (x zip y).find(x => x._1 != x._2).map(x => x._1 < x._2).getOrElse(false))
+    val Some(ngram1) = Await.result(ng1, Duration.Inf)
 
-    Await.result(ng1, Duration.Inf) foreach { map =>
-      println("== 1 gramm ==")
-      map.toList.sortBy(_._1).foreach {
-        case (key, value) =>
-          println(s" ${key.map(_.toString).mkString("", " :: ", " :: Nil")} -> $value")
-      }
-    }
+    val Some(ngram2) = Await.result(ng2, Duration.Inf)
 
-    Await.result(ng2, Duration.Inf) foreach { map =>
-      println("== 2 gramm ==")
-      map.toList.sortBy(_._1).foreach {
-        case (key, value) =>
-          println(s" ${key.map(_.toString).mkString("", " :: ", " :: Nil")} -> $value")
-      }
-    }
+    val Some(ngram3) = Await.result(ng3, Duration.Inf)
 
-    Await.result(ng3, Duration.Inf) foreach { map =>
-      println("== 3 gramm ==")
-      map.toList.sortBy(_._1).foreach {
-        case (key, value) =>
-          println(s" ${key.map(_.toString).mkString("", " :: ", " :: Nil")} -> $value")
-      }
-    }
+    val Some((toToken, lastToken)) = Await.result(futureToToken, Duration.Inf)
 
-    Await.result(phrases, Duration.Inf) foreach { phrase =>
-      println(phrase.mkString("", " :: ", " :: Nil"))
-    }
+    val phrases = Await.result(futurePhrases, Duration.Inf)
 
-    Await.result(outcome, Duration.Inf) foreach {
-      case (map, token) =>
-        map.
-          toList.
-          sortBy(_._1).
-          foreach {
-            case (key, value :: _) =>
-              println(f"$key%-60s:$value%010d")
-          }
+    println("== 1 gramm ==")
+    dump(ngram1)
 
-        println(s"Last token = $token")
-    }
+    println("== 2 gramm ==")
+    dump(ngram2)
+
+    println("== 2 gramm ==")
+    dump(ngram3)
+
+    println("== phrases ==")
+    dump(phrases)
+
+    dump(toToken, lastToken)
+
+    save(new File(fileOut), VocabularyRawImpl(phrases, ngram1, ngram2, ngram3, toToken))
+
   } finally {
     mat.shutdown()
     system.terminate()

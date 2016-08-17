@@ -6,15 +6,20 @@ import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
 import com.github.dronegator.nlp.component.splitter.Splitter
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{TokenMap, Token}
 import com.github.dronegator.nlp.component.tokenizer.{Tokenizer}
+import com.github.dronegator.nlp.main.MainTools
+import com.github.dronegator.nlp.main.NLTPMainStream._
 import com.github.dronegator.nlp.utils.CFG
+import com.github.dronegator.nlp.vocabulary.VocabularyRawImpl
 
-object NLPTMain extends App {
+object NLPTMain
+  extends App
+  with MainTools {
 
-  val Array(file) = args
+  val Array(fileIn, fileOut) = args
 
   val cfg = CFG()
 
-  val source = io.Source.fromFile(new File(file)).getLines()
+  val source = io.Source.fromFile(new File(fileIn)).getLines()
 
   val splitter = new Splitter(cfg)
 
@@ -55,60 +60,40 @@ object NLPTMain extends App {
     collect{
       case (_, Some(phrase)) => phrase
     }.
-    toStream
+    toList
 
-  implicit val ordering = Ordering.
-    fromLessThan((x: List[Int], y: List[Int]) => (x zip y).find(x => x._1 != x._2).map(x => x._1 < x._2).getOrElse(false))
-
-  phrases.
+  val ngram1 = phrases.
     toIterator.
-    foldLeft(Map[List[Token], Int]())(ngramms1(_, _)) match {
-      case map =>
-        println("== 1 gramm ==")
-        map.toList.sortBy(_._1).foreach {
-          case (key, value) =>
-            println(s" ${key.map(_.toString).mkString("", " :: ", " :: Nil")} -> $value")
-        }
-      }
+    foldLeft(Map[List[Token], Int]())(ngramms1(_, _))
 
-  phrases.
+  val ngram2 = phrases.
     toIterator.
-    foldLeft(Map[List[Token], Int]())(ngramms2(_, _)) match {
-    case map =>
-      println("== 2 gramm ==")
-      map.toList.sortBy(_._1).foreach {
-        case (key, value) =>
-          println(s" ${key.map(_.toString).mkString("", " :: ", " :: Nil")} -> $value")
-      }
-  }
+    foldLeft(Map[List[Token], Int]())(ngramms2(_, _))
 
-  phrases.
+  val ngram3 = phrases.
     toIterator.
-    foldLeft(Map[List[Token], Int]())(ngramms3(_, _)) match {
-    case map =>
-      println("== 3 gramm ==")
-      map.toList.sortBy(_._1).foreach {
-        case (key, value) =>
-          println(s" ${key.map(_.toString).mkString("", " :: ", " :: Nil")} -> $value")
-      }
-  }
+    foldLeft(Map[List[Token], Int]())(ngramms3(_, _))
 
-  maps.
+  val Some((toToken, lastToken)) = maps.
     toIterator.
     foldLeft(Option.empty[(TokenMap, Token)]) {
       case (_, x) =>
         Option(x)
-    }.
-    foreach {
-      case (map, token) =>
-        map.
-          toList.
-          sortBy(_._1).
-          foreach {
-            case (key, value :: _) =>
-              println(f"$key%-60s:$value%010d")
-          }
-
-        println(s"Last token = $token")
     }
+
+  println("== 1 gramm ==")
+  dump(ngram1)
+
+  println("== 2 gramm ==")
+  dump(ngram2)
+
+  println("== 2 gramm ==")
+  dump(ngram3)
+
+  println("== phrases ==")
+  dump(phrases)
+
+  dump(toToken, lastToken)
+
+  save(new File(fileOut), VocabularyRawImpl(phrases, ngram1, ngram2, ngram3, toToken))
 }
