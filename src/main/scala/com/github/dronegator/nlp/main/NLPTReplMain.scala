@@ -36,6 +36,8 @@ object NLPTReplMain
     
     case object Probability extends Command
 
+    case object Everything extends Command
+
     def unapply(name: String) = withNameOption(name)
   }
 
@@ -80,12 +82,12 @@ object NLPTReplMain
       println("==")
 
     case NGram2() :: Dump() :: _ =>
-      println("== ngram1")
+      println("== ngram2")
       dump(vocabulary.ngrams2)
       println("==")
 
     case NGram3() :: Dump() :: _ =>
-      println("== ngram1")
+      println("== ngram3")
       dump(vocabulary.ngrams3)
       println("==")
 
@@ -95,7 +97,7 @@ object NLPTReplMain
       println("==")
 
     case Tokens() :: Dump() :: _ =>
-      println("== phrases")
+      println("== tokens")
       dump(vocabulary.toToken, vocabulary.toToken.size)
       println("==")
 
@@ -103,16 +105,27 @@ object NLPTReplMain
       println(s"== ngram1 size = ${vocabulary.ngrams1.size}")
 
     case NGram2() :: _ =>
-      println(s"== ngram1 size = ${vocabulary.ngrams2.size}")
+      println(s"== ngram2 size = ${vocabulary.ngrams2.size}")
 
     case NGram3() :: _ =>
-      println(s"== ngram1 size = ${vocabulary.ngrams3.size}")
+      println(s"== ngram3 size = ${vocabulary.ngrams3.size}")
 
     case Phrases() :: _ =>
       println(s"== phrases size = ${vocabulary.phrases.size}")
 
     case Tokens() :: _ =>
       println(s"== tokens size = ${vocabulary.toToken.size}")
+
+    case Everything() :: _ =>
+      println(
+        s"""
+           |Statistic:
+           | - ngram1 size = ${vocabulary.ngrams1.size}
+           | - ngram2 size = ${vocabulary.ngrams2.size}
+           | - ngram3 size = ${vocabulary.ngrams3.size}
+           | - phrases size = ${vocabulary.phrases.size}
+           | - tokens size = ${vocabulary.toToken.size}
+         """.stripMargin)
 
     case Probability() :: args =>
       val phrase = args.mkString(" ")
