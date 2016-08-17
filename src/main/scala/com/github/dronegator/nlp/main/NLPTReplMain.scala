@@ -3,6 +3,7 @@ package com.github.dronegator.nlp.main
 import java.io.File
 
 import com.github.dronegator.nlp.utils.CFG
+import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyImpl}
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
 import enumeratum.values.{ValueEnum, ValueEnumEntry}
@@ -55,6 +56,8 @@ object NLPTReplMain
     
     case object Probability extends Command("Calculate a probability of the phrase", Set())
 
+    case object Lookup extends Command("Show probability of n-gram", Set())
+
     case object Everything extends Command("Statistic for all items of a vocabulary", Set(Dump, Stat))
 
     def unapply(name: String): Option[(Command, String, Set[SubCommand])] = withNameOption(name) map {
@@ -69,7 +72,7 @@ object NLPTReplMain
 
   val Array(fileIn) = args
 
-  lazy val vocabulary = load(new File(fileIn))
+  lazy val vocabulary: VocabularyImpl = load(new File(fileIn))
 
   val ConsoleReader = new jline.console.ConsoleReader()
 
@@ -144,6 +147,35 @@ object NLPTReplMain
     case Probability() :: args =>
       val phrase = args.mkString(" ")
       println(s"== phrase = ${phrase}")
+
+    case Lookup() :: word1 :: Nil =>
+      println(s"1 $word1:")
+      for {
+        token1 <- vocabulary.toToken(word1)
+        x <- vocabulary.vngrams1.get(token1 :: Nil)
+      } {
+        println(s" - $token1 => $x")
+      }
+
+    case Lookup() :: word1 :: word2 :: Nil =>
+      println(s"2 $word1 $word2:")
+      for {
+        token1 <- vocabulary.toToken(word1)
+        token2 <- vocabulary.toToken(word2)
+        x <- vocabulary.vngrams2.get(token1 :: token2 :: Nil)
+      } {
+        println(s" - $token1 $token2 => $x")
+      }
+    case Lookup() :: word1 :: word2 :: word3 :: _ =>
+      println(s"3 $word1 $word2 $word3:")
+      for {
+        token1 <- vocabulary.toToken(word1)
+        token2 <- vocabulary.toToken(word2)
+        token3 <- vocabulary.toToken(word3)
+        x <- vocabulary.vngrams3.get(token1 :: token2 :: token3 :: Nil)
+      } {
+        println(s" - $token1 $token2 $token3 => $x")
+      }
 
     case _ =>
       Command.values foreach {
