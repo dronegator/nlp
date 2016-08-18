@@ -8,12 +8,13 @@ import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{TokenMap, Token}
 import com.github.dronegator.nlp.component.tokenizer.{Tokenizer}
 import com.github.dronegator.nlp.main.MainTools
 import com.github.dronegator.nlp.main.NLPTMainStream._
-import com.github.dronegator.nlp.utils.CFG
+import com.github.dronegator.nlp.utils._
 import com.github.dronegator.nlp.vocabulary.VocabularyRawImpl
 
 object NLPTMain
   extends App
   with MainTools {
+
 
   val Array(fileIn, fileOut) = args
 
@@ -31,11 +32,10 @@ object NLPTMain
     scanLeft((map, n, List[Tokenizer.Token]()))(tokenizer(_, _)).
     map{
       case (x, y, z) => ((x, y), z)
-    }.toStream.
+    }.
     unzip
 
-  val phrases = tokenVariances.
-    toIterator.
+  val (phrases1, phrases2, phrases3, phrases4, phrases5) = tokenVariances.
     zipWithIndex.
     map{
       case (tokens, n) =>
@@ -45,19 +45,15 @@ object NLPTMain
     scanLeft((List.empty[List[Token]], Option.empty[List[Token]]))(accumulator(_, _)).
     collect{
       case (_, Some(phrase)) => phrase
-    }.
-    toList
+    }.fork()(fork5)
 
-  val ngram1 = phrases.
-    toIterator.
+  val ngram1 = phrases1.
     foldLeft(Map[List[Token], Int]())(ngramms1(_, _))
 
-  val ngram2 = phrases.
-    toIterator.
+  val ngram2 = phrases2.
     foldLeft(Map[List[Token], Int]())(ngramms2(_, _))
 
-  val ngram3 = phrases.
-    toIterator.
+  val ngram3 = phrases3.
     foldLeft(Map[List[Token], Int]())(ngramms3(_, _))
 
   val Some((toToken, lastToken)) = maps.
@@ -77,9 +73,9 @@ object NLPTMain
   dump(ngram3)
 
   println("== phrases ==")
-  dump(phrases)
+  dump(phrases4.toList)
 
   dump(toToken, lastToken)
 
-  save(new File(fileOut), VocabularyRawImpl(phrases, ngram1, ngram2, ngram3, toToken))
+  save(new File(fileOut), VocabularyRawImpl(phrases5.toList, ngram1, ngram2, ngram3, toToken))
 }
