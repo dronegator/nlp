@@ -11,20 +11,31 @@ package object utils {
     }
   }
 
-  implicit def fork2[A](stream: Stream[A]) =
-    (stream.toIterator, stream.toIterator)
-
-  implicit def fork3[A](stream: Stream[A]) =
-    (stream.toIterator, stream.toIterator, stream.toIterator)
-
-  implicit def fork4[A](stream: Stream[A]) =
-    (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator)
-
-  implicit def fork5[A](stream: Stream[A]) =
-    (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator )
 
   implicit class IteratorFork[A](val iterator: Iterator[A]) extends AnyVal {
     def fork[B]()(implicit fork: Stream[A] => B): B =
       fork(iterator.toStream)
+
+    def fork[A]() = {
+      val stream = iterator.toStream
+      (stream.toIterator, stream.toIterator)
+    }
+
+    def fork3[A]() =              {
+      val stream = iterator.toStream
+      (stream.toIterator, stream.toIterator, stream.toIterator)
+    }
+
+    def fork4[A]() = {
+      val stream = iterator.toStream
+      (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator)
+    }
+
+    def fork5[A]() = {
+      val stream = iterator.toStream
+      (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator )
+    }
+
+
   }
 }

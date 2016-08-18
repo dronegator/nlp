@@ -45,7 +45,7 @@ object NLPTMain
     scanLeft((List.empty[List[Token]], Option.empty[List[Token]]))(accumulator(_, _)).
     collect{
       case (_, Some(phrase)) => phrase
-    }.fork()(fork5)
+    }.fork5()
 
   val ngram1 = phrases1.
     foldLeft(Map[List[Token], Int]())(ngramms1(_, _))
