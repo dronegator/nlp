@@ -8,6 +8,7 @@ import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
 import com.github.dronegator.nlp.component.splitter.Splitter
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
+import com.github.dronegator.nlp.component.twophrases.TwoPhrases
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.vocabulary.VocabularyRaw
 
@@ -31,6 +32,8 @@ package object main {
      lazy val ngramms2 = new NGramsCounter(cfg, 2)
 
      lazy val ngramms3 = new NGramsCounter(cfg, 3)
+
+     lazy val twoPhrases = new TwoPhrases(cfg)
    }
 
    trait MainTools extends Combinators {
@@ -71,6 +74,21 @@ package object main {
            case (key, value :: _) =>
              println(f"$key%-60s:$value%010d")
          }
+     }
+
+     def dump(tokenHist: Map[Token, Int], token2Word: Map[Token, Word]) = {
+       tokenHist.
+         toList.
+         flatMap{
+           case (key, count) =>
+             token2Word.get(key) map { _ -> count}
+         }.
+         sortBy(_._2).
+         reverse.
+         foreach {
+         case (key, value) =>
+           println(f" $key%-60s -> $value%010d")
+       }
      }
 
    }

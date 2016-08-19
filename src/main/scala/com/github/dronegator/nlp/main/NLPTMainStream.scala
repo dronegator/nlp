@@ -11,8 +11,9 @@ import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
 import com.github.dronegator.nlp.component.splitter.Splitter
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Word, Token, TokenMap}
+import com.github.dronegator.nlp.component.twophrases.TwoPhrases
 import com.github.dronegator.nlp.utils.CFG
-import com.github.dronegator.nlp.vocabulary.VocabularyRawImpl
+import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, Vocabulary, VocabularyRawImpl}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, duration}
@@ -52,6 +53,10 @@ object NLPTMainStream
     fold(Map[List[Token], Int]())(ngramms3(_, _)).
     toMat(Sink.headOption)(Keep.right)
 
+  val twoPhrasesVoc = Flow[List[Token]].
+    fold(TwoPhrases.Init)(twoPhrases(_, _)).
+    toMat(Sink.headOption)(Keep.right)
+
   val tokenVariances =
     Flow[(Map[String, List[Int]], Int, List[Tokenizer.Token])].
       collect {
@@ -69,6 +74,7 @@ object NLPTMainStream
       alsoToMat(count1gramms)(Keep.right).
       alsoToMat(count2gramms)(Keep.both).
       alsoToMat(count3gramms)(Keep.both).
+      alsoToMat(twoPhrasesVoc)(Keep.both).
       toMat(Sink.fold(List.empty[List[Token]]) {
         case (list, x) => x :: list
       })(Keep.both)
@@ -84,8 +90,12 @@ object NLPTMainStream
         })(Keep.right)
 
 
+  def plain[A,B,C](x: (A, B), y:C) = (x._1, x._2, y)
+  def plain[A,B,C,D](x: (A, B, C), y:D ) = (x._1, x._2, x._3, y)
+  def plain[A,B,C,D, E](x: (A, B, C, D), y: E ) = (x._1, x._2, x._3, x._4, y)
+
   try {
-    val (futureToToken, (((ng1, ng2), ng3), futurePhrases)) =
+    val (futureToToken, ((((ng1, ng2), ng3), twoPhrasesOut), futurePhrases)) =
       (Source.fromIterator(() => source).
         /*map { x =>
           println(x)
@@ -103,23 +113,33 @@ object NLPTMainStream
 
     val Some(ngram3) = Await.result(ng3, Duration.Inf)
 
+    val Some(twoPhrasesOut1) = Await.result(twoPhrasesOut, Duration.Inf)
+
     val Some((toToken, lastToken)) = Await.result(futureToToken, Duration.Inf)
 
     val phrases = Await.result(futurePhrases, Duration.Inf)
 
+    val vocabularyRaw = VocabularyRawImpl(phrases, ngram1, ngram2, ngram3, toToken)
+
+    val vocabulary: VocabularyImpl = vocabularyRaw
+
     println("== 1 gramm ==")
-    dump(ngram1)
+   // dump(ngram1)
 
     println("== 2 gramm ==")
-    dump(ngram2)
+   // dump(ngram2)
 
     println("== 2 gramm ==")
-    dump(ngram3)
+   // dump(ngram3)
 
     println("== phrases ==")
-    dump(phrases)
+   // dump(phrases)
 
-    dump(toToken, lastToken)
+   // dump(toToken, lastToken)
+
+    println("== two phrases ==")
+
+    dump(twoPhrasesOut1._2, vocabulary.toWord)
 
     save(new File(fileOut), VocabularyRawImpl(phrases, ngram1, ngram2, ngram3, toToken))
 
