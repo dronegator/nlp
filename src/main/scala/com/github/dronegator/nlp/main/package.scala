@@ -9,7 +9,7 @@ import com.github.dronegator.nlp.component.splitter.Splitter
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.component.twophrases.TwoPhrases
-import com.github.dronegator.nlp.utils.CFG
+import com.github.dronegator.nlp.utils.{IteratorFork, CFG}
 import com.github.dronegator.nlp.vocabulary.VocabularyRaw
 
 /**
@@ -64,6 +64,7 @@ package object main {
        phrases foreach { phrase =>
          println(phrase.mkString("", " :: ", " :: Nil"))
        }
+
 
      def dump(toToken: Map[Word, List[Token]], lastToken: Int) = {
        println(s"Last token = $lastToken")

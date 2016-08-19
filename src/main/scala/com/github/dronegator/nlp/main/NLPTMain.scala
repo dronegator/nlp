@@ -57,7 +57,6 @@ object NLPTMain
     foldLeft(Map[List[Token], Int]())(ngramms3(_, _))
 
   val Some((toToken, lastToken)) = maps.
-    toIterator.
     foldLeft(Option.empty[(TokenMap, Token)]) {
       case (_, x) =>
         Option(x)

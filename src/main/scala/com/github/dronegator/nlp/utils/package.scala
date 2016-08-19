@@ -1,5 +1,7 @@
 package com.github.dronegator.nlp
 
+import scala.math.Ordering
+
 /**
  * Created by cray on 8/18/16.
  */
@@ -12,30 +14,32 @@ package object utils {
   }
 
 
-  implicit class IteratorFork[A](val iterator: Iterator[A]) extends AnyVal {
+  implicit class IteratorFork[A](val iterator: Iterator[A]) /*extends AnyVal*/ {
+    lazy val stream = iterator.toStream
+
     def fork[B]()(implicit fork: Stream[A] => B): B =
-      fork(iterator.toStream)
+      fork(stream)
 
-    def fork[A]() = {
-      val stream = iterator.toStream
+    def fork[A]() =
       (stream.toIterator, stream.toIterator)
-    }
 
-    def fork3[A]() =              {
-      val stream = iterator.toStream
+
+    def fork3[A]() =
       (stream.toIterator, stream.toIterator, stream.toIterator)
-    }
 
-    def fork4[A]() = {
-      val stream = iterator.toStream
+
+    def fork4[A]() =
       (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator)
-    }
 
-    def fork5[A]() = {
-      val stream = iterator.toStream
+
+    def fork5[A]() =
       (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator )
-    }
 
 
+    def sortBy[B](f: A => B)(implicit ord: Ordering[B]) =
+      stream.sortBy[B](f)(ord)
+
+    def sorted[B >: A](implicit ord: Ordering[B]) =
+      stream.sorted[B](ord)
   }
 }
