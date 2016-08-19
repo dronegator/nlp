@@ -14,7 +14,8 @@ object VocabularyImpl {
       vocabulary.ngrams1,
       vocabulary.ngrams2,
       vocabulary.ngrams3,
-      vocabulary.toToken
+      vocabulary.toToken,
+      vocabulary.twoPhraseCorelator
     )
 }
 
@@ -22,8 +23,9 @@ class VocabularyImpl(phrases: List[List[Token]],
                      ngrams1: Map[List[Token], Int],
                      ngrams2: Map[List[Token], Int],
                      ngrams3: Map[List[Token], Int],
-                     toToken: Map[Word, List[Token]]                      )
-  extends VocabularyRawImpl(phrases, ngrams1, ngrams2, ngrams3, toToken) with Vocabulary {
+                     toToken: Map[Word, List[Token]],
+                     twoPhraseCorelator: Map[List[Token], Int]                      )
+  extends VocabularyRawImpl(phrases, ngrams1, ngrams2, ngrams3, toToken, twoPhraseCorelator) with Vocabulary {
   override lazy val toWord: Map[Token, Word] =
     toToken.
       toIterator.
@@ -94,6 +96,31 @@ class VocabularyImpl(phrases: List[List[Token]],
         case (key,value) =>
           key -> value.
             map(_._2).
+            sortBy(_._1)
+      }
+  }
+
+  override def vcor: Map[List[Token], Double] = ???
+
+  override def vcnext: Map[List[Token], List[(Double, Token)]] = {
+    twoPhraseCorelator.
+      toList.
+      groupBy{
+        case (x :: _, _) =>
+          x :: Nil
+      }.
+      map{
+        case (x, value) =>
+          val entire = value.
+            map(_._2).
+            sum.
+            toDouble
+
+          x -> value.
+            map{
+              case (_ :: y :: _, n) =>
+                n / entire -> y
+            }.
             sortBy(_._1)
       }
   }

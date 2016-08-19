@@ -5,6 +5,7 @@ import java.io.File
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import com.github.dronegator.nlp.component.TwoPhraseCorelator
 import com.github.dronegator.nlp.component.accumulator.Accumulator
 import com.github.dronegator.nlp.component.ngramscounter.{NGramsCounter}
 import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
@@ -57,6 +58,10 @@ object NLPTMainStream
     fold(TwoPhrases.Init)(twoPhrases(_, _)).
     toMat(Sink.headOption)(Keep.right)
 
+  val twoPhraseCorelatorVoc = Flow[List[Token]].
+    fold(TwoPhraseCorelator.Init)(twoPhraseCorelator(_, _)).
+    toMat(Sink.headOption)(Keep.right)
+
   val tokenVariances =
     Flow[(Map[String, List[Int]], Int, List[Tokenizer.Token])].
       collect {
@@ -75,6 +80,7 @@ object NLPTMainStream
       alsoToMat(count2gramms)(Keep.both).
       alsoToMat(count3gramms)(Keep.both).
       alsoToMat(twoPhrasesVoc)(Keep.both).
+      alsoToMat(twoPhraseCorelatorVoc)(Keep.both).
       toMat(Sink.fold(List.empty[List[Token]]) {
         case (list, x) => x :: list
       })(Keep.both)
@@ -95,7 +101,7 @@ object NLPTMainStream
   def plain[A,B,C,D, E](x: (A, B, C, D), y: E ) = (x._1, x._2, x._3, x._4, y)
 
   try {
-    val (futureToToken, ((((ng1, ng2), ng3), twoPhrasesOut), futurePhrases)) =
+    val (futureToToken, (((((ng1, ng2), ng3), twoPhrasesOut),twoPhraseCorelatorOut), futurePhrases)) =
       (Source.fromIterator(() => source).
         /*map { x =>
           println(x)
@@ -115,11 +121,13 @@ object NLPTMainStream
 
     val Some(twoPhrasesOut1) = Await.result(twoPhrasesOut, Duration.Inf)
 
+    val Some(twoPhraseCorelatorOut1) = Await.result(twoPhraseCorelatorOut, Duration.Inf)
+
     val Some((toToken, lastToken)) = Await.result(futureToToken, Duration.Inf)
 
     val phrases = Await.result(futurePhrases, Duration.Inf)
 
-    val vocabularyRaw = VocabularyRawImpl(phrases, ngram1, ngram2, ngram3, toToken)
+    val vocabularyRaw = VocabularyRawImpl(phrases, ngram1, ngram2, ngram3, toToken, twoPhraseCorelatorOut1._2)
 
     val vocabulary: VocabularyImpl = vocabularyRaw
 
@@ -141,7 +149,11 @@ object NLPTMainStream
 
     dump(twoPhrasesOut1._2, vocabulary.toWord)
 
-    save(new File(fileOut), VocabularyRawImpl(phrases, ngram1, ngram2, ngram3, toToken))
+    println("Corr")
+
+    dump(twoPhraseCorelatorOut1._2)
+
+    save(new File(fileOut), vocabularyRaw)
 
   } finally {
     mat.shutdown()

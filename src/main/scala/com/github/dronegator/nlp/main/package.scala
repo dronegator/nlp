@@ -2,6 +2,7 @@ package com.github.dronegator.nlp
 
 import java.io._
 
+import com.github.dronegator.nlp.component.TwoPhraseCorelator
 import com.github.dronegator.nlp.component.accumulator.Accumulator
 import com.github.dronegator.nlp.component.ngramscounter.NGramsCounter
 import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
@@ -34,6 +35,8 @@ package object main {
      lazy val ngramms3 = new NGramsCounter(cfg, 3)
 
      lazy val twoPhrases = new TwoPhrases(cfg)
+
+     lazy val twoPhraseCorelator = new TwoPhraseCorelator(cfg)
    }
 
    trait MainTools extends Combinators {

@@ -17,6 +17,8 @@ package object vocabulary {
     def ngrams3: Map[List[Token], Int]
 
     def toToken: Map[Word, List[Token]]
+
+    def twoPhraseCorelator: Map[List[Token], Int]
   }
 
   trait Vocabulary extends VocabularyRaw {
@@ -31,5 +33,10 @@ package object vocabulary {
     def vnext1: Map[List[Token], List[(Double,Token)]]
 
     def vnext2: Map[List[Token], List[(Double,Token)]]
+
+    def vcor: Map[List[Token], Double]
+
+    def vcnext: Map[List[Token], List[(Double,Token)]]
+
   }
 }

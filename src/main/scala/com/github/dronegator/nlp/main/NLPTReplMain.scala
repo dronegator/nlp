@@ -60,7 +60,10 @@ object NLPTReplMain
 
     case object Continue extends Command("Show possible continuation of n-gram", Set())
 
+    case object ContinuePhrase extends Command("Show possible continuation of a phrase", Set())
+
     case object Everything extends Command("Statistic for all items of a vocabulary", Set(Dump, Stat))
+
 
     def unapply(name: String): Option[(Command, String, Set[SubCommand])] = withNameOption(name) map {
       case Command(x, y, z) => (x, y, z)
@@ -195,6 +198,16 @@ object NLPTReplMain
         token1 <- vocabulary.toToken(word1)
         token2 <- vocabulary.toToken(word2)
         (p, nextToken) <- vocabulary.vnext2(token1 :: token2 :: Nil)
+        nextWord <- vocabulary.toWord.get(nextToken)
+      } {
+        println(s" - $nextWord ($nextToken), p = $p")
+      }
+
+    case ContinuePhrase() :: word1 :: Nil =>
+      println(s"$word1:")
+      for {
+        token1 <- vocabulary.toToken(word1)
+        (p, nextToken) <- vocabulary.vcnext(token1 :: Nil)
         nextWord <- vocabulary.toWord.get(nextToken)
       } {
         println(s" - $nextWord ($nextToken), p = $p")

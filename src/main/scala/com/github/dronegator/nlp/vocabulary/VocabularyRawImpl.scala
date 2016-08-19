@@ -12,12 +12,16 @@ object VocabularyRawImpl {
       vocabulary.ngrams1,
       vocabulary.ngrams2,
       vocabulary.ngrams3,
-      vocabulary.toToken
+      vocabulary.toToken,
+      vocabulary.twoPhraseCorelator
     )
+
 }
 
 case class VocabularyRawImpl(phrases: List[List[Token]],
                              ngrams1: Map[List[Token], Int],
                              ngrams2: Map[List[Token], Int],
                              ngrams3: Map[List[Token], Int],
-                             toToken: Map[Word, List[Token]]) extends VocabularyRaw
+                             toToken: Map[Word, List[Token]],
+                             twoPhraseCorelator: Map[List[Token], Int])
+  extends VocabularyRaw

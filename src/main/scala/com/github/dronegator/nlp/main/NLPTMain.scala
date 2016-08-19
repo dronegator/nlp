@@ -76,5 +76,5 @@ object NLPTMain
 
   dump(toToken, lastToken)
 
-  save(new File(fileOut), VocabularyRawImpl(phrases5.toList, ngram1, ngram2, ngram3, toToken))
+  save(new File(fileOut), VocabularyRawImpl(phrases5.toList, ngram1, ngram2, ngram3, toToken, ???))
 }
