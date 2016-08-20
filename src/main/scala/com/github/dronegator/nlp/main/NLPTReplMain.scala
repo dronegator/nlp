@@ -53,7 +53,9 @@ object NLPTReplMain
     case object Phrases extends Command("Dump or Stat phrases in a vocabulary", Set(Dump, Stat))
 
     case object Tokens extends Command("Dump or Stat tokens sequences in a vocabulary", Set(Dump, Stat))
-    
+
+    case object Next extends Command("Dump or Stat correlation map for phrases", Set(Dump, Stat))
+
     case object Probability extends Command("Calculate a probability of the phrase", Set())
 
     case object Lookup extends Command("Show probability of n-gram", Set())
@@ -116,6 +118,12 @@ object NLPTReplMain
     case Phrases() :: Dump() :: _ =>
       println("== phrases")
       dump(vocabulary.phrases)
+      println("==")
+
+    case Next() :: Dump() :: _ =>
+      println("== next")
+      println(vocabulary.vcnext.keys)
+      //println(vocabulary.vcnext.keys.toList.flatten.flatMap(vocabulary.toWord.get(_)))
       println("==")
 
     case Tokens() :: Dump() :: _ =>
