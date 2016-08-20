@@ -2,11 +2,11 @@ package com.github.dronegator.nlp.main
 
 import java.io.File
 
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.utils.CFG
-import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyImpl}
+import com.github.dronegator.nlp.vocabulary.VocabularyImpl
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
-import enumeratum.values.{ValueEnum, ValueEnumEntry}
 
 /**
  * Created by cray on 8/17/16.
@@ -211,15 +211,36 @@ object NLPTReplMain
         println(s" - $nextWord ($nextToken), p = $p")
       }
 
-    case ContinuePhrase() :: word1 :: Nil =>
-      println(s"$word1:")
-      for {
-        token1 <- vocabulary.toToken(word1)
-        (p, nextToken) <- vocabulary.vcnext(token1 :: Nil)
-        nextWord <- vocabulary.toWord.get(nextToken)
-      } {
-        println(s" - $nextWord ($nextToken), p = $p")
-      }
+    case ContinuePhrase() :: words =>
+      words.
+        map { word =>
+          for {
+            token1 <- vocabulary.toToken(word)
+            (p, nextToken) <- vocabulary.vcnext(token1 :: Nil)
+          } yield {
+            nextToken -> p
+          }
+        }.
+        map(_.toMap).
+        reduce{
+          (map1: Map[Token, Double], map2:Map[Token, Double]) =>
+            map1.foldLeft(map2){
+              case (map, (token, p)) =>
+                map + (token -> (p + map.getOrElse(token,0.0)) )
+            }
+        }.
+        toList.
+        flatMap{
+          case (token, p) =>
+            vocabulary.toWord.
+              get(token).
+              map(_ -> p)
+        }.
+        sortBy(_._2).
+        foreach{
+          case (word, p) =>
+            println(s" - $word, p = $p")
+        }
 
     case /*Continue() ::*/ words @ (_ :: _)=>
       words.takeRight(2) match {

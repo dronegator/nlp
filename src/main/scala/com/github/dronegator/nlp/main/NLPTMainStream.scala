@@ -31,8 +31,9 @@ object NLPTMainStream
   def progress[A](chunk: Int = 1024*10) = Flow[A].
     scan((0, Option.empty[A])) {
       case ((n, _), item) =>
-        if (n % chunk == 0)
-          println(f"$n%20d items passed through")
+        if (n % chunk == 0)                         {
+          println(f"$n%20d items passed through ${Runtime.getRuntime().freeMemory()} ${Runtime.getRuntime().maxMemory()}")
+        }
 
         val m = item           match {
           case x: Seq[_] => n + x.length
@@ -180,9 +181,11 @@ object NLPTMainStream
 
     println("Corr")
 
-    dump(twoPhraseCorelatorOut1._2)
+    //dump(twoPhraseCorelatorOut1._2)
 
-    save(new File(fileOut), vocabularyRaw)
+    save(new File(fileOut), vocabularyRaw.copy(
+      twoPhraseCorelator = TwoPhraseCorelator.Init._2
+    ))
 
   } finally {
     mat.shutdown()

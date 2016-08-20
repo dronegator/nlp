@@ -147,15 +147,18 @@ class VocabularyImpl(phrases: List[List[Token]],
 
         println(s"source significance = $sourceSignificance")
 
-        phrase -> vector.
-          map {
-            case (token, probability) =>
-              token -> (probability - projection.getOrElse(token, 0.0))
-          }.
-          toList.
-          filter(_._2 > 0).
-          sortBy(_._2).
-          takeRight(4)
+        if (sourceSignificance < 0.1) {
+          phrase -> vector.
+            map {
+              case (token, probability) =>
+                token -> (probability - projection.getOrElse(token, 0.0))
+            }.
+            toList.
+            filter(_._2 > 0).
+            sortBy(_._2).
+            takeRight(2)
+        } else (List(), List())
+
       }.
       sliding(2).
       flatMap {
