@@ -114,53 +114,65 @@ class VocabularyImpl(phrases: List[List[Token]],
     restorePhrase(sequence.sortBy(order(_)))
   }
 
+  def filter(phrase: List[Token], requiredSignificance: Double) = {
+    val projection = phrase.
+      flatMap { token =>
+        vngrams1.get(token :: Nil).map(token -> _)
+      }.
+      foldLeft((0.0, Map[Token, Double]())) {
+        case ((d, map), item@(_, p)) =>
+          (d + p, map + item)
+      } match {
+      case (d, map) =>
+        map.map {
+          case (token, p) =>
+            token -> (p / d)
+        }
+    }
+
+    val vector = phrase.
+      groupBy(identity).
+      map {
+        case (key, seq) =>
+          key -> (seq.length / phrase.length.toDouble)
+      }
+
+    val sourceSignificance = (projection.keySet & vector.keySet).
+      foldLeft(0.0) {
+        case (production, token) =>
+          production + vector(token) * projection(token)
+      }
+
+    println(s"source significance = $sourceSignificance")
+    if (requiredSignificance > sourceSignificance) {
+      Some(
+        (sourceSignificance, vector.
+          map {
+            case (token, probability) =>
+              token -> (probability - projection.getOrElse(token, 0.0))
+          }.
+          toList.
+//          map{x =>
+//            println(x)
+//            x
+//          }.
+          filter(_._2 > 0).
+          sortBy(_._2).
+          takeRight(2))
+      )
+    } else None
+  }
+
   override lazy val vcnext: Map[List[Token], List[(Double, Token)]] =
     phrases.
       map { phrase =>
-        val projection = phrase.
-          flatMap { token =>
-            vngrams1.get(token :: Nil).map(token -> _)
-          }.
-          foldLeft((0.0, Map[Token, Double]())) {
-            case ((d, map), item@(_, p)) =>
-              (d + p, map + item)
-          } match {
-          case (d, map) =>
-            map.map {
-              case (token, p) =>
-                token -> (p / d)
-            }
-        }
-
-        val vector = phrase.
-          groupBy(identity).
-          map {
-            case (key, seq) =>
-              key -> (seq.length / phrase.length.toDouble)
-          }
-
-        val sourceSignificance = (projection.keySet & vector.keySet).
-          foldLeft(0.0) {
-            case (production, token) =>
-              production + vector(token) * projection(token)
-          }
-
-        println(s"source significance = $sourceSignificance")
-
-        if (sourceSignificance < 0.1) {
-          phrase -> vector.
-            map {
-              case (token, probability) =>
-                token -> (probability - projection.getOrElse(token, 0.0))
-            }.
-            toList.
-            filter(_._2 > 0).
-            sortBy(_._2).
-            takeRight(2)
-        } else (List(), List())
-
+        filter(phrase, 0.1) map (phrase -> _._2)
       }.
       sliding(2).
+      collect{
+        case Some(x) :: Some(y) :: _ =>
+          x :: y :: Nil
+      }.
       flatMap {
         case (p1, v1) :: (p2, v2) :: _ =>
 

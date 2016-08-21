@@ -6,7 +6,8 @@ import scala.math.Ordering
  * Created by cray on 8/18/16.
  */
 package object utils {
-  implicit class IteratorUnzip[A,B](val iterator: Iterator[(A,B)]) extends AnyVal {
+
+  implicit class IteratorUnzip[A, B](val iterator: Iterator[(A, B)]) extends AnyVal {
     def unzip(): (Iterator[A], Iterator[B]) = {
       val stream = iterator.toStream
       (stream.toIterator.map(_._1), stream.toIterator.map(_._2))
@@ -33,7 +34,7 @@ package object utils {
 
 
     def fork5[A]() =
-      (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator )
+      (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator)
 
 
     def sortBy[B](f: A => B)(implicit ord: Ordering[B]) =
@@ -42,4 +43,14 @@ package object utils {
     def sorted[B >: A](implicit ord: Ordering[B]) =
       stream.sorted[B](ord)
   }
+
+//  implicit class IterableExt[I <: List[B], B](val iterable: I) extends AnyVal {
+//    def collateral(f: B => Unit): I =
+//      iterable.map[B, I]{ x =>
+//        println(x)
+//        x
+//      }
+//
+//  }
 }
+

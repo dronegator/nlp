@@ -41,7 +41,7 @@ object NLPTReplMain
     override def values: Seq[Command] = findValues
 
     trait EnumApply {
-      def unapply(name: String) = withNameOption(name) filter ( x => x == this) isDefined
+      def unapply(name: String) = withNameOption(name) filter (x => x == this) isDefined
     }
 
     case object NGram1 extends Command("Dump or Stat 1-gram sequences in a vocabulary", Set(Dump, Stat))
@@ -72,7 +72,7 @@ object NLPTReplMain
     }
 
     def unapply(x: Command) =
-      Some((x, x.help,x.subcommands))
+      Some((x, x.help, x.subcommands))
   }
 
   import Command._
@@ -84,10 +84,12 @@ object NLPTReplMain
   val ConsoleReader = new jline.console.ConsoleReader()
 
   def task(): Unit = ConsoleReader.readLine("> ") match {
-    case s : String => try {
+    case s: String => try {
       exec(s.split("\\s+").toList);
     } catch {
-      case x  => printf("\n* Command failure: %s\n\n",x)
+      case th: Throwable =>
+        printf("\n* Command failure: %s\n\n", th)
+        th.printStackTrace()
     } finally task()
     case _ => {}
   }
@@ -96,8 +98,8 @@ object NLPTReplMain
     case Command(command, help, subcommands) :: Nil =>
       println(
         s"""
-          | >> ${command} ${subcommands mkString ("["," | ", "]")}
-          |    $help
+           | >> ${command} ${subcommands mkString("[", " | ", "]")}
+           |    $help
         """.stripMargin)
 
     case NGram1() :: Dump() :: _ =>
@@ -122,8 +124,8 @@ object NLPTReplMain
 
     case Next() :: Dump() :: _ =>
       println("== next")
-      println(vocabulary.vcnext.keys)
-      //println(vocabulary.vcnext.keys.toList.flatten.flatMap(vocabulary.toWord.get(_)))
+      //println(vocabulary.vcnext.keys)
+      println(vocabulary.vcnext.keys.toList.flatten.flatMap(vocabulary.toWord.get(_)))
       println("==")
 
     case Tokens() :: Dump() :: _ =>
@@ -211,45 +213,44 @@ object NLPTReplMain
         println(s" - $nextWord ($nextToken), p = $p")
       }
 
-    case ContinuePhrase() :: words =>
-      words.
-        map { word =>
-          for {
-            token1 <- vocabulary.toToken(word)
-            (p, nextToken) <- vocabulary.vcnext(token1 :: Nil)
-          } yield {
+    //case ContinuePhrase() :: words =>
+    case words if words.lastOption.contains(".") =>
+      (for {
+          (token1, _) <-
+            vocabulary.filter(
+                words.flatMap(vocabulary.toToken.get(_)).flatten,
+              2).
+              toList.
+              flatMap(_._2)
+          (p, nextToken) <- vocabulary.vcnext.get(token1 :: Nil).toList.flatten
+        } yield {
             nextToken -> p
+          }).
+          foldLeft(Map[Token, Double]()) {
+            case (map, (token, p)) =>
+              map + (token -> (p + map.getOrElse(token, 0.0)))
+          }.
+          flatMap {
+            case (token, p) =>
+              vocabulary.toWord.
+                get(token).
+                map(_ -> p)
+          }.
+          toList.
+          sortBy(_._2).
+          foreach {
+            case (word, p) =>
+              println(s" - $word, p = $p")
           }
-        }.
-        map(_.toMap).
-        reduce{
-          (map1: Map[Token, Double], map2:Map[Token, Double]) =>
-            map1.foldLeft(map2){
-              case (map, (token, p)) =>
-                map + (token -> (p + map.getOrElse(token,0.0)) )
-            }
-        }.
-        toList.
-        flatMap{
-          case (token, p) =>
-            vocabulary.toWord.
-              get(token).
-              map(_ -> p)
-        }.
-        sortBy(_._2).
-        foreach{
-          case (word, p) =>
-            println(s" - $word, p = $p")
-        }
 
-    case /*Continue() ::*/ words @ (_ :: _)=>
+    case /*Continue() ::*/ words@(_ :: _) =>
       words.takeRight(2) match {
         case word1 :: word2 :: Nil =>
           println(s"$word1 $word2:")
           for {
             token1 <- vocabulary.toToken(word1)
             token2 <- vocabulary.toToken(word2)
-            (p, nextToken) <- vocabulary.vnext2(token1 :: token2 :: Nil)
+            (p, nextToken) <- vocabulary.vnext2.get(token1 :: token2 :: Nil) orElse vocabulary.vnext1.get(token1 :: Nil) getOrElse List()
             nextWord <- vocabulary.toWord.get(nextToken)
           } {
             println(s" - $nextWord ($nextToken), p = $p")
@@ -269,9 +270,10 @@ object NLPTReplMain
     case _ =>
       Command.values foreach {
         case Command(command, help, subcommands) =>
-          println(s""" >> ${command} ${subcommands mkString ("["," | ", "]")}
-                      |    $help
-                      |    """.stripMargin)
+          println(
+            s""" >> ${command} ${subcommands mkString("[", " | ", "]")}
+               |    $help
+               |    """.stripMargin)
       }
 
   }
