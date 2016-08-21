@@ -1,5 +1,6 @@
 package com.github.dronegator.nlp.vocabulary
 
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 
 /**
@@ -43,7 +44,6 @@ class VocabularyImpl(phrases: List[List[Token]],
       mapValues(_ / count1)
   }
 
-
   override lazy val vngrams2: Map[List[Token], Double] = {
     println("== 2")
     ngrams2 flatMap {
@@ -60,9 +60,29 @@ class VocabularyImpl(phrases: List[List[Token]],
       case (key@(x :: y :: z :: _), n) =>
         ngrams2.
           get(x :: y :: Nil).
-          map { m => key -> (n / m.toDouble)
-          }
+          map { m => key -> (n / m.toDouble) }
     }
+  }
+
+  override lazy val vmiddle: Map[List[Token], List[(Double, Token)]] = {
+    ngrams3.
+      groupBy {
+        case (x :: _ :: z :: _, n) =>
+          x :: z :: Nil
+      }.
+      map{
+        case (key, values) =>
+          val delimiter = values.map(_._2).sum.toDouble
+
+          key -> values.
+            map{
+              case (_ :: y :: _, count ) =>
+                count / delimiter -> y
+            }.
+            toList.
+            sortBy(_._1).
+            reverse
+      }
   }
 
   override lazy val vnext1: Map[List[Token], List[(Double, Token)]] = {

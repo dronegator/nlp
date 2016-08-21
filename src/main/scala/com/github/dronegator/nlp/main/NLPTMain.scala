@@ -22,14 +22,10 @@ object NLPTMain
 
   val cfg = CFG()
 
-  val map = Tokenizer.MapOfPredefs
-
-  val n = map.valuesIterator.flatten.max
-
   val (maps,tokenVariances) = source.
     map(splitter(_)).
     flatten.
-    scanLeft((map, n, List[Tokenizer.Token]()))(tokenizer(_, _)).
+    scanLeft(Tokenizer.Init)(tokenizer(_, _)).
     map{
       case (x, y, z) => ((x, y), z)
     }.
@@ -42,7 +38,7 @@ object NLPTMain
         //println(f"$n%-10d : ${tokens.mkString(" :: ")}")
         tokens
     }.
-    scanLeft((List.empty[List[Token]], Option.empty[List[Token]]))(accumulator(_, _)).
+    scanLeft(Accumulator.Init)(accumulator(_, _)).
     collect{
       case (_, Some(phrase)) => phrase
     }.fork5()

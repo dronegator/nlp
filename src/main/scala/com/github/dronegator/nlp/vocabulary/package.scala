@@ -34,6 +34,8 @@ package object vocabulary {
 
     def vnext2: Map[List[Token], List[(Double,Token)]]
 
+    def vmiddle: Map[List[Token], List[(Double, Token)]]
+
     def vcor: Map[List[Token], Double]
 
     def vcnext: Map[List[Token], List[(Double,Token)]]

@@ -18,6 +18,8 @@ object Tokenizer {
 
   type TokenMap = Map[Word, List[Token]]
 
+  type Init = (TokenMap, Token, List[Token])
+
   sealed abstract class TokenPreDef extends IntEnumEntry
 
   case object TokenPreDef extends values.IntEnum[TokenPreDef] {
@@ -27,20 +29,34 @@ object Tokenizer {
       val value = 0
     }
 
-    case object DEOP extends TokenPreDef {
+    case object PStart extends TokenPreDef {
       val value = 1
     }
 
-    case object DEOW extends TokenPreDef {
+    case object PEnd extends TokenPreDef {
       val value = 2
     }
 
+    case object TEnd extends TokenPreDef {
+      val value = 3
+    }
+
+    case object DEOP extends TokenPreDef {
+      val value = 4
+    }
+
+    case object DEOW extends TokenPreDef {
+      val value = 5
+    }
   }
 
   val MapOfPredefs = Map("." -> (DEOP.value :: DEOW.value :: Nil))
+
+  val Init: Init = (MapOfPredefs, 6, List())
+
 }
 
-class Tokenizer(cfgArg: => CFG, tokenMap: Option[TokenMap])
+class Tokenizer(cfgArg: => CFG)
   extends Component[((TokenMap, Token, List[Token]), Word), (TokenMap, Token, List[Token])] {
 
   private val rSplit = """\s+""".r

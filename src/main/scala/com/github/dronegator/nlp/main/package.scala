@@ -22,7 +22,7 @@ package object main {
 
      lazy val splitter = new Splitter(cfg)
 
-     lazy val tokenizer = new Tokenizer(cfg, None)
+     lazy val tokenizer = new Tokenizer(cfg)
 
      lazy val phraseDetector = new PhraseDetector(cfg)
 

@@ -1,9 +1,9 @@
 package com.github.dronegator.nlp.component.accumulator
 
 import com.github.dronegator.nlp.component.Component
+import com.github.dronegator.nlp.component.accumulator.Accumulator.Init
 import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.utils.CFG
 
 /**
@@ -12,12 +12,14 @@ import com.github.dronegator.nlp.utils.CFG
 
 object Accumulator {
 
+  type Init = (List[List[Token]], Option[List[Token]])
+  val Init: Init = (List.empty[List[Token]], Option.empty[List[Token]])
 }
 
-class Accumulator(cfgArg: => CFG, phraseDetector: PhraseDetector) extends Component[((List[List[Token]], Option[List[Token]]), List[Token]), (List[List[Tokenizer.Token]], Option[List[Tokenizer.Token]])] {
+class Accumulator(cfgArg: => CFG, phraseDetector: PhraseDetector) extends Component[((List[List[Token]], Option[List[Token]]), List[Token]), (List[List[Token]], Option[List[Token]])] {
   override def cfg: CFG = cfgArg
 
-  override def apply(in: ((List[List[Token]], Option[List[Token]]), List[Token]) )  =
+  override def apply(in: (Init, List[Token]) )  =
     in match {
     case ((buffer, _), tokens) =>
       val tokenizedText = buffer :+ tokens

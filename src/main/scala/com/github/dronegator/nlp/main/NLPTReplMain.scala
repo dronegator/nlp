@@ -2,11 +2,14 @@ package com.github.dronegator.nlp.main
 
 import java.io.File
 
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
+import com.github.dronegator.nlp.component.accumulator.Accumulator
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenPreDef}
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.vocabulary.VocabularyImpl
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
+import org.omg.CosNaming.NamingContextPackage.NotEmpty
 
 /**
  * Created by cray on 8/17/16.
@@ -66,6 +69,7 @@ object NLPTReplMain
 
     case object Everything extends Command("Statistic for all items of a vocabulary", Set(Dump, Stat))
 
+    case object Advice extends Command("Provide an advice to improve the phrase", Set())
 
     def unapply(name: String): Option[(Command, String, Set[SubCommand])] = withNameOption(name) map {
       case Command(x, y, z) => (x, y, z)
@@ -216,32 +220,87 @@ object NLPTReplMain
     //case ContinuePhrase() :: words =>
     case words if words.lastOption.contains(".") =>
       (for {
-          (token1, _) <-
-            vocabulary.filter(
-                words.flatMap(vocabulary.toToken.get(_)).flatten,
-              2).
-              toList.
-              flatMap(_._2)
-          (p, nextToken) <- vocabulary.vcnext.get(token1 :: Nil).toList.flatten
-        } yield {
-            nextToken -> p
-          }).
-          foldLeft(Map[Token, Double]()) {
-            case (map, (token, p)) =>
-              map + (token -> (p + map.getOrElse(token, 0.0)))
-          }.
-          flatMap {
-            case (token, p) =>
-              vocabulary.toWord.
-                get(token).
-                map(_ -> p)
-          }.
+        (token1, _) <-
+        vocabulary.filter(
+          words.flatMap(vocabulary.toToken.get(_)).flatten,
+          2).
           toList.
-          sortBy(_._2).
-          foreach {
-            case (word, p) =>
-              println(s" - $word, p = $p")
-          }
+          flatMap(_._2)
+        (p, nextToken) <- vocabulary.vcnext.get(token1 :: Nil).toList.flatten
+      } yield {
+          nextToken -> p
+        }).
+        foldLeft(Map[Token, Double]()) {
+          case (map, (token, p)) =>
+            map + (token -> (p + map.getOrElse(token, 0.0)))
+        }.
+        flatMap {
+          case (token, p) =>
+            vocabulary.toWord.
+              get(token).
+              map(_ -> p)
+        }.
+        toList.
+        sortBy(_._2).
+        foreach {
+          case (word, p) =>
+            println(s" - $word, p = $p")
+        }
+
+    case Advice() :: words =>
+      val tokens = splitter(words.mkString(" ")).
+//        map{ x =>
+//          println(x)
+//          x
+//        }.
+        scanLeft((vocabulary.toToken, 100000000, Tokenizer.Init._3))(tokenizer(_, _)).
+        map {
+          case (_, _, tokens) => tokens
+        }.
+        toList :+ List(TokenPreDef.TEnd.value)
+
+      val phrase = tokens.
+        scanLeft(Accumulator.Init)(accumulator(_, _)).
+        collect {
+          case (_, Some(phrase)) => phrase
+        }.
+        flatten
+
+      phrase.
+        sliding(3).
+        zipWithIndex.
+        collect{
+          case (x :: y :: z :: Nil, n) =>
+            (x, y, z, n, phrase)
+        }.
+        map{
+          case (x, y, z, n, phrase) =>
+
+            val (start, token :: end) = phrase.splitAt(n+1)
+
+            //println(start.flatMap(vocabulary.toWord.get(_)).mkString(" "), token, end.flatMap(vocabulary.toWord.get(_)).mkString(" "))
+
+            vocabulary.vmiddle.get(x :: z :: Nil).
+              toList.
+              flatten.
+              takeWhile(_._2 != token).
+              take(4).
+              map{
+                case (d, advice) =>
+                  (d, start ++ (advice :: end))
+              } -> n
+        }.
+        foreach{
+          case (phrases, n) if !phrases.isEmpty =>
+            println(s" == $n ==")
+            phrases.foreach{
+              case (d, tokens) =>
+                val phrase = tokens.flatMap(vocabulary.toWord.get(_)).mkString(" ")
+                println(f"$d%5.4f $phrase")
+            }
+
+          case _ =>
+        }
 
     case /*Continue() ::*/ words@(_ :: _) =>
       words.takeRight(2) match {

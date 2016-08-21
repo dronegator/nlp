@@ -63,10 +63,6 @@ object NLPTMainStream
 
   implicit val mat = ActorMaterializer()
 
-  val map = Tokenizer.MapOfPredefs
-
-  val n = map.valuesIterator.flatten.max
-
   val count1gramms = Flow[List[Token]].
     fold(Map[List[Token], Int]())(ngramms1(_, _)).
     toMat(Sink.headOption)(Keep.right)
@@ -136,7 +132,7 @@ object NLPTMainStream
         }.*/
         map(splitter(_)).
         mapConcat(_.toList).
-        scan((map, n, List[Tokenizer.Token]()))(tokenizer(_, _)).
+        scan(Tokenizer.Init)(tokenizer(_, _)).
         alsoToMat(maps)(Keep.both).
         toMat(tokenVariances)(Keep.both).run())
 
