@@ -134,7 +134,7 @@ class VocabularyImpl(phrases: List[List[Token]],
     restorePhrase(sequence.sortBy(order(_)))
   }
 
-  def filter(phrase: List[Token], requiredSignificance: Double) = {
+  def filter(phrase: List[Token], requiredSignificance: Double, amount: Int = 2 ) = {
     val projection = phrase.
       flatMap { token =>
         vngrams1.get(token :: Nil).map(token -> _)
@@ -163,7 +163,8 @@ class VocabularyImpl(phrases: List[List[Token]],
           production + vector(token) * projection(token)
       }
 
-    println(s"source significance = $sourceSignificance")
+    // println(s"source significance = $sourceSignificance")
+
     if (requiredSignificance > sourceSignificance) {
       Some(
         (sourceSignificance, vector.
@@ -178,7 +179,51 @@ class VocabularyImpl(phrases: List[List[Token]],
 //          }.
           filter(_._2 > 0).
           sortBy(_._2).
-          takeRight(2))
+          takeRight(amount))
+      )
+    } else None
+  }
+
+  def filter1(vector: Map[Token, Double], requiredSignificance: Double, amount: Int = 2 ) = {
+    val projection = vector.
+      map(_._1).
+      flatMap { token =>
+        vngrams1.get(token :: Nil).map(token -> _)
+      }.
+      foldLeft((0.0, Map[Token, Double]())) {
+        case ((d, map), item@(_, p)) =>
+          (d + p, map + item)
+      } match {
+      case (d, map) =>
+        map.map {
+          case (token, p) =>
+            token -> (p / d)
+        }
+    }
+
+    val sourceSignificance = (projection.keySet & vector.keySet).
+      foldLeft(0.0) {
+        case (production, token) =>
+          production + vector(token) * projection(token)
+      }
+
+    // println(s"source significance = $sourceSignificance")
+
+    if (requiredSignificance > sourceSignificance) {
+      Some(
+        (sourceSignificance, vector.
+          map {
+            case (token, probability) =>
+              token -> (probability - projection.getOrElse(token, 0.0))
+          }.
+          toList.
+//          map{x =>
+//            println(x)
+//            x
+//          }.
+          filter(_._2 > 0).
+          sortBy(_._2).
+          takeRight(amount))
       )
     } else None
   }

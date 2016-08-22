@@ -217,36 +217,6 @@ object NLPTReplMain
         println(s" - $nextWord ($nextToken), p = $p")
       }
 
-    //case ContinuePhrase() :: words =>
-    case words if words.lastOption.contains(".") =>
-      (for {
-        (token1, _) <-
-        vocabulary.filter(
-          words.flatMap(vocabulary.toToken.get(_)).flatten,
-          2).
-          toList.
-          flatMap(_._2)
-        (p, nextToken) <- vocabulary.vcnext.get(token1 :: Nil).toList.flatten
-      } yield {
-          nextToken -> p
-        }).
-        foldLeft(Map[Token, Double]()) {
-          case (map, (token, p)) =>
-            map + (token -> (p + map.getOrElse(token, 0.0)))
-        }.
-        flatMap {
-          case (token, p) =>
-            vocabulary.toWord.
-              get(token).
-              map(_ -> p)
-        }.
-        toList.
-        sortBy(_._2).
-        foreach {
-          case (word, p) =>
-            println(s" - $word, p = $p")
-        }
-
     case Advice() :: words =>
       val tokens = splitter(words.mkString(" ")).
 //        map{ x =>
@@ -300,6 +270,41 @@ object NLPTReplMain
             }
 
           case _ =>
+        }
+
+    //case ContinuePhrase() :: words =>
+    case words if words.lastOption.contains(".") =>
+      val advice = (for {
+        (token1, _) <-
+        vocabulary.filter(
+          words.flatMap(vocabulary.toToken.get(_)).flatten,
+          2, 10).
+          toList.
+          flatMap(_._2)
+        (p, nextToken) <- vocabulary.vcnext.get(token1 :: Nil).toList.flatten
+      } yield {
+          nextToken -> p
+        }).
+        foldLeft(Map[Token, Double]()) {
+          case (map, (token, p)) =>
+            map + (token -> (p + map.getOrElse(token, 0.0)))
+        }.
+        toList
+
+      vocabulary.filter1(advice.toMap, 2, 10).
+        map(_._2).
+        toList.
+        flatten.
+        sortBy(_._2).
+        flatMap {
+          case (token, p) =>
+            vocabulary.toWord.
+              get(token).
+              map(_ -> p)
+        }.
+        foreach {
+          case (word, p) =>
+            println(s" - $word, p = $p")
         }
 
     case /*Continue() ::*/ words@(_ :: _) =>
