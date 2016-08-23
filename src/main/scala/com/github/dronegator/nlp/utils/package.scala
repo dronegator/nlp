@@ -14,9 +14,8 @@ package object utils {
     }
   }
 
-
-  implicit class IteratorFork[A](val iterator: Iterator[A]) /*extends AnyVal*/ {
-    lazy val stream = iterator.toStream
+  implicit class IteratorFork[A](val iterator: Iterator[A]) extends AnyVal {
+    private def stream = iterator.toStream
 
     def fork[B]()(implicit fork: Stream[A] => B): B =
       fork(stream)
@@ -24,18 +23,14 @@ package object utils {
     def fork[A]() =
       (stream.toIterator, stream.toIterator)
 
-
     def fork3[A]() =
       (stream.toIterator, stream.toIterator, stream.toIterator)
-
 
     def fork4[A]() =
       (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator)
 
-
     def fork5[A]() =
       (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator)
-
 
     def sortBy[B](f: A => B)(implicit ord: Ordering[B]) =
       stream.sortBy[B](f)(ord)
@@ -43,14 +38,5 @@ package object utils {
     def sorted[B >: A](implicit ord: Ordering[B]) =
       stream.sorted[B](ord)
   }
-
-//  implicit class IterableExt[I <: List[B], B](val iterable: I) extends AnyVal {
-//    def collateral(f: B => Unit): I =
-//      iterable.map[B, I]{ x =>
-//        println(x)
-//        x
-//      }
-//
-//  }
 }
 

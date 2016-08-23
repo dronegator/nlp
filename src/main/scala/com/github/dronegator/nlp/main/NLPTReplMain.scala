@@ -10,6 +10,7 @@ import com.github.dronegator.nlp.vocabulary.VocabularyImpl
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
 
+import com.github.dronegator.nlp.utils.RandomUtils._
 /**
  * Created by cray on 8/17/16.
  */
@@ -224,16 +225,14 @@ object NLPTReplMain
         map {
           case (_, _, tokens) => tokens
         }.
-        toList. //:+ List(TokenPreDef.TEnd.value)
+        toList.
         flatMap(_.headOption)
 
       val phrase = Iterator.
         iterate(tokens) {
           case tokens@_ :: Nil =>
-            tokens :+ vocabulary.vnext1(tokens).lastOption.map {
-              case (p, token) =>
-                token
-            }.getOrElse(TokenPreDef.PEnd.value)
+            tokens :+ vocabulary.vnext1(tokens).
+              choiceOption.getOrElse(TokenPreDef.PEnd.value)
 
 
           case tokens =>
@@ -250,10 +249,8 @@ object NLPTReplMain
           Iterator.
             iterate(tokens) {
               case tokens@_ :: Nil =>
-                vocabulary.vprev1(tokens).lastOption.map {
-                  case (p, token) =>
-                    token
-                }.getOrElse(TokenPreDef.PStart.value) :: tokens
+                vocabulary.vprev1(tokens).
+                  choiceOption.getOrElse(TokenPreDef.PStart.value) :: tokens
 
               case tokens@x :: y :: _ =>
                 vocabulary.vprev2(x :: y :: Nil).lastOption.map {
