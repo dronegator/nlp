@@ -38,7 +38,7 @@ class VocabularyImpl(phrases: List[List[Token]],
 
   private lazy val count1 = ngrams1.values.sum.toDouble
 
-  override lazy val vngrams1: Map[List[Token], Double] = {
+  override lazy val vtoken: Map[List[Token], Double] = {
     println("== 1")
     ngrams1.
       mapValues(_ / count1)
@@ -60,6 +60,26 @@ class VocabularyImpl(phrases: List[List[Token]],
       case (key@(x :: y :: z :: _), n) =>
         ngrams2.
           get(x :: y :: Nil).
+          map { m => key -> (n / m.toDouble) }
+    }
+  }
+
+  override lazy val vpgrams2: Map[List[Token], Double] = {
+    println("== 2")
+    ngrams2 flatMap {
+      case (key@(x :: y :: _ ), n) =>
+        ngrams1.
+          get(y :: Nil).
+          map { m => key -> (n / m.toDouble) }
+    }
+  }
+
+  override lazy val vpgrams3: Map[List[Token], Double] = {
+    println("== 3")
+    ngrams3 flatMap {
+      case (key@(x :: y :: z :: _), n) =>
+        ngrams2.
+          get(y :: z :: Nil).
           map { m => key -> (n / m.toDouble) }
     }
   }
@@ -119,7 +139,39 @@ class VocabularyImpl(phrases: List[List[Token]],
       }
   }
 
-  override def vcor: Map[List[Token], Double] = ???
+  override lazy val vprev1: Map[List[Token], List[(Double, Token)]] = {
+    println("=>4")
+    vpgrams2.
+      toList.
+      map {
+        case (w1 :: w2 :: _, p) =>
+          w2 -> (p -> w1)
+      }.
+      groupBy(_._1).
+      map {
+        case (key, value) =>
+          List(key) -> value.
+            map(_._2).
+            sortBy(_._1)
+      }
+  }
+
+  override lazy val vprev2: Map[List[Token], List[(Double, Token)]] = {
+    println("=>5")
+    vngrams3.
+      toList.
+      map {
+        case (w1 :: w2 :: w3 :: _, p) =>
+          (w2 :: w3 :: Nil) -> (p -> w1)
+      }.
+      groupBy(_._1).
+      map {
+        case (key, value) =>
+          key -> value.
+            map(_._2).
+            sortBy(_._1)
+      }
+  }
 
   private def restorePhrase(phrase: List[Token]) =
     phrase.
@@ -137,7 +189,7 @@ class VocabularyImpl(phrases: List[List[Token]],
   def filter(phrase: List[Token], requiredSignificance: Double, amount: Int = 2 ) = {
     val projection = phrase.
       flatMap { token =>
-        vngrams1.get(token :: Nil).map(token -> _)
+        vtoken.get(token :: Nil).map(token -> _)
       }.
       foldLeft((0.0, Map[Token, Double]())) {
         case ((d, map), item@(_, p)) =>
@@ -188,7 +240,7 @@ class VocabularyImpl(phrases: List[List[Token]],
     val projection = vector.
       map(_._1).
       flatMap { token =>
-        vngrams1.get(token :: Nil).map(token -> _)
+        vtoken.get(token :: Nil).map(token -> _)
       }.
       foldLeft((0.0, Map[Token, Double]())) {
         case ((d, map), item@(_, p)) =>

@@ -24,7 +24,7 @@ package object vocabulary {
   trait Vocabulary extends VocabularyRaw {
     def toWord: Map[Token, Word]
 
-    def vngrams1: Map[List[Token], Double]
+    def vtoken: Map[List[Token], Double]
 
     def vngrams2: Map[List[Token], Double]
 
@@ -34,9 +34,15 @@ package object vocabulary {
 
     def vnext2: Map[List[Token], List[(Double,Token)]]
 
-    def vmiddle: Map[List[Token], List[(Double, Token)]]
+    def vpgrams2: Map[List[Token], Double]
 
-    def vcor: Map[List[Token], Double]
+    def vpgrams3: Map[List[Token], Double]
+
+    def vprev1: Map[List[Token], List[(Double,Token)]]
+
+    def vprev2: Map[List[Token], List[(Double,Token)]]
+
+    def vmiddle: Map[List[Token], List[(Double, Token)]]
 
     def vcnext: Map[List[Token], List[(Double,Token)]]
 
