@@ -16,24 +16,31 @@ class PhraseDetector(cfgArg: => CFG) extends Component[List[List[Token]], Option
   override def cfg: CFG = cfgArg
 
   override def apply(in: List[List[Token]]): Option[(List[Token], Seq[List[Token]])] =
-    in.span{
+    (in.span{
       case tokens if tokens contains Tokenizer.TokenPreDef.DEOP.value => false
       case tokens if tokens contains Tokenizer.TokenPreDef.TEnd.value => false
       case _ => true
     } match {
+      case x =>
+        println(x)
+        x
+    }) match {
       case (start, (tokens :: rest)) if tokens contains Tokenizer.TokenPreDef.TEnd.value=>
 
         val phrase = start.
-          flatMap(_.headOption) :+
-          Tokenizer.TokenPreDef.DEOP.value
+          flatMap(_.headOption) /*:+
+          Tokenizer.TokenPreDef.DEOP.value*/
 
-        Option((PStart.value +: PStart.value +: phrase :+ PEnd.value, rest))
+        println(s"phrase 1 $phrase")
+        Option((PStart.value +: PStart.value +: phrase :+ PEnd.value, Nil))
 
       case (start, (dot :: rest)) =>
 
         val phrase = start.
           flatMap(_.headOption) :+
           Tokenizer.TokenPreDef.DEOP.value
+
+        println(s"phrase 2 $phrase")
 
         Option((PStart.value +: PStart.value +: phrase :+ PEnd.value, rest))
 

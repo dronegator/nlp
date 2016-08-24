@@ -1,11 +1,61 @@
 package com.github.dronegator.nlp
 
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Word, Token}
+import com.github.dronegator.nlp.component.accumulator.Accumulator
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{TokenPreDef, Word, Token}
+import com.github.dronegator.nlp.main.NLPTReplMain._
 
 /**
  * Created by cray on 8/17/16.
  */
 package object vocabulary {
+
+
+
+  implicit class VocabularyTools(val vocabulary: Vocabulary) {
+    def tokenize(s: String): List[Token] =
+      {
+
+        val tokens = splitter(s).
+          scanLeft((vocabulary.toToken, 100000000, Tokenizer.Init._3))(tokenizer(_, _)).
+          map {
+            case (_, _, tokens) => tokens
+          }.
+          toList :+ List(TokenPreDef.TEnd.value)
+
+        val phrase = tokens.
+          toIterator.
+          scanLeft(Accumulator.Init)(accumulator(_, _)).
+          collectFirst {
+            case (_, Some(phrase)) => phrase
+          }.
+          toList.
+          flatten
+
+        phrase
+      }
+
+    def untokenize(tokens: List[Token]) =
+      tokens.flatMap(vocabulary.toWord.get(_)).mkString(" ")
+
+    def probability(tokens: List[Token]) =
+      tokens.
+        sliding(3).
+        map{
+          case Nil =>
+            1.0
+          case tokens@(_ :: Nil) =>
+            vocabulary.vtoken.get(tokens).getOrElse(0.0)
+
+          case tokens@(_ :: _ :: Nil) =>
+            vocabulary.vngrams2.get(tokens).getOrElse(0.0)
+
+          case tokens=>
+            vocabulary.vngrams3.get(tokens.take(3)).getOrElse(0.0)
+        }.
+        reduceOption(_*_).
+        getOrElse(1.0)
+  }
 
   trait VocabularyRaw {
     def phrases: List[List[Token]]

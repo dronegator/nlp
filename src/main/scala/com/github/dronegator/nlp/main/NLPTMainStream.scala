@@ -27,7 +27,6 @@ object NLPTMainStream
   val Array(fileIn, fileOut) = args
   val cfg = CFG()
 
-
   def progress[A](chunk: Int = 1024*10) = Flow[A].
     scan((0, Option.empty[A])) {
       case ((n, _), item) =>

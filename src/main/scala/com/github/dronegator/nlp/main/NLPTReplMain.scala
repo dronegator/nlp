@@ -1,7 +1,12 @@
 package com.github.dronegator.nlp.main
 
 import java.io.File
+import java.nio.file.Paths
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{FileIO, Sink, Source}
+import akka.util.ByteString
 import com.github.dronegator.nlp.component.accumulator.Accumulator
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenPreDef}
@@ -9,8 +14,12 @@ import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.vocabulary.VocabularyImpl
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
+import com.github.dronegator.nlp.utils.concurrent.Zukunft
 
 import com.github.dronegator.nlp.utils.RandomUtils._
+
+import scala.concurrent.Await
+
 /**
  * Created by cray on 8/17/16.
  */
@@ -19,6 +28,12 @@ object NLPTReplMain
   extends App
   with MainTools {
   lazy val cfg: CFG = CFG()
+
+  implicit val context = scala.concurrent.ExecutionContext.global
+
+  implicit val system = ActorSystem()
+
+  implicit val mat = ActorMaterializer()
 
   sealed trait SubCommand extends EnumEntry with Lowercase with SubCommand.EnumUnaply
 
@@ -59,7 +74,7 @@ object NLPTReplMain
 
     case object Next extends Command("Dump or Stat correlation map for phrases", Set(Dump, Stat))
 
-    case object Probability extends Command("Calculate a probability of the phrase", Set())
+    case object Probability extends Command("Calculate a probability of the phrase", Set(Dump))
 
     case object Lookup extends Command("Show probability of n-gram", Set())
 
@@ -165,9 +180,36 @@ object NLPTReplMain
            | - tokens size = ${vocabulary.toToken.size}
          """.stripMargin)
 
+    case Probability() :: Dump() :: (file@(_ :: Nil| Nil)) =>
+      val probabilities = Source(vocabulary.phrases).map{ tokens =>
+        val probability = vocabulary.probability(tokens)
+        val phrase = vocabulary.untokenize(tokens)
+        (f"${tokens.length}%-3d ${probability}%-16.14f $phrase")
+      }
+
+      file.headOption match {
+        case Some(file) =>
+          probabilities.map(x => ByteString(x + "\n")).runWith(FileIO.toPath(Paths.get(file))).foreach{ _ =>
+            println(s"Dumping to $file finished")
+          }
+
+        case None =>
+          probabilities.runForeach{
+            println(_)
+          }.await
+      }
+
     case Probability() :: args =>
       val phrase = args.mkString(" ")
-      println(s"== phrase = ${phrase}")
+      val tokens = vocabulary.tokenize(phrase)
+      val probability = vocabulary.probability(tokens)
+
+      println(
+        f"""
+           | probability = ${probability}%16.14f
+           | length = ${tokens.length}
+           | tokens = ${tokens.mkString(""," :: ", " :: Nil")}
+         """.stripMargin)
 
     case Lookup() :: word1 :: Nil =>
       println(s"1 $word1:")
@@ -220,13 +262,7 @@ object NLPTReplMain
       }
 
     case Generate() :: words =>
-      val tokens = splitter(words.mkString(" ")).
-        scanLeft((vocabulary.toToken, 100000000, Tokenizer.Init._3))(tokenizer(_, _)).
-        map {
-          case (_, _, tokens) => tokens
-        }.
-        toList.
-        flatMap(_.headOption)
+      val tokens = vocabulary.tokenize(words.mkString(" "))
 
       val phrase = Iterator.
         iterate(tokens) {
@@ -265,27 +301,18 @@ object NLPTReplMain
             lastOption
         }
 
+
+
       phrase.
         foreach {
           case tokens =>
-            val phrase = tokens.flatMap(vocabulary.toWord.get(_)).mkString(" ")
-            println(phrase)
+
+            println(vocabulary.untokenize(tokens))
         }
 
     case Advice() :: words =>
-      val tokens = splitter(words.mkString(" ")).
-        scanLeft((vocabulary.toToken, 100000000, Tokenizer.Init._3))(tokenizer(_, _)).
-        map {
-          case (_, _, tokens) => tokens
-        }.
-        toList :+ List(TokenPreDef.TEnd.value)
 
-      val phrase = tokens.
-        scanLeft(Accumulator.Init)(accumulator(_, _)).
-        collect {
-          case (_, Some(phrase)) => phrase
-        }.
-        flatten
+      val phrase = vocabulary.tokenize(words.mkString(" "))
 
       phrase.
         sliding(3).
