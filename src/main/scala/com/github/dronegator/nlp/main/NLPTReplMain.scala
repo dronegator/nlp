@@ -5,20 +5,15 @@ import java.nio.file.Paths
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{FileIO, Sink, Source}
+import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
-import com.github.dronegator.nlp.component.accumulator.Accumulator
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenPreDef}
 import com.github.dronegator.nlp.utils.CFG
+import com.github.dronegator.nlp.utils.RandomUtils._
+import com.github.dronegator.nlp.utils.concurrent.Zukunft
 import com.github.dronegator.nlp.vocabulary.VocabularyImpl
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
-import com.github.dronegator.nlp.utils.concurrent.Zukunft
-
-import com.github.dronegator.nlp.utils.RandomUtils._
-
-import scala.concurrent.Await
 
 /**
  * Created by cray on 8/17/16.
@@ -180,8 +175,8 @@ object NLPTReplMain
            | - tokens size = ${vocabulary.toToken.size}
          """.stripMargin)
 
-    case Probability() :: Dump() :: (file@(_ :: Nil| Nil)) =>
-      val probabilities = Source(vocabulary.phrases).map{ tokens =>
+    case Probability() :: Dump() :: (file@(_ :: Nil | Nil)) =>
+      val probabilities = Source(vocabulary.phrases).map { tokens =>
         val probability = vocabulary.probability(tokens)
         val phrase = vocabulary.untokenize(tokens)
         (f"${tokens.length}%-3d ${probability}%-16.14f $phrase")
@@ -189,12 +184,12 @@ object NLPTReplMain
 
       file.headOption match {
         case Some(file) =>
-          probabilities.map(x => ByteString(x + "\n")).runWith(FileIO.toPath(Paths.get(file))).foreach{ _ =>
+          probabilities.map(x => ByteString(x + "\n")).runWith(FileIO.toPath(Paths.get(file))).foreach { _ =>
             println(s"Dumping to $file finished")
           }
 
         case None =>
-          probabilities.runForeach{
+          probabilities.runForeach {
             println(_)
           }.await
       }
@@ -208,7 +203,7 @@ object NLPTReplMain
         f"""
            | probability = ${probability}%16.14f
            | length = ${tokens.length}
-           | tokens = ${tokens.mkString(""," :: ", " :: Nil")}
+           | tokens = ${tokens.mkString("", " :: ", " :: Nil")}
          """.stripMargin)
 
     case Lookup() :: word1 :: Nil =>
@@ -262,7 +257,7 @@ object NLPTReplMain
       }
 
     case Generate() :: words =>
-      val tokens = vocabulary.tokenize(words.mkString(" "))
+      val tokens = vocabulary.tokenize(words.mkString(" ")).drop(2).dropRight(1)
 
       val phrase = Iterator.
         iterate(tokens) {
@@ -270,12 +265,8 @@ object NLPTReplMain
             tokens :+ vocabulary.vnext1(tokens).
               choiceOption.getOrElse(TokenPreDef.PEnd.value)
 
-
           case tokens =>
-            tokens :+ vocabulary.vnext2(tokens.takeRight(2)).lastOption.map {
-              case (p, token) =>
-                token
-            }.getOrElse(TokenPreDef.PEnd.value)
+            tokens :+ vocabulary.vnext2(tokens.takeRight(2)).choiceOption.getOrElse(TokenPreDef.PEnd.value)
         }.
         takeWhile(x => !(x.lastOption contains TokenPreDef.PEnd.value)).
         take(20).
@@ -289,10 +280,7 @@ object NLPTReplMain
                   choiceOption.getOrElse(TokenPreDef.PStart.value) :: tokens
 
               case tokens@x :: y :: _ =>
-                vocabulary.vprev2(x :: y :: Nil).lastOption.map {
-                  case (p, token) =>
-                    token
-                }.getOrElse(TokenPreDef.PEnd.value) :: tokens
+                vocabulary.vprev2(x :: y :: Nil).choiceOption.getOrElse(TokenPreDef.PStart.value) :: tokens
 
             }.
             takeWhile(x => !(x.headOption contains TokenPreDef.PStart.value)).

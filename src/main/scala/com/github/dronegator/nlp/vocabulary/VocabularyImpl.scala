@@ -158,7 +158,7 @@ class VocabularyImpl(phrases: List[List[Token]],
 
   override lazy val vprev2: Map[List[Token], List[(Double, Token)]] = {
     println("=>5")
-    vngrams3.
+    vpgrams3.
       toList.
       map {
         case (w1 :: w2 :: w3 :: _, p) =>
