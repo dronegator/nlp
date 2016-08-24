@@ -21,6 +21,10 @@ class PhraseDetector(cfgArg: => CFG) extends Component[List[List[Token]], Option
       case tokens if tokens contains Tokenizer.TokenPreDef.TEnd.value => false
       case _ => true
     }  match {
+//      case (start, (tokens :: rest)) if tokens contains Tokenizer.TokenPreDef.Reset.value =>
+//        println(s"reset $start")
+//        Option(Nil, rest)
+
       case (start, (tokens :: rest)) if tokens contains Tokenizer.TokenPreDef.TEnd.value=>
 
         val phrase = start.

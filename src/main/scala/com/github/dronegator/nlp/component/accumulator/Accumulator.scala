@@ -3,7 +3,7 @@ package com.github.dronegator.nlp.component.accumulator
 import com.github.dronegator.nlp.component.Component
 import com.github.dronegator.nlp.component.accumulator.Accumulator.Init
 import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{TokenPreDef, Token}
 import com.github.dronegator.nlp.utils.CFG
 
 /**
@@ -25,6 +25,9 @@ class Accumulator(cfgArg: => CFG, phraseDetector: PhraseDetector) extends Compon
       val tokenizedText = buffer :+ tokens
 
       phraseDetector(tokenizedText) match {
+        case Some((phrase, rest)) if phrase.contains(TokenPreDef.Reset.value) =>
+          (rest.toList, Some(Nil))
+
         case Some((phrase, rest)) =>
           (rest.toList, Some(phrase))
 

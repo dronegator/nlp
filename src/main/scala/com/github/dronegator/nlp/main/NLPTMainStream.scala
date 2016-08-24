@@ -122,6 +122,7 @@ object NLPTMainStream
 
   def plain[A, B, C, D, E](x: (A, B, C, D), y: E) = (x._1, x._2, x._3, x._4, y)
 
+  val substitute = Map("’"->"'")
   try {
     val ((termination, futureToToken), ((((((_, ng1), ng2), ng3), twoPhrasesOut), twoPhraseCorelatorOut), futurePhrases)) =
       (source.
@@ -131,6 +132,11 @@ object NLPTMainStream
         }.*/
         map(splitter(_)).
         mapConcat(_.toList).
+        map(x=>substitute.getOrElse(x,x)).
+//        map{ x =>
+//          println(x)
+//          x
+//        }.
         scan(Tokenizer.Init)(tokenizer(_, _)).
         alsoToMat(maps)(Keep.both).
         toMat(tokenVariances)(Keep.both).run())

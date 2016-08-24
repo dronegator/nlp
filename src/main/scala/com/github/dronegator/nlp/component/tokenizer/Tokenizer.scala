@@ -1,7 +1,7 @@
 package com.github.dronegator.nlp.component.tokenizer
 
 import com.github.dronegator.nlp.component.Component
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{DEOW, DEOP}
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{Reset, DEOW, DEOP}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.utils.CFG
 import enumeratum._
@@ -48,23 +48,37 @@ object Tokenizer {
     case object DEOW extends TokenPreDef {
       val value = 5
     }
+
+    case object Reset extends TokenPreDef {
+      val value = 6
+    }
   }
 
   val MapOfPredefs = Map("." -> (DEOP.value :: DEOW.value :: Nil))
 
-  val Init: Init = (MapOfPredefs, 6, List())
+  val Init: Init = (MapOfPredefs, 7, List())
+
+  object StopWord {
+    val Punct = Set(".",",","'")
+
+    def unapply(word: Word) =
+      //word.find(x => !x.isLetterOrDigit).isDefined && word.find(x => !",.'".contains(x)).isDefined
+      word.find(x => !x.isLetterOrDigit).isDefined && (!Punct(word))
+  }
 
 }
 
 class Tokenizer(cfgArg: => CFG)
   extends Component[((TokenMap, Token, List[Token]), Word), (TokenMap, Token, List[Token])] {
 
-  private val rSplit = """\s+""".r
-
   def cfg = cfgArg
 
   override def apply(x: ((TokenMap, Token, List[Token]), Word)): (TokenMap, Token, List[Token]) =
     x match {
+      case ((map, n, _), qq@StopWord()) =>
+        //println(s"Stop word: $qq")
+        (map, n, List(Reset.value))
+
       case ((map, n, _), w) =>
         map.get(w) match {
           case Some(tokens) =>
