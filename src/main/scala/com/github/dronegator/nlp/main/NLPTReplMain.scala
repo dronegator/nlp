@@ -289,17 +289,13 @@ object NLPTReplMain
             lastOption
         }
 
-
-
       phrase.
         foreach {
           case tokens =>
-
             println(vocabulary.untokenize(tokens))
         }
 
-    case Advice() :: words =>
-
+    case com@Advice() :: words =>
       val phrase = vocabulary.tokenize(words.mkString(" "))
 
       phrase.
@@ -314,8 +310,6 @@ object NLPTReplMain
 
             val (start, token :: end) = phrase.splitAt(n + 1)
 
-            //println(start.flatMap(vocabulary.toWord.get(_)).mkString(" "), token, end.flatMap(vocabulary.toWord.get(_)).mkString(" "))
-
             vocabulary.vmiddle.get(x :: z :: Nil).
               toList.
               flatten.
@@ -328,7 +322,6 @@ object NLPTReplMain
         }.
         foreach {
           case (phrases, n) if !phrases.isEmpty =>
-            println(s" == $n ==")
             phrases.foreach {
               case (d, tokens) =>
                 val phrase = tokens.flatMap(vocabulary.toWord.get(_)).mkString(" ")
@@ -339,7 +332,8 @@ object NLPTReplMain
         }
 
     //case ContinuePhrase() :: words =>
-    case words if words.lastOption.contains(".") =>
+    case words@(_ :+ ".") =>
+      println("We suggest a few words for the next phrase:")
       val advice = (for {
         (token1, _) <-
         vocabulary.filter(
@@ -351,6 +345,7 @@ object NLPTReplMain
       } yield {
           nextToken -> p
         }).
+
         foldLeft(Map[Token, Double]()) {
           case (map, (token, p)) =>
             map + (token -> (p + map.getOrElse(token, 0.0)))
