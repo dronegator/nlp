@@ -98,24 +98,141 @@ Storage contains:
 
 Usage
 -------
-The initial release only contains a console application that can gather statistic from a text corpora, save it into the storage and provide simple services from a command prompt. To start the application issue:
+The initial release only contains a few console applications those can gather statistic from a text corpora, save it into the storage and provide simple services from a command prompt. 
 
-  `java -jar nlp-tools.jar [gather|prompt] <Directory> [<List of files>]`, where:
+To collect statistic,  issue:
 
-  * "gather" gathers data from the files, incrementally saving in a storage, hosting in the Directory, at the end in shows statistic;
-
-  * "promt" shows a prompt with a few possiible commands:
+  `sbt "run-main com.github.dronegator.nlp.main.NLPTMainStream <FILE WITH A TEXT CORPUS> <FILE OF STORAGE>`
   
-    * "fill" [<word> | "*" *] fills the gap denoted with "*"
-      
-    * "arrange" [<word> *] builds a phrase from the words.
-      
-The storage can be converted to the dictionary for an android application.      
+  or 
+
+  `sbt "run-main com.github.dronegator.nlp.main.NLPTMain <FILE WITH A TEXT CORPUS> <FILE OF STORAGE>`
+  
+The applications do the same, except the first one uses AKKA-STREAMS that helps to require less RAM.
+   
+To use collect statistic, issue:   
+
+  `sbt "run-main com.github.dronegator.nlp.main.NLPTReplMain <FILE OF STORAGE>`
+    
+  * probability [Word]
+  
+    Evaluates a probability of a phrase:
+     > probability He was reading a book .
+     probability = 0.00000010187081
+     length = 9
+     tokens = 1 :: 1 :: 1494 :: 1047 :: 495 :: 43 :: 670 :: 4 :: 2 :: Nil
+
+  * [Word]+
+  
+    Suggest a few words to continue the phrase:
+    
+      > He was reading a
+      - magazine (18153), p = 0.1038961038961039
+      - book (670), p = 0.16883116883116883
+      - paperback (22287), p = 0.16883116883116883
+
+  * [Word]+ .
+  
+    Suggest a few words for the next phrase:
+    
+     > He was reading a book .
+     - pretending, p = 0.08330280953101102
+     - judgment, p = 0.08330766559047138
+     - Turkish, p = 0.0833250086599727
+     
+  * advice [Word] .
+     
+    Suggest possible substitution of the words in a phrase (the intentional error has provided for the illustration puprpose):
+     
+      > advice He were reading a book .
+      0.3902 They were reading a book .
+      0.3532 There were reading a book .
+      0.6429 He was reading a book .
+      0.0714 He remembered reading a book .
+      0.1667 He were in a book .
+      0.0549 He were on a book .
+      0.0363 He were reading a little .
+      0.0140 He were reading a moment .
+      0.0102 He were reading a while .
+      0.0101 He were reading a lot .
+
+  * generate [Word]+
+    Generates a phrase containing the sequence of words:
+    
+    > generate reading a book
+    She was reading a book of famous people .
+  
+  The storage has to be converted to the dictionary for an android application (but the feature has not implemented yet).      
 
 The outcome
 -----------
-No outcomes yet
+The first version easily gathers dictionaries from  huge text corpora (I feed it in 85m of novels), generates a phrase from one word, followed by a prompting of a few words for next phrase. The implementation is based on a simple statistical approach without any of substantial ML techniques, but the fact of usage of quite outdated algorithms makes an outcome even more impressive, 
+
+An example of final text:
+
+  I hope you enjoy your trip .
+  And still hungry .
+  There was no problem , of course , we deserve a more global problem .
+  It would have hit the targeted house was a statement .
+  Soon it will revolutionize every field .
+
+And how I got it:
+  
+  > generate hope
+  I hope you enjoy your trip .
+  
+  > I hope you enjoy your trip .
+  We suggest a few words for the next phrase:
+   - hungry, p = 0.03266713608466161
+   
+   ... (There were a lot of trash actually)
+   
+  > generate hungry
+  And still hungry .
+  
+   (a few attempt actually)
+   
+  > And still hungry .
+  We suggest a few words for the next phrase:
+   - course, p = 0.015324305712431879
+   - tucked, p = 0.019890646915401836
+   - he, p = 0.05362317241041657
+   
+  > generate course 
+  There was no problem , of course , we deserve a more global problem .
+  
+  > There was no problem , of course , we deserve a more global problem .
+   - attempted, p = 0.09997779416380262
+   - targeted, p = 0.09999748181238999
+   - subsidiary, p = 0.09999771073853636
+   
+  > generate targeted
+  It would have hit the targeted house was a statement .
+  
+  > It would have hit the targeted house was a statement .
+  We suggest a few words for the next phrase:
+   - Asia, p = 0.24999549931115772
+   - revolutionize, p = 0.24999905248655951
+  
+  Soon it will revolutionize every field .
+
+It can suggest different words for a phrase (the phrase contains an intentional error for the sake of illustration):
+
+  > advice The man were trying to make sure .
+  0.0559 The walls were trying to make sure .
+  0.0194 The others were trying to make sure .
+  0.0178 The windows were trying to make sure .
+  0.0138 The men were trying to make sure .
+  0.9000 The man was trying to make sure .
+  0.1000 The man either trying to make sure .
+  0.2004 The man were going to make sure .
+  0.0621 The man were supposed to make sure .
+  0.2315 The man were trying to make it .
+  0.1034 The man were trying to make sense .
+  0.0887 The man were trying to make out .
 
 History
 ---------
-[Version 0.0](https://github.com/dronegator/nlp/tree/v.0.0),, 20160814, Initial release of nothing.
+[Version 0.0](https://github.com/dronegator/nlp/tree/v.0.0), 20160814, Initial release of nothing.
+
+[Version 0.1](https://github.com/dronegator/nlp/tree/v.0.1), 20160825, Prototype the index tools and functions to cover the simplified script of the game.
