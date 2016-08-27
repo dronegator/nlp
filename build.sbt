@@ -25,3 +25,11 @@ libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.4.9-RC2"
 //libraryDependencies += "jline" % "jline" % "2.14.2"
 
 libraryDependencies += "jline" % "jline" % "2.11"
+
+libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.2.3" % "provided"
+
+libraryDependencies += "com.softwaremill.macwire" %% "util" % "2.2.3"
+
+libraryDependencies += "com.softwaremill.macwire" %% "proxy" % "2.2.3"
+
+//enablePlugins(ScalaKataPlugin)

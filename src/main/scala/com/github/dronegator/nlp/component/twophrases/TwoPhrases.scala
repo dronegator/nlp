@@ -1,7 +1,8 @@
 package com.github.dronegator.nlp.component.twophrases
 
-import com.github.dronegator.nlp.component.Component
+import com.github.dronegator.nlp.component.ComponentFold
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
+import com.github.dronegator.nlp.component.twophrases.TwoPhrases.Init
 import com.github.dronegator.nlp.utils.CFG
 
 /**
@@ -9,21 +10,24 @@ import com.github.dronegator.nlp.utils.CFG
  */
 
 object TwoPhrases {
-  val Init = (List[Token](), Map[Token, Int]())
+  type Init = (List[Token], Map[Token, Int])
 
 }
-class TwoPhrases(cfgArg: CFG) extends Component[((List[Token], Map[Token, Int]), List[Token]), (List[Token], Map[Token, Int])] {
+
+class TwoPhrases(cfgArg: CFG) extends ComponentFold[List[Token], Init] {
   override def cfg: CFG = cfgArg
 
-  override def apply(in: ((List[Token], Map[Token, Int]), List[Token])): (List[Token], Map[Token, Int]) = {
-    in match {
-      case ((prev, map), next) =>
-        val newmap = (prev.toSet & next.toSet).
-          foldLeft(map){
+  override def init: (List[Token], Map[Token, Token]) = (List[Token](), Map[Token, Int]())
+
+  override def apply(state: (List[Token], Map[Token, Token]), phrase: List[Token]): (List[Token], Map[Token, Token]) = {
+    state match {
+      case (prev, map) =>
+        val newmap = (prev.toSet & phrase.toSet).
+          foldLeft(map) {
             case (map, token) =>
               map + (token -> (map.getOrElse(token, 0) + 1))
-        }
-        (next, newmap)
+          }
+        (phrase, newmap)
     }
   }
 }

@@ -10,8 +10,9 @@ import com.github.dronegator.nlp.component.splitter.Splitter
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.component.twophrases.TwoPhrases
-import com.github.dronegator.nlp.utils.{IteratorFork, CFG}
+import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.vocabulary.VocabularyRaw
+import com.softwaremill.macwire._
 
 /**
  * Created by cray on 8/17/16.
@@ -20,13 +21,13 @@ package object main {
    trait Combinators {
      def cfg: CFG
 
-     lazy val splitter = new Splitter(cfg)
+     lazy val splitter = wire[Splitter]
 
-     lazy val tokenizer = new Tokenizer(cfg)
+     lazy val tokenizer = wire[Tokenizer]
 
-     lazy val phraseDetector = new PhraseDetector(cfg)
+     lazy val phraseDetector = wire[PhraseDetector]
 
-     lazy val accumulator = new Accumulator(cfg, phraseDetector)
+     lazy val accumulator = wire[Accumulator]
 
      lazy val ngramms1 = new NGramsCounter(cfg, 1)
 
@@ -34,9 +35,9 @@ package object main {
 
      lazy val ngramms3 = new NGramsCounter(cfg, 3)
 
-     lazy val twoPhrases = new TwoPhrases(cfg)
+     lazy val twoPhrases = wire[TwoPhrases]
 
-     lazy val twoPhraseCorelator = new TwoPhraseCorelator(cfg)
+     lazy val twoPhraseCorelator = wire[TwoPhraseCorelator]
    }
 
    trait MainTools extends Combinators {
@@ -94,6 +95,5 @@ package object main {
            println(f" $key%-60s -> $value%010d")
        }
      }
-
    }
 }

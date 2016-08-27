@@ -63,23 +63,23 @@ object NLPTMainStream
   implicit val mat = ActorMaterializer()
 
   val count1gramms = Flow[List[Token]].
-    fold(Map[List[Token], Int]())(ngramms1(_, _)).
+    fold(ngramms1.init)(ngramms1).
     toMat(Sink.headOption)(Keep.right)
 
   val count2gramms = Flow[List[Token]].
-    fold(Map[List[Token], Int]())(ngramms2(_, _)).
+    fold(ngramms2.init)(ngramms2).
     toMat(Sink.headOption)(Keep.right)
 
   val count3gramms = Flow[List[Token]].
-    fold(Map[List[Token], Int]())(ngramms3(_, _)).
+    fold(ngramms3.init)(ngramms3).
     toMat(Sink.headOption)(Keep.right)
 
   val twoPhrasesVoc = Flow[List[Token]].
-    fold(TwoPhrases.Init)(twoPhrases(_, _)).
+    fold(twoPhrases.init)(twoPhrases).
     toMat(Sink.headOption)(Keep.right)
 
   val twoPhraseCorelatorVoc = Flow[List[Token]].
-    fold(TwoPhraseCorelator.Init)(twoPhraseCorelator(_, _)).
+    fold(twoPhraseCorelator.init)(twoPhraseCorelator).
     toMat(Sink.headOption)(Keep.right)
 
   val tokenVariances =
@@ -92,7 +92,7 @@ object NLPTMainStream
           //println(f"$n%-10d : ${tokens.mkString(" :: ")}")
           tokens
       }.
-      scan((List.empty[List[Token]], Option.empty[List[Token]]))(accumulator(_, _)).
+      scan(accumulator.init)(accumulator).
       collect {
         case (_, Some(phrase)) => phrase
       }.
@@ -130,14 +130,14 @@ object NLPTMainStream
           println(x)
           x
         }.*/
-        map(splitter(_)).
+        map(splitter).
         mapConcat(_.toList).
         map(x=>substitute.getOrElse(x,x)).
 //        map{ x =>
 //          println(x)
 //          x
 //        }.
-        scan(Tokenizer.Init)(tokenizer(_, _)).
+        scan(tokenizer.init)(tokenizer).
         alsoToMat(maps)(Keep.both).
         toMat(tokenVariances)(Keep.both).run())
 
@@ -185,7 +185,7 @@ object NLPTMainStream
     //dump(twoPhraseCorelatorOut1._2)
 
     save(new File(fileOut), vocabularyRaw.copy(
-      twoPhraseCorelator = TwoPhraseCorelator.Init._2
+      twoPhraseCorelator = twoPhraseCorelator.init._2
     ))
 
   } finally {

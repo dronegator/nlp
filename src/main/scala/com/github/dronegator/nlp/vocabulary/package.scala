@@ -17,7 +17,7 @@ package object vocabulary {
       {
 
         val tokens = splitter(s).
-          scanLeft((vocabulary.toToken, 100000000, Tokenizer.Init._3))(tokenizer(_, _)).
+          scanLeft((vocabulary.toToken, 100000000, tokenizer.init._3))(tokenizer).
           map {
             case (_, _, tokens) => tokens
           }.
@@ -25,7 +25,7 @@ package object vocabulary {
 
         val phrase = tokens.
           toIterator.
-          scanLeft(Accumulator.Init)(accumulator(_, _)).
+          scanLeft(accumulator.init)(accumulator).
           collectFirst {
             case (_, Some(phrase)) => phrase
           }.

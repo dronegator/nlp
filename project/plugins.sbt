@@ -7,3 +7,9 @@ addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.10.1")
 resolvers += "jgit-repo" at "http://download.eclipse.org/jgit/maven"
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.6.2")
+
+addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.8.2")
+
+addSbtPlugin("com.scalakata" % "sbt-scalakata" % "1.1.5")
+
+addSbtPlugin("com.sksamuel.sbt-versions" % "sbt-versions" % "0.2.0")

@@ -1,9 +1,9 @@
 package com.github.dronegator.nlp.component.phrase_detector
 
-import com.github.dronegator.nlp.component.Component
+import com.github.dronegator.nlp.component.ComponentMap
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{PEnd, PStart}
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, Word}
 import com.github.dronegator.nlp.utils.CFG
 
 /**
@@ -12,25 +12,18 @@ import com.github.dronegator.nlp.utils.CFG
 object PhraseDetector {
 }
 
-class PhraseDetector(cfgArg: => CFG) extends Component[List[List[Token]], Option[(List[Token], Seq[List[Token]])]] {
+class PhraseDetector(cfgArg: => CFG) extends ComponentMap[List[List[Token]], Option[(List[Token], Seq[List[Token]])]] {
   override def cfg: CFG = cfgArg
 
   override def apply(in: List[List[Token]]): Option[(List[Token], Seq[List[Token]])] =
-    in.span{
+    in.span {
       case tokens if tokens contains Tokenizer.TokenPreDef.DEOP.value => false
       case tokens if tokens contains Tokenizer.TokenPreDef.TEnd.value => false
       case _ => true
-    }  match {
-//      case (start, (tokens :: rest)) if tokens contains Tokenizer.TokenPreDef.Reset.value =>
-//        println(s"reset $start")
-//        Option(Nil, rest)
+    } match {
+      case (start, (tokens :: rest)) if tokens contains Tokenizer.TokenPreDef.TEnd.value =>
 
-      case (start, (tokens :: rest)) if tokens contains Tokenizer.TokenPreDef.TEnd.value=>
-
-        val phrase = start.
-          flatMap(_.headOption) /*:+
-          Tokenizer.TokenPreDef.DEOP.value*/
-
+        val phrase = start.flatMap(_.headOption)
 
         Option((PStart.value +: PStart.value +: phrase :+ PEnd.value, Nil))
 

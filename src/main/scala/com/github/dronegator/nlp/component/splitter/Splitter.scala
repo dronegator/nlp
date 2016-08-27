@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp.component.splitter
 
-import com.github.dronegator.nlp.component.Component
+import com.github.dronegator.nlp.component.ComponentMap
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Word
 import com.github.dronegator.nlp.utils.CFG
 
@@ -10,7 +10,7 @@ import com.github.dronegator.nlp.utils.CFG
 object Splitter {
 }
 
-class Splitter(cfgArg: => CFG) extends Component[String, Iterator[Word]] {
+class Splitter(cfgArg: => CFG) extends ComponentMap[String, Iterator[Word]] {
   private val rSplit = """\b|\s""".r
 
   def cfg = cfgArg

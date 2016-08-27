@@ -23,9 +23,9 @@ object NLPTMain
   val cfg = CFG()
 
   val (maps,tokenVariances) = source.
-    map(splitter(_)).
+    map(splitter).
     flatten.
-    scanLeft(Tokenizer.Init)(tokenizer(_, _)).
+    scanLeft(tokenizer.init)(tokenizer).
     map{
       case (x, y, z) => ((x, y), z)
     }.
@@ -38,19 +38,19 @@ object NLPTMain
         //println(f"$n%-10d : ${tokens.mkString(" :: ")}")
         tokens
     }.
-    scanLeft(Accumulator.Init)(accumulator(_, _)).
+    scanLeft(accumulator.init)(accumulator).
     collect{
       case (_, Some(phrase)) => phrase
     }.fork5()
 
   val ngram1 = phrases1.
-    foldLeft(Map[List[Token], Int]())(ngramms1(_, _))
+    foldLeft(ngramms1.init)(ngramms1)
 
   val ngram2 = phrases2.
-    foldLeft(Map[List[Token], Int]())(ngramms2(_, _))
+    foldLeft(ngramms2.init)(ngramms2)
 
   val ngram3 = phrases3.
-    foldLeft(Map[List[Token], Int]())(ngramms3(_, _))
+    foldLeft(ngramms2.init)(ngramms3)
 
   val Some((toToken, lastToken)) = maps.
     foldLeft(Option.empty[(TokenMap, Token)]) {
