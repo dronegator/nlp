@@ -7,13 +7,11 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import akka.util.ByteString
-import com.github.dronegator.nlp.component.TwoPhraseCorelator
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenMap}
-import com.github.dronegator.nlp.component.twophrases.TwoPhrases
 import com.github.dronegator.nlp.utils.CFG
-import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, VocabularyRawImpl}
 import com.github.dronegator.nlp.utils.stream._
+import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, VocabularyRawImpl}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -28,14 +26,14 @@ object NLPTMainStream
   val Array(fileIn, fileOut) = args
   val cfg = CFG()
 
-  def progress[A](chunk: Int = 1024*10) = Flow[A].
+  def progress[A](chunk: Int = 1024 * 10) = Flow[A].
     scan((0, Option.empty[A])) {
       case ((n, _), item) =>
-        if (n % chunk == 0)                         {
+        if (n % chunk == 0) {
           println(f"$n%20d items passed through ${Runtime.getRuntime().freeMemory()} ${Runtime.getRuntime().maxMemory()}")
         }
 
-        val m = item           match {
+        val m = item match {
           case x: Seq[_] => n + x.length
           case _ => n + 1
         }
@@ -66,7 +64,8 @@ object NLPTMainStream
   implicit val mat = ActorMaterializer()
 
   val count1gramms = Flow[List[Token]].
-    fold(ngramms1.init)(ngramms1).
+    //fold(ngramms1.init)(ngramms1).
+    componentFold(ngramms1).
     toMat(Sink.headOption)(Keep.right)
 
   val count2gramms = Flow[List[Token]].
@@ -95,7 +94,8 @@ object NLPTMainStream
           //println(f"$n%-10d : ${tokens.mkString(" :: ")}")
           tokens
       }.
-      scan(accumulator.init)(accumulator).
+    //  scan(accumulator.init)(accumulator).
+      componentScan(accumulator).
       collect {
         case (_, Some(phrase)) => phrase
       }.
@@ -125,22 +125,16 @@ object NLPTMainStream
 
   def plain[A, B, C, D, E](x: (A, B, C, D), y: E) = (x._1, x._2, x._3, x._4, y)
 
-  val substitute = Map("’"->"'")
+  val substitute = Map("’" -> "'")
   try {
     val ((termination, futureToToken), ((((((_, ng1), ng2), ng3), twoPhrasesOut), twoPhraseCorelatorOut), futurePhrases)) =
       (source.
-        /*map { x =>
-          println(x)
-          x
-        }.*/
-        map(splitter).
+        //trace("An original string: ").
+        component(splitter).
         mapConcat(_.toList).
-        map(x=>substitute.getOrElse(x,x)).
-//        map{ x =>
-//          println(x)
-//          x
-//        }.
-        scan(tokenizer.init)(tokenizer).
+        map(x => substitute.getOrElse(x, x)).
+        //trace("A word after substitution: ").
+        componentScan(tokenizer).
         alsoToMat(maps)(Keep.both).
         toMat(tokenVariances)(Keep.both).run())
 

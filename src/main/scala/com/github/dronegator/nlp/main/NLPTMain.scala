@@ -23,9 +23,11 @@ object NLPTMain
   val cfg = CFG()
 
   val (maps,tokenVariances) = source.
-    map(splitter).
+    component(splitter).
+    // map(splitter).
     flatten.
-    scanLeft(tokenizer.init)(tokenizer).
+    //scanLeft(tokenizer.init)(tokenizer).
+    componentScan(tokenizer).
     map{
       case (x, y, z) => ((x, y), z)
     }.
@@ -45,6 +47,7 @@ object NLPTMain
     }.fork5()
 
   val ngram1 = phrases1.
+    //componentFold(ngramms1)
     foldLeft(ngramms1.init)(ngramms1)
 
   val ngram2 = phrases2.
