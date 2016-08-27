@@ -13,6 +13,7 @@ import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenMap}
 import com.github.dronegator.nlp.component.twophrases.TwoPhrases
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, VocabularyRawImpl}
+import com.github.dronegator.nlp.utils.stream._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -46,11 +47,13 @@ object NLPTMainStream
         item
     }
 
+
   val source =
     FileIO.fromPath(Paths.get(fileIn)).
       via(progress()).
       via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 1024*1025, allowTruncation = false)).
       map(_.utf8String).
+      trace("string: ").
       //monitor()(Keep.right).
       watchTermination()(Keep.right)
 

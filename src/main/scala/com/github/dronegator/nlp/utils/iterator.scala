@@ -38,5 +38,15 @@ package object utils {
     def sorted[B >: A](implicit ord: Ordering[B]) =
       stream.sorted[B](ord)
   }
+
+  implicit class IteratorLog[A, M[A] <: TraversableOnce[A]](a: M[A]) {
+    def trace(s: String=""): M[A] = {
+      a.map/*[A, Seq[A]]*/{x =>
+        println(s"$s $x")
+        x
+      }.asInstanceOf[M[A]]
+    }
+  }
+
 }
 

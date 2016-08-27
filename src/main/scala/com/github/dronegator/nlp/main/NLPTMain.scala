@@ -33,6 +33,7 @@ object NLPTMain
 
   val (phrases1, phrases2, phrases3, phrases4, phrases5) = tokenVariances.
     zipWithIndex.
+   // log("qqq: ").
     map{
       case (tokens, n) =>
         //println(f"$n%-10d : ${tokens.mkString(" :: ")}")
