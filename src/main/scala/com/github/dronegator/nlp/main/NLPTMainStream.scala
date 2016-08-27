@@ -26,32 +26,12 @@ object NLPTMainStream
   val Array(fileIn, fileOut) = args
   val cfg = CFG()
 
-  def progress[A](chunk: Int = 1024 * 10) = Flow[A].
-    scan((0, Option.empty[A])) {
-      case ((n, _), item) =>
-        if (n % chunk == 0) {
-          println(f"$n%20d items passed through ${Runtime.getRuntime().freeMemory()} ${Runtime.getRuntime().maxMemory()}")
-        }
-
-        val m = item match {
-          case x: Seq[_] => n + x.length
-          case _ => n + 1
-        }
-
-        (m, Some(item))
-    }.
-    collect {
-      case (_, Some(item)) =>
-        item
-    }
-
-
   val source =
     FileIO.fromPath(Paths.get(fileIn)).
-      via(progress()).
+      progress().
       via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 1024*1025, allowTruncation = false)).
       map(_.utf8String).
-      trace("string: ").
+      //trace("Input string: ").
       //monitor()(Keep.right).
       watchTermination()(Keep.right)
 
@@ -137,7 +117,6 @@ object NLPTMainStream
         componentScan(tokenizer).
         alsoToMat(maps)(Keep.both).
         toMat(tokenVariances)(Keep.both).run())
-
 
     println(s"Stream has finished with ${Await.result(termination, Duration.Inf)}")
 
