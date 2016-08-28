@@ -8,7 +8,7 @@ import com.github.dronegator.nlp.main.NLPTReplMain._
  */
 package object vocabulary {
 
-  implicit class VocabularyToolsExt(val vocabulary: Vocabulary) extends VocabularyTools.VocabularyTools(vocabulary)
+  // implicit class VocabularyToolsExt(val vocabulary: Vocabulary) extends VocabularyTools.VocabularyTools(vocabulary)
 
   trait VocabularyRaw {
     def phrases: List[List[Token]]

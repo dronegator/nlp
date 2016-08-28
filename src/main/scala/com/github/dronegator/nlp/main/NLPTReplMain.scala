@@ -5,6 +5,7 @@ import java.io.File
 import akka.stream.scaladsl.Source
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.utils.{Match, CFG}
+import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyTools
 import com.github.dronegator.nlp.vocabulary.VocabularyImpl
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
