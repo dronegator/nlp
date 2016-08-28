@@ -22,6 +22,7 @@ import com.github.dronegator.nlp.utils.concurrent.Zukunft
 import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyRaw}
 import com.softwaremill.macwire._
 import enumeratum._
+import scala.concurrent.Future
 import scala.util.Try
 
 /**
@@ -126,11 +127,14 @@ package object main {
     def vocabulary: Vocabulary
 
     implicit class SourceExt[Mat](source: Source[String, Mat]) /*extends AnyVal*/ {
-      def arbeiten() =
+      def arbeiten(): Unit =
         source.runWith(dumpSink()).await
 
-      def arbeiten(file: File) =
+      def arbeiten(file: File): Unit =
         source.runWith(dumpSink(file))
+
+      def arbeiten(file: Option[File]): Unit =
+        file.map(arbeiten(_)).getOrElse(arbeiten())
     }
 
     def tokenToDump(token: Token): String
@@ -168,18 +172,21 @@ package object main {
             f"$probability%f-16.14 : ${representer.represent(payload)}"
         }
 
-    def dumpSink(file: File) =
+//    def dumpSink(file: Option[File]): Sink[String, Future[Done]] =
+//      file.map(dumpSink(_)).getOrElse(dumpSink())
+
+    def dumpSink(file: File): Sink[String, Future[Done]] =
       Flow[String].
         map(x => ByteString(x + "\n")).
         toMat(FileIO.toPath(Paths.get(file.toString)))(Keep.right).
         mapMaterializedValue { mat =>
           println(s"Dumping to $file has finished with $mat")
-          Done
+          Future.successful(Done)
         }
 
-    def dumpSink() =
+    def dumpSink(): Sink[String, Future[Done]] =
       Flow[String].
-        map(x => ByteString(x + "\n")).
+        //map(x => ByteString(x + "\n")).
         toMat(Sink.foreach {
           println(_)
         })(Keep.right).

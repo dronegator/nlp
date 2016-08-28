@@ -1,6 +1,7 @@
 package com.github.dronegator.nlp.main
 
 import java.io.File
+import java.io.File
 import java.nio.file.Paths
 
 import akka.actor.ActorSystem
@@ -200,23 +201,24 @@ object NLPTReplMain
       }
 
     case Probability() :: Dump() :: (file@(_ :: Nil | Nil)) =>
-      val probabilities = Source(vocabulary.phrases).map { tokens =>
+      SourceExt(Source(vocabulary.phrases).map { tokens =>
         val probability = vocabulary.probability(tokens)
         val statement = vocabulary.untokenize(tokens)
         (f"${tokens.length}%-3d ${probability}%-16.14f $statement")
-      }
+      }).arbeiten(file.headOption.map(new File(_)))
 
-      file.headOption match {
-        case Some(file) =>
-          probabilities.map(x => ByteString(x + "\n")).runWith(FileIO.toPath(Paths.get(file))).foreach { _ =>
-            println(s"Dumping to $file finished")
-          }
 
-        case None =>
-          probabilities.runForeach {
-            println(_)
-          }.await
-      }
+//      match {
+//        case Some(file) =>
+//          probabilities.map(x => ByteString(x + "\n")).runWith(FileIO.toPath(Paths.get(file))).foreach { _ =>
+//            println(s"Dumping to $file finished")
+//          }
+//
+//        case None =>
+//          probabilities.runForeach {
+//            println(_)
+//          }.await
+//      }
 
     case Probability() :: words =>
       val statement = vocabulary.tokenize(words)

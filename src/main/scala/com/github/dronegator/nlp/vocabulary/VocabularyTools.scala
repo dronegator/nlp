@@ -4,6 +4,7 @@ import com.github.dronegator.nlp.common.Probability
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Phrase, Statement, Token, TokenPreDef}
 import com.github.dronegator.nlp.main.NLPTReplMain._
 import com.github.dronegator.nlp.utils.RandomUtils._
+
 /**
  * Created by cray on 8/28/16.
  */
@@ -50,7 +51,7 @@ object VocabularyTools {
       case (p, t) => (t, p)
     }
 
-    def continueStatement(statement: Statement): List[(Token, Probability)] =  {
+    def continueStatement(statement: Statement): List[(Token, Probability)] = {
       println(statement)
       statement.takeRight(2) match {
         case token1 :: Nil =>
@@ -169,6 +170,5 @@ object VocabularyTools {
       tokens.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
 
   }
-
 
 }
