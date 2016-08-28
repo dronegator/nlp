@@ -1,6 +1,5 @@
 package com.github.dronegator.nlp.vocabulary
 
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 
 /**
@@ -20,7 +19,7 @@ object VocabularyImpl {
     )
 }
 
-class VocabularyImpl(phrases: List[List[Token]],
+class VocabularyImpl(phrases: List[Phrase],
                      nGram1: Map[List[Token], Int],
                      nGram2: Map[List[Token], Int],
                      nGram3: Map[List[Token], Int],
@@ -41,13 +40,11 @@ class VocabularyImpl(phrases: List[List[Token]],
   private lazy val count1 = nGram1.values.sum.toDouble
 
   override lazy val pToken: Map[List[Token], Double] = {
-    println("== 1")
     nGram1.
       mapValues(_ / count1)
   }
 
   override lazy val pNGram2: Map[List[Token], Double] = {
-    println("== 2")
     nGram2 flatMap {
       case (key@(x :: y :: _), n) =>
         nGram1.
@@ -57,7 +54,6 @@ class VocabularyImpl(phrases: List[List[Token]],
   }
 
   override lazy val pNGram3: Map[List[Token], Double] = {
-    println("== 3")
     nGram3 flatMap {
       case (key@(x :: y :: z :: _), n) =>
         nGram2.
@@ -66,49 +62,7 @@ class VocabularyImpl(phrases: List[List[Token]],
     }
   }
 
-  override lazy val pNGram2Prev: Map[List[Token], Double] = {
-    println("== 2")
-    nGram2 flatMap {
-      case (key@(x :: y :: _ ), n) =>
-        nGram1.
-          get(y :: Nil).
-          map { m => key -> (n / m.toDouble) }
-    }
-  }
-
-  override lazy val pNGram3Prev: Map[List[Token], Double] = {
-    println("== 3")
-    nGram3 flatMap {
-      case (key@(x :: y :: z :: _), n) =>
-        nGram2.
-          get(y :: z :: Nil).
-          map { m => key -> (n / m.toDouble) }
-    }
-  }
-
-  override lazy val map2ToMiddle: Map[List[Token], List[(Double, Token)]] = {
-    nGram3.
-      groupBy {
-        case (x :: _ :: z :: _, n) =>
-          x :: z :: Nil
-      }.
-      map{
-        case (key, values) =>
-          val delimiter = values.map(_._2).sum.toDouble
-
-          key -> values.
-            map{
-              case (_ :: y :: _, count ) =>
-                count / delimiter -> y
-            }.
-            toList.
-            sortBy(_._1).
-            reverse
-      }
-  }
-
   override lazy val map1ToNext: Map[List[Token], List[(Double, Token)]] = {
-    println("=>4")
     pNGram2.
       toList.
       map {
@@ -125,7 +79,6 @@ class VocabularyImpl(phrases: List[List[Token]],
   }
 
   override lazy val map2ToNext: Map[List[Token], List[(Double, Token)]] = {
-    println("=>5")
     pNGram3.
       toList.
       map {
@@ -141,8 +94,25 @@ class VocabularyImpl(phrases: List[List[Token]],
       }
   }
 
+  override lazy val pNGram2Prev: Map[List[Token], Double] = {
+    nGram2 flatMap {
+      case (key@(x :: y :: _), n) =>
+        nGram1.
+          get(y :: Nil).
+          map { m => key -> (n / m.toDouble) }
+    }
+  }
+
+  override lazy val pNGram3Prev: Map[List[Token], Double] = {
+    nGram3 flatMap {
+      case (key@(x :: y :: z :: _), n) =>
+        nGram2.
+          get(y :: z :: Nil).
+          map { m => key -> (n / m.toDouble) }
+    }
+  }
+
   override lazy val map1ToPrev: Map[List[Token], List[(Double, Token)]] = {
-    println("=>4")
     pNGram2Prev.
       toList.
       map {
@@ -159,7 +129,6 @@ class VocabularyImpl(phrases: List[List[Token]],
   }
 
   override lazy val map2ToPrev: Map[List[Token], List[(Double, Token)]] = {
-    println("=>5")
     pNGram3Prev.
       toList.
       map {
@@ -175,6 +144,69 @@ class VocabularyImpl(phrases: List[List[Token]],
       }
   }
 
+  override lazy val map2ToMiddle: Map[List[Token], List[(Double, Token)]] = {
+    nGram3.
+      groupBy {
+        case (x :: _ :: z :: _, n) =>
+          x :: z :: Nil
+      }.
+      map {
+        case (key, values) =>
+          val delimiter = values.map(_._2).sum.toDouble
+
+          key -> values.
+            map {
+              case (_ :: y :: _, count) =>
+                count / delimiter -> y
+            }.
+            toList.
+            sortBy(_._1).
+            reverse
+      }
+  }
+
+  override lazy val map1ToNextPhrase: Map[List[Token], List[(Double, Token)]] =
+    phrases.reverse.
+      map { phrase =>
+        filter(phrase, 0.1) map (phrase -> _._2)
+      }.
+      sliding(2).
+      collect {
+        case Some(x) :: Some(y) :: _ =>
+          x :: y :: Nil
+      }.
+      flatMap {
+        case (p1, v1) :: (p2, v2) :: _ =>
+
+          val tokens1 = v1.map(_._1)
+          val tokens2 = v2.map(_._1)
+          for {
+            token1 <- tokens1
+            token2 <- tokens2
+          } yield {
+            token1 :: token2 :: Nil
+          }
+      }.foldLeft(Map[List[Token], Int]()) {
+      case (map, key) =>
+        map + (key -> (map.getOrElse(key, 0) + 1))
+    } match {
+      case map =>
+        map.
+          groupBy {
+            case (key :: _, _) => key :: Nil
+          }.
+          map {
+            case (key, map) =>
+              val denominator = map.map(_._2).sum.toDouble
+              key -> map.
+                toList.
+                map {
+                  case (_ :: token :: _, count) =>
+                    (count / denominator) -> token
+                }
+          }
+    }
+
   private def restorePhrase(phrase: List[Token]) =
     phrase.
       flatMap(wordMap.get(_)).
@@ -188,7 +220,7 @@ class VocabularyImpl(phrases: List[List[Token]],
     restorePhrase(sequence.sortBy(order(_)))
   }
 
-  def filter(phrase: List[Token], requiredSignificance: Double, amount: Int = 2 ) = {
+  def filter(phrase: List[Token], requiredSignificance: Double, amount: Int = 2) = {
     val projection = phrase.
       flatMap { token =>
         pToken.get(token :: Nil).map(token -> _)
@@ -217,8 +249,6 @@ class VocabularyImpl(phrases: List[List[Token]],
           production + vector(token) * projection(token)
       }
 
-    // println(s"source significance = $sourceSignificance")
-
     if (requiredSignificance > sourceSignificance) {
       Some(
         (sourceSignificance, vector.
@@ -227,10 +257,6 @@ class VocabularyImpl(phrases: List[List[Token]],
               token -> (probability - projection.getOrElse(token, 0.0))
           }.
           toList.
-//          map{x =>
-//            println(x)
-//            x
-//          }.
           filter(_._2 > 0).
           sortBy(_._2).
           takeRight(amount))
@@ -238,7 +264,7 @@ class VocabularyImpl(phrases: List[List[Token]],
     } else None
   }
 
-  def filter1(vector: Map[Token, Double], requiredSignificance: Double, amount: Int = 2 ) = {
+  def filter1(vector: Map[Token, Double], requiredSignificance: Double, amount: Int = 2) = {
     val projection = vector.
       map(_._1).
       flatMap { token =>
@@ -261,8 +287,6 @@ class VocabularyImpl(phrases: List[List[Token]],
           production + vector(token) * projection(token)
       }
 
-    // println(s"source significance = $sourceSignificance")
-
     if (requiredSignificance > sourceSignificance) {
       Some(
         (sourceSignificance, vector.
@@ -271,91 +295,10 @@ class VocabularyImpl(phrases: List[List[Token]],
               token -> (probability - projection.getOrElse(token, 0.0))
           }.
           toList.
-//          map{x =>
-//            println(x)
-//            x
-//          }.
           filter(_._2 > 0).
           sortBy(_._2).
           takeRight(amount))
       )
     } else None
   }
-
-  override lazy val map1ToNextPhrase: Map[List[Token], List[(Double, Token)]] =
-    phrases.
-      map { phrase =>
-        filter(phrase, 0.1) map (phrase -> _._2)
-      }.
-      sliding(2).
-      collect{
-        case Some(x) :: Some(y) :: _ =>
-          x :: y :: Nil
-      }.
-      flatMap {
-        case (p1, v1) :: (p2, v2) :: _ =>
-
-          val tokens1 = v1.map(_._1)
-          val tokens2 = v2.map(_._1)
-
-//          println(
-//            s""" --
-//               | ${restorePhrase(p1)}
-//               |   ${restoreSequence(p1, tokens1)}
-//               |   ${v1.map{case (t, p) => toWord(t) -> p}.sortBy(_._2)}
-//               |
-//               | ${restorePhrase(p2)}
-//               |   ${restoreSequence(p2, tokens2)}
-//               |   ${v2.map { case (t, p) => toWord(t) -> p}.sortBy(_._2)}
-//           """.stripMargin)
-          for {
-            token1 <- tokens1
-            token2 <- tokens2
-          } yield {
-            token1 :: token2 :: Nil
-          }
-      }.foldLeft(Map[List[Token], Int]()) {
-      case (map, key) =>
-        map + (key -> (map.getOrElse(key, 0) + 1))
-    } match {
-      case map =>
-        map.
-          groupBy{
-            case (key :: _, _) => key :: Nil
-          }.
-          map {
-            case (key, map) =>
-              val denominator = map.map(_._2).sum.toDouble
-              key -> map.
-                toList.
-                map {
-                  case (_ :: token :: _, count) =>
-                    (count / denominator) -> token
-                }
-          }
-    }
-
-
-  /*{
-    twoPhraseCorelator.
-      toList.
-      groupBy{
-        case (x :: _, _) =>
-          x :: Nil
-      }.
-      map{
-        case (x, value) =>
-          val entire = value.
-            map(_._2).
-            sum.
-            toDouble
-
-          x -> value.
-            map{
-              case (_ :: y :: _, n) =>
-                n / entire -> y
-            }.
-            sortBy(_._1)
-      }
-  }*/
 }
