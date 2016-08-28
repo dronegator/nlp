@@ -11,25 +11,25 @@ object VocabularyImpl {
   implicit def apply(vocabulary: VocabularyRaw) =
     new VocabularyImpl(
       vocabulary.phrases,
-      vocabulary.ngrams1,
-      vocabulary.ngrams2,
-      vocabulary.ngrams3,
-      vocabulary.toToken,
+      vocabulary.nGram1,
+      vocabulary.nGram2,
+      vocabulary.nGram3,
+      vocabulary.tokenMap,
       vocabulary.phraseCorrelationConsequent,
       vocabulary.phraseCorrelationInner
     )
 }
 
 class VocabularyImpl(phrases: List[List[Token]],
-                     ngrams1: Map[List[Token], Int],
-                     ngrams2: Map[List[Token], Int],
-                     ngrams3: Map[List[Token], Int],
-                     toToken: Map[Word, List[Token]],
+                     nGram1: Map[List[Token], Int],
+                     nGram2: Map[List[Token], Int],
+                     nGram3: Map[List[Token], Int],
+                     tokenMap: Map[Word, List[Token]],
                      phraseCorrelationConsequent: Map[List[Token], Int],
                      phraseCorrelationInner: Map[List[Token], Int])
-  extends VocabularyRawImpl(phrases, ngrams1, ngrams2, ngrams3, toToken, phraseCorrelationConsequent, phraseCorrelationInner) with Vocabulary {
-  override lazy val toWord: Map[Token, Word] =
-    toToken.
+  extends VocabularyRawImpl(phrases, nGram1, nGram2, nGram3, tokenMap, phraseCorrelationConsequent, phraseCorrelationInner) with Vocabulary {
+  override lazy val wordMap: Map[Token, Word] =
+    tokenMap.
       toIterator.
       flatMap {
         case (word, tokens) =>
@@ -38,56 +38,56 @@ class VocabularyImpl(phrases: List[List[Token]],
             toIterator
       }.toMap
 
-  private lazy val count1 = ngrams1.values.sum.toDouble
+  private lazy val count1 = nGram1.values.sum.toDouble
 
-  override lazy val vtoken: Map[List[Token], Double] = {
+  override lazy val pToken: Map[List[Token], Double] = {
     println("== 1")
-    ngrams1.
+    nGram1.
       mapValues(_ / count1)
   }
 
-  override lazy val vngrams2: Map[List[Token], Double] = {
+  override lazy val pNGram2: Map[List[Token], Double] = {
     println("== 2")
-    ngrams2 flatMap {
+    nGram2 flatMap {
       case (key@(x :: y :: _), n) =>
-        ngrams1.
+        nGram1.
           get(x :: Nil).
           map { m => key -> (n / m.toDouble) }
     }
   }
 
-  override lazy val vngrams3: Map[List[Token], Double] = {
+  override lazy val pNGram3: Map[List[Token], Double] = {
     println("== 3")
-    ngrams3 flatMap {
+    nGram3 flatMap {
       case (key@(x :: y :: z :: _), n) =>
-        ngrams2.
+        nGram2.
           get(x :: y :: Nil).
           map { m => key -> (n / m.toDouble) }
     }
   }
 
-  override lazy val vpgrams2: Map[List[Token], Double] = {
+  override lazy val pNGram2Prev: Map[List[Token], Double] = {
     println("== 2")
-    ngrams2 flatMap {
+    nGram2 flatMap {
       case (key@(x :: y :: _ ), n) =>
-        ngrams1.
+        nGram1.
           get(y :: Nil).
           map { m => key -> (n / m.toDouble) }
     }
   }
 
-  override lazy val vpgrams3: Map[List[Token], Double] = {
+  override lazy val pNGram3Prev: Map[List[Token], Double] = {
     println("== 3")
-    ngrams3 flatMap {
+    nGram3 flatMap {
       case (key@(x :: y :: z :: _), n) =>
-        ngrams2.
+        nGram2.
           get(y :: z :: Nil).
           map { m => key -> (n / m.toDouble) }
     }
   }
 
-  override lazy val vmiddle: Map[List[Token], List[(Double, Token)]] = {
-    ngrams3.
+  override lazy val map2ToMiddle: Map[List[Token], List[(Double, Token)]] = {
+    nGram3.
       groupBy {
         case (x :: _ :: z :: _, n) =>
           x :: z :: Nil
@@ -107,9 +107,9 @@ class VocabularyImpl(phrases: List[List[Token]],
       }
   }
 
-  override lazy val vnext1: Map[List[Token], List[(Double, Token)]] = {
+  override lazy val map1ToNext: Map[List[Token], List[(Double, Token)]] = {
     println("=>4")
-    vngrams2.
+    pNGram2.
       toList.
       map {
         case (w1 :: w2 :: _, p) =>
@@ -124,9 +124,9 @@ class VocabularyImpl(phrases: List[List[Token]],
       }
   }
 
-  override lazy val vnext2: Map[List[Token], List[(Double, Token)]] = {
+  override lazy val map2ToNext: Map[List[Token], List[(Double, Token)]] = {
     println("=>5")
-    vngrams3.
+    pNGram3.
       toList.
       map {
         case (w1 :: w2 :: w3 :: _, p) =>
@@ -141,9 +141,9 @@ class VocabularyImpl(phrases: List[List[Token]],
       }
   }
 
-  override lazy val vprev1: Map[List[Token], List[(Double, Token)]] = {
+  override lazy val map1ToPrev: Map[List[Token], List[(Double, Token)]] = {
     println("=>4")
-    vpgrams2.
+    pNGram2Prev.
       toList.
       map {
         case (w1 :: w2 :: _, p) =>
@@ -158,9 +158,9 @@ class VocabularyImpl(phrases: List[List[Token]],
       }
   }
 
-  override lazy val vprev2: Map[List[Token], List[(Double, Token)]] = {
+  override lazy val map2ToPrev: Map[List[Token], List[(Double, Token)]] = {
     println("=>5")
-    vpgrams3.
+    pNGram3Prev.
       toList.
       map {
         case (w1 :: w2 :: w3 :: _, p) =>
@@ -177,7 +177,7 @@ class VocabularyImpl(phrases: List[List[Token]],
 
   private def restorePhrase(phrase: List[Token]) =
     phrase.
-      flatMap(toWord.get(_)).
+      flatMap(wordMap.get(_)).
       mkString(" ")
 
   private def restoreSequence(phrase: List[Token], sequence: List[Token]) = {
@@ -191,7 +191,7 @@ class VocabularyImpl(phrases: List[List[Token]],
   def filter(phrase: List[Token], requiredSignificance: Double, amount: Int = 2 ) = {
     val projection = phrase.
       flatMap { token =>
-        vtoken.get(token :: Nil).map(token -> _)
+        pToken.get(token :: Nil).map(token -> _)
       }.
       foldLeft((0.0, Map[Token, Double]())) {
         case ((d, map), item@(_, p)) =>
@@ -242,7 +242,7 @@ class VocabularyImpl(phrases: List[List[Token]],
     val projection = vector.
       map(_._1).
       flatMap { token =>
-        vtoken.get(token :: Nil).map(token -> _)
+        pToken.get(token :: Nil).map(token -> _)
       }.
       foldLeft((0.0, Map[Token, Double]())) {
         case ((d, map), item@(_, p)) =>
@@ -282,7 +282,7 @@ class VocabularyImpl(phrases: List[List[Token]],
     } else None
   }
 
-  override lazy val vcnext: Map[List[Token], List[(Double, Token)]] =
+  override lazy val map1ToNextPhrase: Map[List[Token], List[(Double, Token)]] =
     phrases.
       map { phrase =>
         filter(phrase, 0.1) map (phrase -> _._2)

@@ -9,10 +9,10 @@ object VocabularyRawImpl {
   implicit def apply(vocabulary: Vocabulary): VocabularyRawImpl =
     VocabularyRawImpl(
       vocabulary.phrases,
-      vocabulary.ngrams1,
-      vocabulary.ngrams2,
-      vocabulary.ngrams3,
-      vocabulary.toToken,
+      vocabulary.nGram1,
+      vocabulary.nGram2,
+      vocabulary.nGram3,
+      vocabulary.tokenMap,
       vocabulary.phraseCorrelationConsequent,
       vocabulary.phraseCorrelationInner
     )
@@ -20,10 +20,10 @@ object VocabularyRawImpl {
 }
 
 case class VocabularyRawImpl(phrases: List[List[Token]],
-                             ngrams1: Map[List[Token], Int],
-                             ngrams2: Map[List[Token], Int],
-                             ngrams3: Map[List[Token], Int],
-                             toToken: Map[Word, List[Token]],
+                             nGram1: Map[List[Token], Int],
+                             nGram2: Map[List[Token], Int],
+                             nGram3: Map[List[Token], Int],
+                             tokenMap: Map[Word, List[Token]],
                              phraseCorrelationConsequent: Map[List[Token], Int],
                              phraseCorrelationInner: Map[List[Token], Int])
   extends VocabularyRaw

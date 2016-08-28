@@ -120,17 +120,17 @@ object NLPTReplMain
 
     case NGram1() :: Dump() :: _ =>
       println("== ngram1")
-      dump(vocabulary.ngrams1)
+      dump(vocabulary.nGram1)
       println("==")
 
     case NGram2() :: Dump() :: _ =>
       println("== ngram2")
-      dump(vocabulary.ngrams2)
+      dump(vocabulary.nGram2)
       println("==")
 
     case NGram3() :: Dump() :: _ =>
       println("== ngram3")
-      dump(vocabulary.ngrams3)
+      dump(vocabulary.nGram3)
       println("==")
 
     case Phrases() :: Dump() :: _ =>
@@ -141,38 +141,38 @@ object NLPTReplMain
     case Next() :: Dump() :: _ =>
       println("== next")
       //println(vocabulary.vcnext.keys)
-      println(vocabulary.vcnext.keys.toList.flatten.flatMap(vocabulary.toWord.get(_)))
+      println(vocabulary.map1ToNextPhrase.keys.toList.flatten.flatMap(vocabulary.wordMap.get(_)))
       println("==")
 
     case Tokens() :: Dump() :: _ =>
       println("== tokens")
-      dump(vocabulary.toToken, vocabulary.toToken.size)
+      dump(vocabulary.tokenMap, vocabulary.tokenMap.size)
       println("==")
 
     case NGram1() :: _ =>
-      println(s"== ngram1 size = ${vocabulary.ngrams1.size}")
+      println(s"== ngram1 size = ${vocabulary.nGram1.size}")
 
     case NGram2() :: _ =>
-      println(s"== ngram2 size = ${vocabulary.ngrams2.size}")
+      println(s"== ngram2 size = ${vocabulary.nGram2.size}")
 
     case NGram3() :: _ =>
-      println(s"== ngram3 size = ${vocabulary.ngrams3.size}")
+      println(s"== ngram3 size = ${vocabulary.nGram3.size}")
 
     case Phrases() :: _ =>
       println(s"== phrases size = ${vocabulary.phrases.size}")
 
     case Tokens() :: _ =>
-      println(s"== tokens size = ${vocabulary.toToken.size}")
+      println(s"== tokens size = ${vocabulary.tokenMap.size}")
 
     case Everything() :: _ =>
       println(
         s"""
            |Statistic:
-           | - ngram1 size = ${vocabulary.ngrams1.size}
-           | - ngram2 size = ${vocabulary.ngrams2.size}
-           | - ngram3 size = ${vocabulary.ngrams3.size}
+           | - ngram1 size = ${vocabulary.nGram1.size}
+           | - ngram2 size = ${vocabulary.nGram2.size}
+           | - ngram3 size = ${vocabulary.nGram3.size}
            | - phrases size = ${vocabulary.phrases.size}
-           | - tokens size = ${vocabulary.toToken.size}
+           | - tokens size = ${vocabulary.tokenMap.size}
          """.stripMargin)
 
     case Probability() :: Dump() :: (file@(_ :: Nil | Nil)) =>
@@ -209,8 +209,8 @@ object NLPTReplMain
     case Lookup() :: word1 :: Nil =>
       println(s"1 $word1:")
       for {
-        token1 <- vocabulary.toToken(word1)
-        x <- vocabulary.vtoken.get(token1 :: Nil)
+        token1 <- vocabulary.tokenMap(word1)
+        x <- vocabulary.pToken.get(token1 :: Nil)
       } {
         println(s" - $token1 => $x")
       }
@@ -218,19 +218,19 @@ object NLPTReplMain
     case Lookup() :: word1 :: word2 :: Nil =>
       println(s"2 $word1 $word2:")
       for {
-        token1 <- vocabulary.toToken(word1)
-        token2 <- vocabulary.toToken(word2)
-        x <- vocabulary.vngrams2.get(token1 :: token2 :: Nil)
+        token1 <- vocabulary.tokenMap(word1)
+        token2 <- vocabulary.tokenMap(word2)
+        x <- vocabulary.pNGram2.get(token1 :: token2 :: Nil)
       } {
         println(s" - $token1 $token2 => $x")
       }
     case Lookup() :: word1 :: word2 :: word3 :: _ =>
       println(s"3 $word1 $word2 $word3:")
       for {
-        token1 <- vocabulary.toToken(word1)
-        token2 <- vocabulary.toToken(word2)
-        token3 <- vocabulary.toToken(word3)
-        x <- vocabulary.vngrams3.get(token1 :: token2 :: token3 :: Nil)
+        token1 <- vocabulary.tokenMap(word1)
+        token2 <- vocabulary.tokenMap(word2)
+        token3 <- vocabulary.tokenMap(word3)
+        x <- vocabulary.pNGram3.get(token1 :: token2 :: token3 :: Nil)
       } {
         println(s" - $token1 $token2 $token3 => $x")
       }
@@ -238,9 +238,9 @@ object NLPTReplMain
     case Continue() :: word1 :: Nil =>
       println(s"$word1:")
       for {
-        token1 <- vocabulary.toToken(word1)
-        (p, nextToken) <- vocabulary.vnext1(token1 :: Nil)
-        nextWord <- vocabulary.toWord.get(nextToken)
+        token1 <- vocabulary.tokenMap(word1)
+        (p, nextToken) <- vocabulary.map1ToNext(token1 :: Nil)
+        nextWord <- vocabulary.wordMap.get(nextToken)
       } {
         println(s" - $nextWord ($nextToken), p = $p")
       }
@@ -248,10 +248,10 @@ object NLPTReplMain
     case Continue() :: word1 :: word2 :: Nil =>
       println(s"$word1 $word2:")
       for {
-        token1 <- vocabulary.toToken(word1)
-        token2 <- vocabulary.toToken(word2)
-        (p, nextToken) <- vocabulary.vnext2(token1 :: token2 :: Nil)
-        nextWord <- vocabulary.toWord.get(nextToken)
+        token1 <- vocabulary.tokenMap(word1)
+        token2 <- vocabulary.tokenMap(word2)
+        (p, nextToken) <- vocabulary.map2ToNext(token1 :: token2 :: Nil)
+        nextWord <- vocabulary.wordMap.get(nextToken)
       } {
         println(s" - $nextWord ($nextToken), p = $p")
       }
@@ -262,11 +262,11 @@ object NLPTReplMain
       val phrase = Iterator.
         iterate(tokens) {
           case tokens@_ :: Nil =>
-            tokens :+ vocabulary.vnext1(tokens).
+            tokens :+ vocabulary.map1ToNext(tokens).
               choiceOption.getOrElse(TokenPreDef.PEnd.value)
 
           case tokens =>
-            tokens :+ vocabulary.vnext2(tokens.takeRight(2)).choiceOption.getOrElse(TokenPreDef.PEnd.value)
+            tokens :+ vocabulary.map2ToNext(tokens.takeRight(2)).choiceOption.getOrElse(TokenPreDef.PEnd.value)
         }.
         takeWhile(x => !(x.lastOption contains TokenPreDef.PEnd.value)).
         take(20).
@@ -276,11 +276,11 @@ object NLPTReplMain
           Iterator.
             iterate(tokens) {
               case tokens@_ :: Nil =>
-                vocabulary.vprev1(tokens).
+                vocabulary.map1ToPrev(tokens).
                   choiceOption.getOrElse(TokenPreDef.PStart.value) :: tokens
 
               case tokens@x :: y :: _ =>
-                vocabulary.vprev2(x :: y :: Nil).choiceOption.getOrElse(TokenPreDef.PStart.value) :: tokens
+                vocabulary.map2ToPrev(x :: y :: Nil).choiceOption.getOrElse(TokenPreDef.PStart.value) :: tokens
 
             }.
             takeWhile(x => !(x.headOption contains TokenPreDef.PStart.value)).
@@ -310,7 +310,7 @@ object NLPTReplMain
 
             val (start, token :: end) = phrase.splitAt(n + 1)
 
-            vocabulary.vmiddle.get(x :: z :: Nil).
+            vocabulary.map2ToMiddle.get(x :: z :: Nil).
               toList.
               flatten.
               takeWhile(_._2 != token).
@@ -324,7 +324,7 @@ object NLPTReplMain
           case (phrases, n) if !phrases.isEmpty =>
             phrases.foreach {
               case (d, tokens) =>
-                val phrase = tokens.flatMap(vocabulary.toWord.get(_)).mkString(" ")
+                val phrase = tokens.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
                 println(f"$d%5.4f $phrase")
             }
 
@@ -337,11 +337,11 @@ object NLPTReplMain
       val advice = (for {
         (token1, _) <-
         vocabulary.filter(
-          words.flatMap(vocabulary.toToken.get(_)).flatten,
+          words.flatMap(vocabulary.tokenMap.get(_)).flatten,
           2, 10).
           toList.
           flatMap(_._2)
-        (p, nextToken) <- vocabulary.vcnext.get(token1 :: Nil).toList.flatten
+        (p, nextToken) <- vocabulary.map1ToNextPhrase.get(token1 :: Nil).toList.flatten
       } yield {
           nextToken -> p
         }).
@@ -359,7 +359,7 @@ object NLPTReplMain
         sortBy(_._2).
         flatMap {
           case (token, p) =>
-            vocabulary.toWord.
+            vocabulary.wordMap.
               get(token).
               map(_ -> p)
         }.
@@ -373,10 +373,10 @@ object NLPTReplMain
         case word1 :: word2 :: Nil =>
           println(s"$word1 $word2:")
           for {
-            token1 <- vocabulary.toToken(word1)
-            token2 <- vocabulary.toToken(word2)
-            (p, nextToken) <- vocabulary.vnext2.get(token1 :: token2 :: Nil) orElse vocabulary.vnext1.get(token1 :: Nil) getOrElse List()
-            nextWord <- vocabulary.toWord.get(nextToken)
+            token1 <- vocabulary.tokenMap(word1)
+            token2 <- vocabulary.tokenMap(word2)
+            (p, nextToken) <- vocabulary.map2ToNext.get(token1 :: token2 :: Nil) orElse vocabulary.map1ToNext.get(token1 :: Nil) getOrElse List()
+            nextWord <- vocabulary.wordMap.get(nextToken)
           } {
             println(s" - $nextWord ($nextToken), p = $p")
           }
@@ -384,9 +384,9 @@ object NLPTReplMain
         case word1 :: Nil =>
           println(s"$word1:")
           for {
-            token1 <- vocabulary.toToken(word1)
-            (p, nextToken) <- vocabulary.vnext1(token1 :: Nil)
-            nextWord <- vocabulary.toWord.get(nextToken)
+            token1 <- vocabulary.tokenMap(word1)
+            (p, nextToken) <- vocabulary.map1ToNext(token1 :: Nil)
+            nextWord <- vocabulary.wordMap.get(nextToken)
           } {
             println(s" - $nextWord ($nextToken), p = $p")
           }

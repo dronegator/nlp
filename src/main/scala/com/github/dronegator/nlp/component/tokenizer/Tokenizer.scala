@@ -16,6 +16,8 @@ object Tokenizer {
 
   type Word = String
 
+  type Phrase = List[Token]
+
   type TokenMap = Map[Word, List[Token]]
 
   type Init = (TokenMap, Token, List[Token])

@@ -8,7 +8,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import akka.util.ByteString
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenMap}
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Phrase, Token, TokenMap}
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.stream._
 import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, VocabularyRawImpl}
@@ -43,53 +43,28 @@ object NLPTMainStream
 
   implicit val mat = ActorMaterializer()
 
-  val count1gramms = Flow[List[Token]].
-    //fold(ngramms1.init)(ngramms1).
+  val nGram1Flow = Flow[Phrase].
     componentFold(nGram1Tool).
     toMat(Sink.headOption)(Keep.right)
 
-  val count2gramms = Flow[List[Token]].
-    fold(nGram2Tool.init)(nGram2Tool).
+  val nGram2Flow = Flow[Phrase].
+    componentFold(nGram2Tool).
     toMat(Sink.headOption)(Keep.right)
 
-  val count3gramms = Flow[List[Token]].
-    fold(nGram3Tool.init)(nGram3Tool).
+  val nGram3Flow = Flow[Phrase].
+    componentFold(nGram3Tool).
     toMat(Sink.headOption)(Keep.right)
 
-  val twoPhrasesVoc = Flow[List[Token]].
-    fold(phraseCorrelationRepeatedTool.init)(phraseCorrelationRepeatedTool).
+  val phraseCorrelationRepeatedFlow = Flow[Phrase].
+    componentFold(phraseCorrelationRepeatedTool).
     toMat(Sink.headOption)(Keep.right)
 
-  val twoPhraseCorelatorVoc = Flow[List[Token]].
-    fold(phraseCorrelationConsequentTool.init)(phraseCorrelationConsequentTool).
+  val phraseCorrelationConsequentFlow = Flow[Phrase].
+    componentFold(phraseCorrelationConsequentTool).
     toMat(Sink.headOption)(Keep.right)
 
-  val tokenVariances =
-    Flow[(Map[String, List[Int]], Int, List[Tokenizer.Token])].
-      collect {
-        case (_, _, z) => z
-      }.
-      zipWith(Source.fromIterator(() => Iterator.from(1))) {
-        case (tokens, n) =>
-          //println(f"$n%-10d : ${tokens.mkString(" :: ")}")
-          tokens
-      }.
-    //  scan(accumulator.init)(accumulator).
-      componentScan(accumulatorTool).
-      collect {
-        case (_, Some(phrase)) => phrase
-      }.
-      alsoToMat(count1gramms)(Keep.both).
-      alsoToMat(count2gramms)(Keep.both).
-      alsoToMat(count3gramms)(Keep.both).
-      alsoToMat(twoPhrasesVoc)(Keep.both).
-      alsoToMat(twoPhraseCorelatorVoc)(Keep.both).
-      toMat(Sink.fold(List.empty[List[Token]]) {
-        case (list, x) => x :: list
-      })(Keep.both)
-
-  val maps =
-    Flow[(Map[String, List[Int]], Int, List[Tokenizer.Token])].
+  val tokenMapSink =
+    Flow[Tokenizer.Init].
       collect {
         case (x, y, _) => (x, y)
       }.
@@ -98,43 +73,55 @@ object NLPTMainStream
           case (_, x) => Option(x)
         })(Keep.right)
 
+  val tokenSink =
+    Flow[Tokenizer.Init].
+      collect {
+        case (_, _, z) => z
+      }.
+      componentScan(accumulatorTool).
+      collect {
+        case (_, Some(phrase)) => phrase
+      }.
+      alsoToMat(nGram1Flow)(Keep.both).
+      alsoToMat(nGram2Flow)(Keep.both).
+      alsoToMat(nGram3Flow)(Keep.both).
+      alsoToMat(phraseCorrelationRepeatedFlow)(Keep.both).
+      alsoToMat(phraseCorrelationConsequentFlow)(Keep.both).
+      toMat(Sink.fold(List.empty[Phrase]) {
+        case (list, x) =>
+          x :: list // Collect list of phrases
+      })(Keep.both)
 
-  def plain[A, B, C](x: (A, B), y: C) = (x._1, x._2, y)
-
-  def plain[A, B, C, D](x: (A, B, C), y: D) = (x._1, x._2, x._3, y)
-
-  def plain[A, B, C, D, E](x: (A, B, C, D), y: E) = (x._1, x._2, x._3, x._4, y)
-
-  val substitute = Map("’" -> "'")
+  val substitute = Map("’" -> "'") // TODO: Move it into some combinator
   try {
-    val ((termination, futureToToken), ((((((_, ng1), ng2), ng3), twoPhrasesOut), twoPhraseCorelatorOut), futurePhrases)) =
+    val ((termination, futureTokenMap),
+    ((((((_, futureNGram1), futureNGram2), futureNGram3), futurePhraseCorrelationRepeated), futurePhraseCorrelationConsequent), futurePhrases)) =
       (source.
         //trace("An original string: ").
-        component(splitterTool).
-        mapConcat(_.toList).
+        component(splitterTool).mapConcat(_.toList).
         map(x => substitute.getOrElse(x, x)).
         //trace("A word after substitution: ").
         componentScan(tokenizerTool).
-        alsoToMat(maps)(Keep.both).
-        toMat(tokenVariances)(Keep.both).run())
+        alsoToMat(tokenMapSink)(Keep.both).
+        toMat(tokenSink)(Keep.both).run())
 
     println(s"Stream has finished with ${Await.result(termination, Duration.Inf)}")
 
-    val Some(ngram1) = Await.result(ng1, Duration.Inf)
+    val Some(nGram1) = Await.result(futureNGram1, Duration.Inf)
 
-    val Some(ngram2) = Await.result(ng2, Duration.Inf)
+    val Some(nGram2) = Await.result(futureNGram2, Duration.Inf)
 
-    val Some(ngram3) = Await.result(ng3, Duration.Inf)
+    val Some(nGram3) = Await.result(futureNGram3, Duration.Inf)
 
-    val Some(twoPhrasesOut1) = Await.result(twoPhrasesOut, Duration.Inf)
+    val Some(phraseCorrelationRepeated) = Await.result(futurePhraseCorrelationRepeated, Duration.Inf)
 
-    val Some(twoPhraseCorelatorOut1) = Await.result(twoPhraseCorelatorOut, Duration.Inf)
+    val Some(phraseCorrelationConsequent) = Await.result(futurePhraseCorrelationConsequent, Duration.Inf)
 
-    val Some((toToken, lastToken)) = Await.result(futureToToken, Duration.Inf)
+    val Some((tokenMap, lastToken)) = Await.result(futureTokenMap, Duration.Inf)
 
     val phrases = Await.result(futurePhrases, Duration.Inf)
 
-    val vocabularyRaw = VocabularyRawImpl(phrases, ngram1, ngram2, ngram3, toToken, twoPhraseCorelatorOut1._2, phraseCorrelationInnerTool.init)
+    val vocabularyRaw = VocabularyRawImpl(phrases, nGram1, nGram2, nGram3, tokenMap, phraseCorrelationConsequent._2, phraseCorrelationInnerTool.init)
 
     val vocabulary: VocabularyImpl = vocabularyRaw
 
@@ -154,7 +141,7 @@ object NLPTMainStream
 
     println("== two phrases ==")
 
-    dump(twoPhrasesOut1._2, vocabulary.toWord)
+    dump(phraseCorrelationRepeated._2, vocabulary.wordMap)
 
     println("Corr")
 
