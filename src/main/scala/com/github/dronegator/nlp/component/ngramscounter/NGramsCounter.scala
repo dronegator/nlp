@@ -10,6 +10,16 @@ import com.github.dronegator.nlp.utils.CFG
  */
 object NGramsCounter {
   type Init = Map[List[Token], Int]
+
+  //TODO: We have to find a way to call cfg by name
+  def factoryNGramsCounter1(cfgArg: CFG) =
+    new NGramsCounter(cfgArg, 1)
+
+  def factoryNGramsCounter2(cfgArg:  CFG) =
+    new NGramsCounter(cfgArg, 2)
+
+  def factoryNGramsCounter3(cfgArg: CFG) =
+    new NGramsCounter(cfgArg, 3)
 }
 
 class NGramsCounter(cfgArg: => CFG, n: Int) extends ComponentFold[List[Token], Init] {
@@ -22,6 +32,4 @@ class NGramsCounter(cfgArg: => CFG, n: Int) extends ComponentFold[List[Token], I
       case (map, token) if token.length == n => map + (token -> (1 + map.getOrElse(token, 0)))
       case (map, _) => map
     }
-
-
 }

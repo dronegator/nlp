@@ -1,8 +1,6 @@
 package com.github.dronegator.nlp
 
-import com.github.dronegator.nlp.component.accumulator.Accumulator
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{TokenPreDef, Word, Token}
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenPreDef, Word}
 import com.github.dronegator.nlp.main.NLPTReplMain._
 
 /**
@@ -10,30 +8,27 @@ import com.github.dronegator.nlp.main.NLPTReplMain._
  */
 package object vocabulary {
 
-
-
   implicit class VocabularyTools(val vocabulary: Vocabulary) {
-    def tokenize(s: String): List[Token] =
-      {
+    def tokenize(s: String): List[Token] = {
 
-        val tokens = splitter(s).
-          scanLeft((vocabulary.toToken, 100000000, tokenizer.init._3))(tokenizer).
-          map {
-            case (_, _, tokens) => tokens
-          }.
-          toList :+ List(TokenPreDef.TEnd.value)
+      val tokens = splitterTool(s).
+        scanLeft((vocabulary.toToken, 100000000, tokenizerTool.init._3))(tokenizerTool).
+        map {
+          case (_, _, tokens) => tokens
+        }.
+        toList :+ List(TokenPreDef.TEnd.value)
 
-        val phrase = tokens.
-          toIterator.
-          scanLeft(accumulator.init)(accumulator).
-          collectFirst {
-            case (_, Some(phrase)) => phrase
-          }.
-          toList.
-          flatten
+      val phrase = tokens.
+        toIterator.
+        scanLeft(accumulatorTool.init)(accumulatorTool).
+        collectFirst {
+          case (_, Some(phrase)) => phrase
+        }.
+        toList.
+        flatten
 
-        phrase
-      }
+      phrase
+    }
 
     def untokenize(tokens: List[Token]) =
       tokens.flatMap(vocabulary.toWord.get(_)).mkString(" ")
@@ -41,7 +36,7 @@ package object vocabulary {
     def probability(tokens: List[Token]) =
       tokens.
         sliding(3).
-        map{
+        map {
           case Nil =>
             1.0
           case tokens@(_ :: Nil) =>
@@ -50,10 +45,10 @@ package object vocabulary {
           case tokens@(_ :: _ :: Nil) =>
             vocabulary.vngrams2.get(tokens).getOrElse(0.0)
 
-          case tokens=>
+          case tokens =>
             vocabulary.vngrams3.get(tokens.take(3)).getOrElse(0.0)
         }.
-        reduceOption(_*_).
+        reduceOption(_ * _).
         getOrElse(1.0)
   }
 
@@ -68,7 +63,9 @@ package object vocabulary {
 
     def toToken: Map[Word, List[Token]]
 
-    def twoPhraseCorelator: Map[List[Token], Int]
+    def phraseCorrelationConsequent: Map[List[Token], Int]
+
+    def phraseCorrelationInner: Map[List[Token], Int]
   }
 
   trait Vocabulary extends VocabularyRaw {
@@ -80,21 +77,22 @@ package object vocabulary {
 
     def vngrams3: Map[List[Token], Double]
 
-    def vnext1: Map[List[Token], List[(Double,Token)]]
+    def vnext1: Map[List[Token], List[(Double, Token)]]
 
-    def vnext2: Map[List[Token], List[(Double,Token)]]
+    def vnext2: Map[List[Token], List[(Double, Token)]]
 
     def vpgrams2: Map[List[Token], Double]
 
     def vpgrams3: Map[List[Token], Double]
 
-    def vprev1: Map[List[Token], List[(Double,Token)]]
+    def vprev1: Map[List[Token], List[(Double, Token)]]
 
-    def vprev2: Map[List[Token], List[(Double,Token)]]
+    def vprev2: Map[List[Token], List[(Double, Token)]]
 
     def vmiddle: Map[List[Token], List[(Double, Token)]]
 
-    def vcnext: Map[List[Token], List[(Double,Token)]]
+    def vcnext: Map[List[Token], List[(Double, Token)]]
 
   }
+
 }

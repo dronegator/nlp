@@ -20,14 +20,14 @@ object NLPTMain
 
   val source = io.Source.fromFile(new File(fileIn)).getLines()
 
-  val cfg = CFG()
+  lazy val cfg = CFG()
 
   val (maps,tokenVariances) = source.
-    component(splitter).
+    component(splitterTool).
     // map(splitter).
     flatten.
     //scanLeft(tokenizer.init)(tokenizer).
-    componentScan(tokenizer).
+    componentScan(tokenizerTool).
     map{
       case (x, y, z) => ((x, y), z)
     }.
@@ -41,20 +41,20 @@ object NLPTMain
         //println(f"$n%-10d : ${tokens.mkString(" :: ")}")
         tokens
     }.
-    scanLeft(accumulator.init)(accumulator).
+    scanLeft(accumulatorTool.init)(accumulatorTool).
     collect{
       case (_, Some(phrase)) => phrase
     }.fork5()
 
   val ngram1 = phrases1.
     //componentFold(ngramms1)
-    foldLeft(ngramms1.init)(ngramms1)
+    foldLeft(nGram1Tool.init)(nGram1Tool)
 
   val ngram2 = phrases2.
-    foldLeft(ngramms2.init)(ngramms2)
+    foldLeft(nGram2Tool.init)(nGram2Tool)
 
   val ngram3 = phrases3.
-    foldLeft(ngramms2.init)(ngramms3)
+    foldLeft(nGram2Tool.init)(nGram3Tool)
 
   val Some((toToken, lastToken)) = maps.
     foldLeft(Option.empty[(TokenMap, Token)]) {
@@ -76,5 +76,5 @@ object NLPTMain
 
   dump(toToken, lastToken)
 
-  save(new File(fileOut), VocabularyRawImpl(phrases5.toList, ngram1, ngram2, ngram3, toToken, ???))
+  save(new File(fileOut), VocabularyRawImpl(phrases5.toList, ngram1, ngram2, ngram3, toToken, ???, ???))
 }

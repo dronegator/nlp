@@ -13,7 +13,8 @@ object VocabularyRawImpl {
       vocabulary.ngrams2,
       vocabulary.ngrams3,
       vocabulary.toToken,
-      vocabulary.twoPhraseCorelator
+      vocabulary.phraseCorrelationConsequent,
+      vocabulary.phraseCorrelationInner
     )
 
 }
@@ -23,5 +24,6 @@ case class VocabularyRawImpl(phrases: List[List[Token]],
                              ngrams2: Map[List[Token], Int],
                              ngrams3: Map[List[Token], Int],
                              toToken: Map[Word, List[Token]],
-                             twoPhraseCorelator: Map[List[Token], Int])
+                             phraseCorrelationConsequent: Map[List[Token], Int],
+                             phraseCorrelationInner: Map[List[Token], Int])
   extends VocabularyRaw

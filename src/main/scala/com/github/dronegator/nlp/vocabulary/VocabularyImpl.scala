@@ -15,7 +15,8 @@ object VocabularyImpl {
       vocabulary.ngrams2,
       vocabulary.ngrams3,
       vocabulary.toToken,
-      vocabulary.twoPhraseCorelator
+      vocabulary.phraseCorrelationConsequent,
+      vocabulary.phraseCorrelationInner
     )
 }
 
@@ -24,8 +25,9 @@ class VocabularyImpl(phrases: List[List[Token]],
                      ngrams2: Map[List[Token], Int],
                      ngrams3: Map[List[Token], Int],
                      toToken: Map[Word, List[Token]],
-                     twoPhraseCorelator: Map[List[Token], Int])
-  extends VocabularyRawImpl(phrases, ngrams1, ngrams2, ngrams3, toToken, twoPhraseCorelator) with Vocabulary {
+                     phraseCorrelationConsequent: Map[List[Token], Int],
+                     phraseCorrelationInner: Map[List[Token], Int])
+  extends VocabularyRawImpl(phrases, ngrams1, ngrams2, ngrams3, toToken, phraseCorrelationConsequent, phraseCorrelationInner) with Vocabulary {
   override lazy val toWord: Map[Token, Word] =
     toToken.
       toIterator.

@@ -24,7 +24,7 @@ object NLPTMainStream
   with MainTools {
 
   val Array(fileIn, fileOut) = args
-  val cfg = CFG()
+  lazy val cfg = CFG()
 
   val source =
     FileIO.fromPath(Paths.get(fileIn)).
@@ -45,23 +45,23 @@ object NLPTMainStream
 
   val count1gramms = Flow[List[Token]].
     //fold(ngramms1.init)(ngramms1).
-    componentFold(ngramms1).
+    componentFold(nGram1Tool).
     toMat(Sink.headOption)(Keep.right)
 
   val count2gramms = Flow[List[Token]].
-    fold(ngramms2.init)(ngramms2).
+    fold(nGram2Tool.init)(nGram2Tool).
     toMat(Sink.headOption)(Keep.right)
 
   val count3gramms = Flow[List[Token]].
-    fold(ngramms3.init)(ngramms3).
+    fold(nGram3Tool.init)(nGram3Tool).
     toMat(Sink.headOption)(Keep.right)
 
   val twoPhrasesVoc = Flow[List[Token]].
-    fold(twoPhrases.init)(twoPhrases).
+    fold(phraseCorrelationRepeatedTool.init)(phraseCorrelationRepeatedTool).
     toMat(Sink.headOption)(Keep.right)
 
   val twoPhraseCorelatorVoc = Flow[List[Token]].
-    fold(twoPhraseCorelator.init)(twoPhraseCorelator).
+    fold(phraseCorrelationConsequentTool.init)(phraseCorrelationConsequentTool).
     toMat(Sink.headOption)(Keep.right)
 
   val tokenVariances =
@@ -75,7 +75,7 @@ object NLPTMainStream
           tokens
       }.
     //  scan(accumulator.init)(accumulator).
-      componentScan(accumulator).
+      componentScan(accumulatorTool).
       collect {
         case (_, Some(phrase)) => phrase
       }.
@@ -110,11 +110,11 @@ object NLPTMainStream
     val ((termination, futureToToken), ((((((_, ng1), ng2), ng3), twoPhrasesOut), twoPhraseCorelatorOut), futurePhrases)) =
       (source.
         //trace("An original string: ").
-        component(splitter).
+        component(splitterTool).
         mapConcat(_.toList).
         map(x => substitute.getOrElse(x, x)).
         //trace("A word after substitution: ").
-        componentScan(tokenizer).
+        componentScan(tokenizerTool).
         alsoToMat(maps)(Keep.both).
         toMat(tokenVariances)(Keep.both).run())
 
@@ -134,7 +134,7 @@ object NLPTMainStream
 
     val phrases = Await.result(futurePhrases, Duration.Inf)
 
-    val vocabularyRaw = VocabularyRawImpl(phrases, ngram1, ngram2, ngram3, toToken, twoPhraseCorelatorOut1._2)
+    val vocabularyRaw = VocabularyRawImpl(phrases, ngram1, ngram2, ngram3, toToken, twoPhraseCorelatorOut1._2, phraseCorrelationInnerTool.init)
 
     val vocabulary: VocabularyImpl = vocabularyRaw
 
@@ -161,7 +161,7 @@ object NLPTMainStream
     //dump(twoPhraseCorelatorOut1._2)
 
     save(new File(fileOut), vocabularyRaw.copy(
-      twoPhraseCorelator = twoPhraseCorelator.init._2
+      phraseCorrelationConsequent = phraseCorrelationConsequentTool.init._2
     ))
 
   } finally {
