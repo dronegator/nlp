@@ -77,7 +77,7 @@ class Tokenizer(cfgArg: => CFG)
 
   def cfg = cfgArg
 
-  override def init: (TokenMap, Token, List[Token]) = (MapOfPredefs, 7, List())
+  override def init: (TokenMap, Token, List[Token]) = (MapOfPredefs, 10, List())
 
   override def apply(state: (TokenMap, Token, List[Token]), word: Word): (TokenMap, Token, List[Token]) =
     (state, word) match {

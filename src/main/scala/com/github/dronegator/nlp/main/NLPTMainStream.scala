@@ -80,7 +80,7 @@ object NLPTMainStream
       }.
       componentScan(accumulatorTool).
       collect {
-        case (_, Some(statement)) => statement
+        case (_, Some(phrase)) => phrase
       }.
       alsoToMat(nGram1Flow)(Keep.both).
       alsoToMat(nGram2Flow)(Keep.both).

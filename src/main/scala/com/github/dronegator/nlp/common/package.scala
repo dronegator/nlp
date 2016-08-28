@@ -6,5 +6,7 @@ package com.github.dronegator.nlp
 package object common {
    type Probability = Double
 
+   type Count = Int
+
    type Weight = Double
 }
