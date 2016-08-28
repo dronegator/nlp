@@ -8,7 +8,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import akka.util.ByteString
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Phrase, Token, TokenMap}
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Statement, Token, TokenMap}
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.stream._
 import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, VocabularyRawImpl}
@@ -43,23 +43,23 @@ object NLPTMainStream
 
   implicit val mat = ActorMaterializer()
 
-  val nGram1Flow = Flow[Phrase].
+  val nGram1Flow = Flow[Statement].
     componentFold(nGram1Tool).
     toMat(Sink.headOption)(Keep.right)
 
-  val nGram2Flow = Flow[Phrase].
+  val nGram2Flow = Flow[Statement].
     componentFold(nGram2Tool).
     toMat(Sink.headOption)(Keep.right)
 
-  val nGram3Flow = Flow[Phrase].
+  val nGram3Flow = Flow[Statement].
     componentFold(nGram3Tool).
     toMat(Sink.headOption)(Keep.right)
 
-  val phraseCorrelationRepeatedFlow = Flow[Phrase].
+  val phraseCorrelationRepeatedFlow = Flow[Statement].
     componentFold(phraseCorrelationRepeatedTool).
     toMat(Sink.headOption)(Keep.right)
 
-  val phraseCorrelationConsequentFlow = Flow[Phrase].
+  val phraseCorrelationConsequentFlow = Flow[Statement].
     componentFold(phraseCorrelationConsequentTool).
     toMat(Sink.headOption)(Keep.right)
 
@@ -80,14 +80,14 @@ object NLPTMainStream
       }.
       componentScan(accumulatorTool).
       collect {
-        case (_, Some(phrase)) => phrase
+        case (_, Some(statement)) => statement
       }.
       alsoToMat(nGram1Flow)(Keep.both).
       alsoToMat(nGram2Flow)(Keep.both).
       alsoToMat(nGram3Flow)(Keep.both).
       alsoToMat(phraseCorrelationRepeatedFlow)(Keep.both).
       alsoToMat(phraseCorrelationConsequentFlow)(Keep.both).
-      toMat(Sink.fold(List.empty[Phrase]) {
+      toMat(Sink.fold(List.empty[Statement]) {
         case (list, x) =>
           x :: list // Collect list of phrases
       })(Keep.both)

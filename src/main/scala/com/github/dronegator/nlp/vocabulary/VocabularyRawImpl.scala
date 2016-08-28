@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp.vocabulary
 
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Phrase, Word, Token}
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Statement, Word, Token}
 
 /**
  * Created by cray on 8/17/16.
@@ -19,7 +19,7 @@ object VocabularyRawImpl {
 
 }
 
-case class VocabularyRawImpl(phrases: List[Phrase],
+case class VocabularyRawImpl(phrases: List[Statement],
                              nGram1: Map[List[Token], Int],
                              nGram2: Map[List[Token], Int],
                              nGram3: Map[List[Token], Int],

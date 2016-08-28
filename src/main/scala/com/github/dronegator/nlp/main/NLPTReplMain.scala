@@ -7,9 +7,8 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenPreDef}
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.utils.CFG
-import com.github.dronegator.nlp.utils.RandomUtils._
 import com.github.dronegator.nlp.utils.concurrent.Zukunft
 import com.github.dronegator.nlp.vocabulary.VocabularyImpl
 import enumeratum.EnumEntry.Lowercase
@@ -21,14 +20,10 @@ import enumeratum._
 
 object NLPTReplMain
   extends App
-  with MainTools {
+  with MainTools
+  with Concurent
+  with DumpTools {
   lazy val cfg: CFG = CFG()
-
-  implicit val context = scala.concurrent.ExecutionContext.global
-
-  implicit val system = ActorSystem()
-
-  implicit val mat = ActorMaterializer()
 
   sealed trait SubCommand extends EnumEntry with Lowercase with SubCommand.EnumUnaply
 
@@ -69,19 +64,19 @@ object NLPTReplMain
 
     case object Next extends Command("Dump or Stat correlation map for phrases", Set(Dump, Stat))
 
-    case object Probability extends Command("Calculate a probability of the phrase", Set(Dump))
+    case object Probability extends Command("Calculate a probability of the statement", Set(Dump))
 
     case object Lookup extends Command("Show probability of n-gram", Set())
 
     case object Continue extends Command("Show possible continuation of n-gram", Set())
 
-    case object ContinuePhrase extends Command("Show possible continuation of a phrase", Set())
+    case object ContinuePhrase extends Command("Show possible continuation of a statement", Set())
 
     case object Everything extends Command("Statistic for all items of a vocabulary", Set(Dump, Stat))
 
-    case object Advice extends Command("Provide an advice to improve the phrase", Set())
+    case object Advice extends Command("Provide an advice to improve the statement", Set())
 
-    case object Generate extends Command("Generate a phrase from a word", Set())
+    case object Generate extends Command("Generate a statement from a word", Set())
 
     def unapply(name: String): Option[(Command, String, Set[SubCommand])] = withNameOption(name) map {
       case Command(x, y, z) => (x, y, z)
@@ -101,7 +96,7 @@ object NLPTReplMain
 
   def task(): Unit = ConsoleReader.readLine("> ") match {
     case s: String => try {
-      exec(s.split("\\s+").toList);
+      exec(s.split("\\s+").filter(_.trim.nonEmpty).toList);
     } catch {
       case th: Throwable =>
         printf("\n* Command failure: %s\n\n", th)
@@ -175,37 +170,6 @@ object NLPTReplMain
            | - tokens size = ${vocabulary.tokenMap.size}
          """.stripMargin)
 
-    case Probability() :: Dump() :: (file@(_ :: Nil | Nil)) =>
-      val probabilities = Source(vocabulary.phrases).map { tokens =>
-        val probability = vocabulary.probability(tokens)
-        val phrase = vocabulary.untokenize(tokens)
-        (f"${tokens.length}%-3d ${probability}%-16.14f $phrase")
-      }
-
-      file.headOption match {
-        case Some(file) =>
-          probabilities.map(x => ByteString(x + "\n")).runWith(FileIO.toPath(Paths.get(file))).foreach { _ =>
-            println(s"Dumping to $file finished")
-          }
-
-        case None =>
-          probabilities.runForeach {
-            println(_)
-          }.await
-      }
-
-    case Probability() :: args =>
-      val phrase = args.mkString(" ")
-      val tokens = vocabulary.tokenize(phrase)
-      val probability = vocabulary.probability(tokens)
-
-      println(
-        f"""
-           | probability = ${probability}%16.14f
-           | length = ${tokens.length}
-           | tokens = ${tokens.mkString("", " :: ", " :: Nil")}
-         """.stripMargin)
-
     case Lookup() :: word1 :: Nil =>
       println(s"1 $word1:")
       for {
@@ -235,96 +199,50 @@ object NLPTReplMain
         println(s" - $token1 $token2 $token3 => $x")
       }
 
-    case Continue() :: word1 :: Nil =>
-      println(s"$word1:")
-      for {
-        token1 <- vocabulary.tokenMap(word1)
-        (p, nextToken) <- vocabulary.map1ToNext(token1 :: Nil)
-        nextWord <- vocabulary.wordMap.get(nextToken)
-      } {
-        println(s" - $nextWord ($nextToken), p = $p")
+    case Probability() :: Dump() :: (file@(_ :: Nil | Nil)) =>
+      val probabilities = Source(vocabulary.phrases).map { tokens =>
+        val probability = vocabulary.probability(tokens)
+        val statement = vocabulary.untokenize(tokens)
+        (f"${tokens.length}%-3d ${probability}%-16.14f $statement")
       }
 
-    case Continue() :: word1 :: word2 :: Nil =>
-      println(s"$word1 $word2:")
-      for {
-        token1 <- vocabulary.tokenMap(word1)
-        token2 <- vocabulary.tokenMap(word2)
-        (p, nextToken) <- vocabulary.map2ToNext(token1 :: token2 :: Nil)
-        nextWord <- vocabulary.wordMap.get(nextToken)
-      } {
-        println(s" - $nextWord ($nextToken), p = $p")
+      file.headOption match {
+        case Some(file) =>
+          probabilities.map(x => ByteString(x + "\n")).runWith(FileIO.toPath(Paths.get(file))).foreach { _ =>
+            println(s"Dumping to $file finished")
+          }
+
+        case None =>
+          probabilities.runForeach {
+            println(_)
+          }.await
       }
+
+    case Probability() :: words =>
+      val statement = vocabulary.tokenize(words)
+      val probability = vocabulary.probability(statement)
+
+      println(
+        f"""
+           | probability = ${probability}%16.14f
+           | length = ${statement.length}
+           | tokens = ${statement.mkString("", " :: ", " :: Nil")}
+         """.stripMargin)
 
     case Generate() :: words =>
-      val tokens = vocabulary.tokenize(words.mkString(" ")).drop(2).dropRight(1)
-
-      val phrase = Iterator.
-        iterate(tokens) {
-          case tokens@_ :: Nil =>
-            tokens :+ vocabulary.map1ToNext(tokens).
-              choiceOption.getOrElse(TokenPreDef.PEnd.value)
-
-          case tokens =>
-            tokens :+ vocabulary.map2ToNext(tokens.takeRight(2)).choiceOption.getOrElse(TokenPreDef.PEnd.value)
-        }.
-        takeWhile(x => !(x.lastOption contains TokenPreDef.PEnd.value)).
-        take(20).
-        toList.
-        lastOption.
-        flatMap { tokens =>
-          Iterator.
-            iterate(tokens) {
-              case tokens@_ :: Nil =>
-                vocabulary.map1ToPrev(tokens).
-                  choiceOption.getOrElse(TokenPreDef.PStart.value) :: tokens
-
-              case tokens@x :: y :: _ =>
-                vocabulary.map2ToPrev(x :: y :: Nil).choiceOption.getOrElse(TokenPreDef.PStart.value) :: tokens
-
-            }.
-            takeWhile(x => !(x.headOption contains TokenPreDef.PStart.value)).
-            take(20).
-            toList.
-            lastOption
-        }
-
-      phrase.
+      vocabulary.generatePhrase(vocabulary.tokenizeShort(words)).
         foreach {
           case tokens =>
             println(vocabulary.untokenize(tokens))
         }
 
     case com@Advice() :: words =>
-      val phrase = vocabulary.tokenize(words.mkString(" "))
-
-      phrase.
-        sliding(3).
-        zipWithIndex.
-        collect {
-          case (x :: y :: z :: Nil, n) =>
-            (x, y, z, n, phrase)
-        }.
-        map {
-          case (x, y, z, n, phrase) =>
-
-            val (start, token :: end) = phrase.splitAt(n + 1)
-
-            vocabulary.map2ToMiddle.get(x :: z :: Nil).
-              toList.
-              flatten.
-              takeWhile(_._2 != token).
-              take(4).
-              map {
-                case (d, advice) =>
-                  (d, start ++ (advice :: end))
-              } -> n
-        }.
+      vocabulary.advicePlain(vocabulary.tokenize(words)).
         foreach {
-          case (phrases, n) if !phrases.isEmpty =>
-            phrases.foreach {
-              case (d, tokens) =>
-                val phrase = tokens.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
+          case (statements, n) if !statements.isEmpty =>
+            statements.foreach {
+              case (statement, d) =>
+                val phrase = statement.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
                 println(f"$d%5.4f $phrase")
             }
 
@@ -334,62 +252,26 @@ object NLPTReplMain
     //case ContinuePhrase() :: words =>
     case words@(_ :+ ".") =>
       println("We suggest a few words for the next phrase:")
-      val advice = (for {
-        (token1, _) <-
-        vocabulary.filter(
-          words.flatMap(vocabulary.tokenMap.get(_)).flatten,
-          2, 10).
-          toList.
-          flatMap(_._2)
-        (p, nextToken) <- vocabulary.map1ToNextPhrase.get(token1 :: Nil).toList.flatten
-      } yield {
-          nextToken -> p
-        }).
-
-        foldLeft(Map[Token, Double]()) {
-          case (map, (token, p)) =>
-            map + (token -> (p + map.getOrElse(token, 0.0)))
-        }.
-        toList
-
-      vocabulary.filter1(advice.toMap, 2, 10).
-        map(_._2).
-        toList.
-        flatten.
-        sortBy(_._2).
+      vocabulary.suggestForNext(vocabulary.tokenize(words)).
         flatMap {
           case (token, p) =>
-            vocabulary.wordMap.
-              get(token).
-              map(_ -> p)
+            vocabulary.wordMap.get(token).map(_ -> p)
         }.
         foreach {
           case (word, p) =>
             println(s" - $word, p = $p")
         }
 
-    case /*Continue() ::*/ words@(_ :: _) =>
-      words.takeRight(2) match {
-        case word1 :: word2 :: Nil =>
-          println(s"$word1 $word2:")
-          for {
-            token1 <- vocabulary.tokenMap(word1)
-            token2 <- vocabulary.tokenMap(word2)
-            (p, nextToken) <- vocabulary.map2ToNext.get(token1 :: token2 :: Nil) orElse vocabulary.map1ToNext.get(token1 :: Nil) getOrElse List()
-            nextWord <- vocabulary.wordMap.get(nextToken)
-          } {
-            println(s" - $nextWord ($nextToken), p = $p")
-          }
+    case Continue() :: words =>
+      vocabulary.continueStatement(vocabulary.tokenizeShort(words)) foreach {
+        case (token, probability) =>
+          println(s" - ${RepresenterToken.represent(token)}, p = $probability")
+      }
 
-        case word1 :: Nil =>
-          println(s"$word1:")
-          for {
-            token1 <- vocabulary.tokenMap(word1)
-            (p, nextToken) <- vocabulary.map1ToNext(token1 :: Nil)
-            nextWord <- vocabulary.wordMap.get(nextToken)
-          } {
-            println(s" - $nextWord ($nextToken), p = $p")
-          }
+    case words@(_ :: _) =>
+      vocabulary.continueStatement(vocabulary.tokenizeShort(words)) foreach {
+        case (token, probability) =>
+          println(s" - ${RepresenterToken.represent(token)}, p = $probability")
       }
 
     case _ =>
@@ -410,4 +292,6 @@ object NLPTReplMain
     ConsoleReader.clearScreen()
     ConsoleReader.shutdown()
   }
+
+  override def tokenToDump(token: Token): String = tokenToWordString(token)
 }

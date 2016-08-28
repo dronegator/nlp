@@ -18,18 +18,18 @@ class PhraseCorrelationConsequent(cfgArg: CFG) extends ComponentFold[List[Token]
 
   override def init = (List[Token](), Map[List[Token], Int]())
 
-  override def apply(state: Init, phrase: List[Token]): (List[Token], Map[List[Token], Token]) =
+  override def apply(state: Init, statement: List[Token]): (List[Token], Map[List[Token], Token]) =
     state match {
       case (prev, map) =>
         val newmap = (for {
           p <- prev
-          n <- phrase
+          n <- statement
         } yield (p :: n :: Nil)).
           foldLeft(map) {
             case (map, pair) =>
               map + (pair -> (map.getOrElse(pair, 0) + 1))
           }
-        (phrase, newmap)
+        (statement, newmap)
     }
 
 }

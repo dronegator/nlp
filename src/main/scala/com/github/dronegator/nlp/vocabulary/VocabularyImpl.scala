@@ -19,7 +19,7 @@ object VocabularyImpl {
     )
 }
 
-class VocabularyImpl(phrases: List[Phrase],
+class VocabularyImpl(phrases: List[Statement],
                      nGram1: Map[List[Token], Int],
                      nGram2: Map[List[Token], Int],
                      nGram3: Map[List[Token], Int],
@@ -167,8 +167,8 @@ class VocabularyImpl(phrases: List[Phrase],
 
   override lazy val map1ToNextPhrase: Map[List[Token], List[(Double, Token)]] =
     phrases.reverse.
-      map { phrase =>
-        filter(phrase, 0.1) map (phrase -> _._2)
+      map { statement =>
+        filter(statement, 0.1) map (statement -> _._2)
       }.
       sliding(2).
       collect {
@@ -207,21 +207,21 @@ class VocabularyImpl(phrases: List[Phrase],
           }
     }
 
-  private def restorePhrase(phrase: List[Token]) =
-    phrase.
+  private def restorePhrase(statement: List[Token]) =
+    statement.
       flatMap(wordMap.get(_)).
       mkString(" ")
 
-  private def restoreSequence(phrase: List[Token], sequence: List[Token]) = {
-    val order = phrase.
+  private def restoreSequence(statement: List[Token], sequence: List[Token]) = {
+    val order = statement.
       zipWithIndex.
       toMap
 
     restorePhrase(sequence.sortBy(order(_)))
   }
 
-  def filter(phrase: List[Token], requiredSignificance: Double, amount: Int = 2) = {
-    val projection = phrase.
+  def filter(statement: List[Token], requiredSignificance: Double, amount: Int = 2) = {
+    val projection = statement.
       flatMap { token =>
         pToken.get(token :: Nil).map(token -> _)
       }.
@@ -236,11 +236,11 @@ class VocabularyImpl(phrases: List[Phrase],
         }
     }
 
-    val vector = phrase.
+    val vector = statement.
       groupBy(identity).
       map {
         case (key, seq) =>
-          key -> (seq.length / phrase.length.toDouble)
+          key -> (seq.length / statement.length.toDouble)
       }
 
     val sourceSignificance = (projection.keySet & vector.keySet).

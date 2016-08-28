@@ -26,11 +26,11 @@ class Accumulator(cfgArg: => CFG, phraseDetector: PhraseDetector)
         val tokenizedText = buffer :+ tokens
 
         phraseDetector(tokenizedText) match {
-          case Some((phrase, rest)) if phrase.contains(TokenPreDef.Reset.value) =>
+          case Some((statement, rest)) if statement.contains(TokenPreDef.Reset.value) =>
             (rest.toList, Some(Nil))
 
-          case Some((phrase, rest)) =>
-            (rest.toList, Some(phrase))
+          case Some((statement, rest)) =>
+            (rest.toList, Some(statement))
 
           case None =>
             (tokenizedText, None)

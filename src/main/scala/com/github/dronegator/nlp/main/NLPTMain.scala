@@ -43,7 +43,7 @@ object NLPTMain
     }.
     scanLeft(accumulatorTool.init)(accumulatorTool).
     collect{
-      case (_, Some(phrase)) => phrase
+      case (_, Some(statement)) => statement
     }.fork5()
 
   val ngram1 = phrases1.

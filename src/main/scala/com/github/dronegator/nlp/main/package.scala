@@ -1,7 +1,14 @@
 package com.github.dronegator.nlp
 
 import java.io._
+import java.nio.file.Paths
 
+import akka.Done
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{FileIO, Flow, Keep, Sink, Source}
+import akka.util.ByteString
+import com.github.dronegator.nlp.common.Probability
 import com.github.dronegator.nlp.component.accumulator.Accumulator
 import com.github.dronegator.nlp.component.ngramscounter.NGramsCounter
 import com.github.dronegator.nlp.component.phrase_correlation_consequent.PhraseCorrelationConsequent
@@ -11,13 +18,24 @@ import com.github.dronegator.nlp.component.splitter.Splitter
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.utils.CFG
-import com.github.dronegator.nlp.vocabulary.VocabularyRaw
+import com.github.dronegator.nlp.utils.concurrent.Zukunft
+import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyRaw}
 import com.softwaremill.macwire._
+import enumeratum._
+import scala.util.Try
 
 /**
  * Created by cray on 8/17/16.
  */
 package object main {
+
+  trait Concurent {
+    implicit val context = scala.concurrent.ExecutionContext.global
+
+    implicit val system = ActorSystem()
+
+    implicit val mat = ActorMaterializer()
+  }
 
   trait Combinators {
     def cfg: CFG
@@ -68,8 +86,8 @@ package object main {
     }
 
     def dump(phrases: Seq[List[Token]]) =
-      phrases foreach { phrase =>
-        println(phrase.mkString("", " :: ", " :: Nil"))
+      phrases foreach { statement =>
+        println(statement.mkString("", " :: ", " :: Nil"))
       }
 
 
@@ -102,4 +120,72 @@ package object main {
     }
   }
 
+  trait DumpTools {
+    this: Concurent =>
+
+    def vocabulary: Vocabulary
+
+    implicit class SourceExt[Mat](source: Source[String, Mat]) /*extends AnyVal*/ {
+      def arbeiten() =
+        source.runWith(dumpSink()).await
+
+      def arbeiten(file: File) =
+        source.runWith(dumpSink(file))
+    }
+
+    def tokenToDump(token: Token): String
+
+    def tokenToString(token: Token) = f"$token"
+
+    def tokenToWordString(token: Token) =
+      vocabulary.wordMap.get(token) orElse
+        (Try(TokenPreDef.withValue(1)).toOption) getOrElse
+        (token, "unknown") toString
+
+    trait Representer[A] {
+      def represent(a: A): String
+    }
+
+    implicit object RepresenterToken extends  Representer[Token] {
+      override def represent(token: Token): String =
+        tokenToDump(token)
+    }
+
+    implicit object RepresenterPhrase extends  Representer[Statement] {
+      override def represent(statement: Statement): String =
+        statement.map(tokenToDump(_)).mkString("", " :: ", " :: Nil")
+    }
+
+    /*implicit object RepresenterNGram extends  Representer[Phrase] {
+      override def represent(statement: Phrase): String =
+        statement.map(tokenToDump(_)).mkString("", " :: ", " :: Nil")
+    }*/
+
+    def sourceFrom[A](data: Seq[(A, Probability)])(implicit representer: Representer[A]) =
+      Source.fromIterator(() => data.toIterator).
+        map{
+          case (payload, probability) =>
+            f"$probability%f-16.14 : ${representer.represent(payload)}"
+        }
+
+    def dumpSink(file: File) =
+      Flow[String].
+        map(x => ByteString(x + "\n")).
+        toMat(FileIO.toPath(Paths.get(file.toString)))(Keep.right).
+        mapMaterializedValue { mat =>
+          println(s"Dumping to $file has finished with $mat")
+          Done
+        }
+
+    def dumpSink() =
+      Flow[String].
+        map(x => ByteString(x + "\n")).
+        toMat(Sink.foreach {
+          println(_)
+        })(Keep.right).
+        mapMaterializedValue { mat =>
+          println(s"Dumping has finished with $mat")
+          mat
+        }
+  }
 }

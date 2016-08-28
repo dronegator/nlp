@@ -8,7 +8,7 @@ import com.github.dronegator.nlp.utils.CFG
 /**
  * Created by cray on 8/19/16.
  *
- * Calculates correlation between tokens in a phrase
+ * Calculates correlation between tokens in a statement
  */
 
 object PhraseCorrelationInner {
@@ -20,12 +20,12 @@ class PhraseCorrelationInner(cfgArg: CFG) extends ComponentFold[List[Token], Ini
 
   override def init: Init= (Map[List[Token], Int]())
 
-  override def apply(state: Init, phrase: List[Token]): Init = {
+  override def apply(state: Init, statement: List[Token]): Init = {
     state match {
       case (map) =>
         (for {
-          token1 <- phrase
-          token2 <- phrase if token1 != token2
+          token1 <- statement
+          token2 <- statement if token1 != token2
         }
           yield (token1 :: token2 :: Nil)).
           foldLeft(map) {

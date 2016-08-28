@@ -21,15 +21,15 @@ class PhraseCorrelationRepeated(cfgArg: CFG) extends ComponentFold[List[Token], 
 
   override def init: Init = (List[Token](), Map[Token, Int]())
 
-  override def apply(state: Init, phrase: List[Token]): (List[Token], Map[Token, Token]) = {
+  override def apply(state: Init, statement: List[Token]): (List[Token], Map[Token, Token]) = {
     state match {
       case (prev, map) =>
-        val newmap = (prev.toSet & phrase.toSet).
+        val newmap = (prev.toSet & statement.toSet).
           foldLeft(map) {
             case (map, token) =>
               map + (token -> (map.getOrElse(token, 0) + 1))
           }
-        (phrase, newmap)
+        (statement, newmap)
     }
   }
 }

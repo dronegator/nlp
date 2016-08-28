@@ -8,49 +8,7 @@ import com.github.dronegator.nlp.main.NLPTReplMain._
  */
 package object vocabulary {
 
-  implicit class VocabularyTools(val vocabulary: Vocabulary) {
-    def tokenize(s: String): List[Token] = {
-
-      val tokens = splitterTool(s).
-        scanLeft((vocabulary.tokenMap, 100000000, tokenizerTool.init._3))(tokenizerTool).
-        map {
-          case (_, _, tokens) => tokens
-        }.
-        toList :+ List(TokenPreDef.TEnd.value)
-
-      val phrase = tokens.
-        toIterator.
-        scanLeft(accumulatorTool.init)(accumulatorTool).
-        collectFirst {
-          case (_, Some(phrase)) => phrase
-        }.
-        toList.
-        flatten
-
-      phrase
-    }
-
-    def untokenize(tokens: List[Token]) =
-      tokens.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
-
-    def probability(tokens: List[Token]) =
-      tokens.
-        sliding(3).
-        map {
-          case Nil =>
-            1.0
-          case tokens@(_ :: Nil) =>
-            vocabulary.pToken.get(tokens).getOrElse(0.0)
-
-          case tokens@(_ :: _ :: Nil) =>
-            vocabulary.pNGram2.get(tokens).getOrElse(0.0)
-
-          case tokens =>
-            vocabulary.pNGram3.get(tokens.take(3)).getOrElse(0.0)
-        }.
-        reduceOption(_ * _).
-        getOrElse(1.0)
-  }
+  implicit class VocabularyToolsExt(val vocabulary: Vocabulary) extends VocabularyTools.VocabularyTools(vocabulary)
 
   trait VocabularyRaw {
     def phrases: List[List[Token]]

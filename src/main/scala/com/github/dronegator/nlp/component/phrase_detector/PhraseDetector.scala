@@ -23,18 +23,18 @@ class PhraseDetector(cfgArg: => CFG) extends ComponentMap[List[List[Token]], Opt
     } match {
       case (start, (tokens :: rest)) if tokens contains Tokenizer.TokenPreDef.TEnd.value =>
 
-        val phrase = start.flatMap(_.headOption)
+        val statement = start.flatMap(_.headOption)
 
-        Option((PStart.value +: PStart.value +: phrase :+ PEnd.value, Nil))
+        Option((PStart.value +: PStart.value +: statement :+ PEnd.value, Nil))
 
       case (start, (dot :: rest)) =>
 
-        val phrase = start.
+        val statement = start.
           flatMap(_.headOption) :+
           Tokenizer.TokenPreDef.DEOP.value
 
 
-        Option((PStart.value +: PStart.value +: phrase :+ PEnd.value, rest))
+        Option((PStart.value +: PStart.value +: statement :+ PEnd.value, rest))
 
       case _ =>
         None
