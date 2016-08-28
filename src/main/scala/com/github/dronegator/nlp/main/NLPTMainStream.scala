@@ -13,7 +13,7 @@ import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.stream._
 import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, VocabularyRawImpl}
 
-import scala.concurrent.Await
+import scala.concurrent.{Future, Await}
 import scala.concurrent.duration._
 
 /**
@@ -107,50 +107,52 @@ object NLPTMainStream
 
     println(s"Stream has finished with ${Await.result(termination, Duration.Inf)}")
 
-    val Some(nGram1) = Await.result(futureNGram1, Duration.Inf)
+    val status = (futureNGram1 zip futureNGram2 zip futureNGram3 zip futurePhraseCorrelationRepeated zip futurePhraseCorrelationConsequent zip futureTokenMap zip futurePhrases).
+      flatMap {
+        case ((((((Some(nGram1), Some(nGram2)), Some(nGram3)), Some((_, phraseCorrelationRepeated))), Some((_, phraseCorrelationConsequent))), Some((tokenMap, lastToken))), phrases) =>
 
-    val Some(nGram2) = Await.result(futureNGram2, Duration.Inf)
+          val vocabularyRaw = VocabularyRawImpl(phrases, nGram1, nGram2, nGram3, tokenMap, phraseCorrelationConsequent, phraseCorrelationInnerTool.init)
 
-    val Some(nGram3) = Await.result(futureNGram3, Duration.Inf)
+          val futureDump = Future {
+            lazy val vocabulary: VocabularyImpl = vocabularyRaw
 
-    val Some(phraseCorrelationRepeated) = Await.result(futurePhraseCorrelationRepeated, Duration.Inf)
+//            println("== N gramm, n = 1 ==")
+//            dump(vocabularyRaw.nGram1)
+//
+//            println("== N gramm, n = 2 ==")
+//            dump(vocabularyRaw.nGram2)
+//
+//            println("== N gramm, n = 3 ==")
+//            dump(vocabularyRaw.nGram3)
+//
+//            println("== Phrases ==")
+//            dump(vocabularyRaw.phrases)
+//
+//            println("== Tokens ==")
+//            dump(vocabularyRaw.tokenMap, lastToken)
 
-    val Some(phraseCorrelationConsequent) = Await.result(futurePhraseCorrelationConsequent, Duration.Inf)
+            println("== Words, repeated in consequent phrases ==")
+            dump(phraseCorrelationRepeated, vocabulary.wordMap)
 
-    val Some((tokenMap, lastToken)) = Await.result(futureTokenMap, Duration.Inf)
+//            println("== Correlation of words in consequent phrases ==")
+//            dump(phraseCorrelationConsequent)
+          }
 
-    val phrases = Await.result(futurePhrases, Duration.Inf)
+          println("Saving the vocabulary")
+          save(new File(fileOut), vocabularyRaw.copy(
+            phraseCorrelationConsequent = phraseCorrelationConsequentTool.init._2
+          ))
+          println("The vocabulary has been saved")
 
-    val vocabularyRaw = VocabularyRawImpl(phrases, nGram1, nGram2, nGram3, tokenMap, phraseCorrelationConsequent._2, phraseCorrelationInnerTool.init)
+          futureDump map {
+            _ => 0
+          }
+        case _ =>
+          println("Process has finished with an uncompleted outcome")
+          Future.successful(1)
+      }
 
-    val vocabulary: VocabularyImpl = vocabularyRaw
-
-    println("== 1 gramm ==")
-    // dump(ngram1)
-
-    println("== 2 gramm ==")
-    // dump(ngram2)
-
-    println("== 2 gramm ==")
-    // dump(ngram3)
-
-    println("== phrases ==")
-    // dump(phrases)
-
-    // dump(toToken, lastToken)
-
-    println("== two phrases ==")
-
-    dump(phraseCorrelationRepeated._2, vocabulary.wordMap)
-
-    println("Corr")
-
-    //dump(twoPhraseCorelatorOut1._2)
-
-    save(new File(fileOut), vocabularyRaw.copy(
-      phraseCorrelationConsequent = phraseCorrelationConsequentTool.init._2
-    ))
-
+    Await.result(status, Duration.Inf)
   } finally {
     mat.shutdown()
     system.terminate()
