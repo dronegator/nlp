@@ -1,13 +1,7 @@
 import java.io.File
 
-import com.github.dronegator.nlp.component.accumulator.Accumulator
-import com.github.dronegator.nlp.component.ngramscounter.NGramsCounter
-import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
-import com.github.dronegator.nlp.component.splitter.Splitter
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{TokenMap, Token}
-import com.github.dronegator.nlp.component.tokenizer.{Tokenizer}
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenMap}
 import com.github.dronegator.nlp.main.MainTools
-import com.github.dronegator.nlp.main.NLPTMainStream._
 import com.github.dronegator.nlp.utils._
 import com.github.dronegator.nlp.vocabulary.VocabularyRawImpl
 
@@ -15,66 +9,56 @@ object NLPTMain
   extends App
   with MainTools {
 
-
   val Array(fileIn, fileOut) = args
 
   val source = io.Source.fromFile(new File(fileIn)).getLines()
 
   lazy val cfg = CFG()
 
-  val (maps,tokenVariances) = source.
+  val (tokenMapIterator, tokenIterator) = source.
     component(splitterTool).
-    // map(splitter).
     flatten.
-    //scanLeft(tokenizer.init)(tokenizer).
     componentScan(tokenizerTool).
-    map{
+    map {
       case (x, y, z) => ((x, y), z)
     }.
     unzip
 
-  val (phrases1, phrases2, phrases3, phrases4, phrases5) = tokenVariances.
-    zipWithIndex.
-   // log("qqq: ").
-    map{
-      case (tokens, n) =>
-        //println(f"$n%-10d : ${tokens.mkString(" :: ")}")
-        tokens
-    }.
-    scanLeft(accumulatorTool.init)(accumulatorTool).
-    collect{
+  val (statement1, statement2, statement3, statement4, statement5) = tokenIterator.
+   // log("token: ").
+    componentScan(accumulatorTool).
+    collect {
       case (_, Some(statement)) => statement
     }.fork5()
 
-  val ngram1 = phrases1.
-    //componentFold(ngramms1)
-    foldLeft(nGram1Tool.init)(nGram1Tool)
+  val nGram1 = statement1.
+    componentFold(nGram1Tool)
 
-  val ngram2 = phrases2.
-    foldLeft(nGram2Tool.init)(nGram2Tool)
+  val nGram2 = statement2.
+    componentFold(nGram2Tool)
 
-  val ngram3 = phrases3.
-    foldLeft(nGram2Tool.init)(nGram3Tool)
+  val nGram3 = statement3.
+    componentFold(nGram3Tool)
 
-  val Some((toToken, lastToken)) = maps.
+  val Some((tokenMap, lastToken)) = tokenMapIterator.
     foldLeft(Option.empty[(TokenMap, Token)]) {
       case (_, x) =>
         Option(x)
     }
 
   println("== 1 gramm ==")
-  dump(ngram1)
+  dump(nGram1)
 
   println("== 2 gramm ==")
-  dump(ngram2)
+  dump(nGram2)
 
-  println("== 2 gramm ==")
-  dump(ngram3)
+  println("== 3 gramm ==")
+  dump(nGram3)
 
   println("== phrases ==")
-  dump(phrases4.toList)
+  dump(statement4.toList)
 
-  dump(toToken, lastToken)
+  dump(tokenMap, lastToken)
 
-  save(new File(fileOut), VocabularyRawImpl(phrases5.toList, ngram1, ngram2, ngram3, toToken, ???, ???))
+  save(new File(fileOut), VocabularyRawImpl(statement5.toList, nGram1, nGram2, nGram3, tokenMap, ???, ???))
 }
