@@ -12,7 +12,19 @@ package object component {
 
   trait ComponentMap[-A, +R] extends Component with Function1[A, R]
 
-  trait ComponentFold[-A, R] extends Component with Function2[R, A, R]   {
+  trait ComponentState[-A, R] extends Component with Function2[R, A, R]   {
     def init: R
+  }
+
+  trait ComponentFold[-A, R, B] extends ComponentState[A, R] {
+    protected type Select = PartialFunction[R, B]
+
+    val select: Select
+  }
+
+  trait ComponentScan[-A, R, B] extends ComponentState[A, R] {
+    protected type Select = PartialFunction[R, B]
+
+    val select: Select
   }
 }

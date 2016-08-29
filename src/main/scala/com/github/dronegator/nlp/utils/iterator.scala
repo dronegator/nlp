@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp
 
-import com.github.dronegator.nlp.component.{ComponentFold, ComponentMap}
+import com.github.dronegator.nlp.component.{ComponentState, ComponentMap}
 
 import scala.math.Ordering
 
@@ -55,11 +55,11 @@ package object utils {
       a.map/*[A, Seq[A]]*/(component).asInstanceOf[M[B]]
     }
 
-    def componentScan[C](component: ComponentFold[A, C]): M[C] = {
+    def componentScan[C](component: ComponentState[A, C]): M[C] = {
       a.scanLeft(component.init)(component).asInstanceOf[M[C]]
     }
 
-    def componentFold[C](component: ComponentFold[A, C]): C = {
+    def componentFold[C](component: ComponentState[A, C]): C = {
       a.foldLeft(component.init)(component)//.asInstanceOf[M[C]]
     }
   }

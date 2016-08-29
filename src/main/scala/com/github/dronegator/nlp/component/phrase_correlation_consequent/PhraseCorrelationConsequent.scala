@@ -4,7 +4,7 @@ package com.github.dronegator.nlp.component.phrase_correlation_consequent
  * Created by cray on 8/19/16.
  */
 
-import com.github.dronegator.nlp.component.ComponentFold
+import com.github.dronegator.nlp.component.{ComponentFold, ComponentState}
 import com.github.dronegator.nlp.component.phrase_correlation_consequent.PhraseCorrelationConsequent.Init
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.utils.CFG
@@ -13,7 +13,7 @@ object PhraseCorrelationConsequent {
   type Init = (List[Token], Map[List[Token], Int])
 }
 
-class PhraseCorrelationConsequent(cfgArg: CFG) extends ComponentFold[List[Token], Init] {
+class PhraseCorrelationConsequent(cfgArg: CFG) extends ComponentFold[List[Token], Init, Map[List[Token], Int]] {
   override def cfg: CFG = cfgArg
 
   override def init = (List[Token](), Map[List[Token], Int]())
@@ -32,4 +32,8 @@ class PhraseCorrelationConsequent(cfgArg: CFG) extends ComponentFold[List[Token]
         (statement, newmap)
     }
 
+  override val select: Select = {
+    case (_, map) =>
+      map
+  }
 }

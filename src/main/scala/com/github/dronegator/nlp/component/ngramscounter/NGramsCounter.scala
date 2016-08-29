@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp.component.ngramscounter
 
-import com.github.dronegator.nlp.component.ComponentFold
+import com.github.dronegator.nlp.component.{ComponentFold, ComponentState}
 import com.github.dronegator.nlp.component.ngramscounter.NGramsCounter.Init
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.utils.CFG
@@ -22,7 +22,7 @@ object NGramsCounter {
     new NGramsCounter(cfgArg, 3)
 }
 
-class NGramsCounter(cfgArg: => CFG, n: Int) extends ComponentFold[List[Token], Init] {
+class NGramsCounter(cfgArg: => CFG, n: Int) extends ComponentFold[List[Token], Init, Init] {
   override def cfg: CFG = cfgArg
 
   override def init: Init = Map[List[Token], Int]()
@@ -32,4 +32,8 @@ class NGramsCounter(cfgArg: => CFG, n: Int) extends ComponentFold[List[Token], I
       case (map, token) if token.length == n => map + (token -> (1 + map.getOrElse(token, 0)))
       case (map, _) => map
     }
+
+  override val select: Select = {
+    case x => x
+  }
 }

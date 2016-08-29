@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp.component.phrase_correlation_repeated
 
-import com.github.dronegator.nlp.component.ComponentFold
+import com.github.dronegator.nlp.component.{ComponentFold, ComponentState}
 import com.github.dronegator.nlp.component.phrase_correlation_repeated.PhraseCorrelationRepeated.Init
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.utils.CFG
@@ -16,7 +16,7 @@ object PhraseCorrelationRepeated {
 
 }
 
-class PhraseCorrelationRepeated(cfgArg: CFG) extends ComponentFold[List[Token], Init] {
+class PhraseCorrelationRepeated(cfgArg: CFG) extends ComponentFold[List[Token], Init, Map[Token, Int]] {
   override def cfg: CFG = cfgArg
 
   override def init: Init = (List[Token](), Map[Token, Int]())
@@ -31,5 +31,10 @@ class PhraseCorrelationRepeated(cfgArg: CFG) extends ComponentFold[List[Token], 
           }
         (statement, newmap)
     }
+  }
+
+  override val select: Select = {
+    case (_, map) =>
+      map
   }
 }

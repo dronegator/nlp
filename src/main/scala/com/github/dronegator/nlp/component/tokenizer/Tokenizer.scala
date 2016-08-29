@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp.component.tokenizer
 
-import com.github.dronegator.nlp.component.ComponentFold
+import com.github.dronegator.nlp.component.ComponentState
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{DEOP, DEOW, Reset}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.utils.CFG
@@ -73,7 +73,7 @@ object Tokenizer {
 }
 
 class Tokenizer(cfgArg: => CFG)
-  extends ComponentFold[Word, (TokenMap, Token, List[Token])] {
+  extends ComponentState[Word, (TokenMap, Token, List[Token])] {
 
   def cfg = cfgArg
 

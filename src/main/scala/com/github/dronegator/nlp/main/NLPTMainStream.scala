@@ -35,8 +35,6 @@ object NLPTMainStream
       //monitor()(Keep.right).
       watchTermination()(Keep.right)
 
-  //io.Source.fromFile(new File(fileIn)).getLines()
-
   implicit val context = scala.concurrent.ExecutionContext.global
 
   implicit val system = ActorSystem()
@@ -44,23 +42,23 @@ object NLPTMainStream
   implicit val mat = ActorMaterializer()
 
   val nGram1Flow = Flow[Statement].
-    componentFold(nGram1Tool).
+    component(nGram1Tool).
     toMat(Sink.headOption)(Keep.right)
 
   val nGram2Flow = Flow[Statement].
-    componentFold(nGram2Tool).
+    component(nGram2Tool).
     toMat(Sink.headOption)(Keep.right)
 
   val nGram3Flow = Flow[Statement].
-    componentFold(nGram3Tool).
+    component(nGram3Tool).
     toMat(Sink.headOption)(Keep.right)
 
   val phraseCorrelationRepeatedFlow = Flow[Statement].
-    componentFold(phraseCorrelationRepeatedTool).
+    component(phraseCorrelationRepeatedTool).
     toMat(Sink.headOption)(Keep.right)
 
   val phraseCorrelationConsequentFlow = Flow[Statement].
-    componentFold(phraseCorrelationConsequentTool).
+    component(phraseCorrelationConsequentTool).
     toMat(Sink.headOption)(Keep.right)
 
   val tokenMapSink =
@@ -78,10 +76,7 @@ object NLPTMainStream
       collect {
         case (_, _, z) => z
       }.
-      componentScan(accumulatorTool).
-      collect {
-        case (_, Some(phrase)) => phrase
-      }.
+      component(accumulatorTool).
       alsoToMat(nGram1Flow)(Keep.both).
       alsoToMat(nGram2Flow)(Keep.both).
       alsoToMat(nGram3Flow)(Keep.both).
@@ -109,7 +104,7 @@ object NLPTMainStream
 
     val status = (futureNGram1 zip futureNGram2 zip futureNGram3 zip futurePhraseCorrelationRepeated zip futurePhraseCorrelationConsequent zip futureTokenMap zip futurePhrases).
       flatMap {
-        case ((((((Some(nGram1), Some(nGram2)), Some(nGram3)), Some((_, phraseCorrelationRepeated))), Some((_, phraseCorrelationConsequent))), Some((tokenMap, lastToken))), phrases) =>
+        case ((((((Some(nGram1), Some(nGram2)), Some(nGram3)), Some(phraseCorrelationRepeated)), Some(phraseCorrelationConsequent)), Some((tokenMap, lastToken))), phrases) =>
 
           val vocabularyRaw = VocabularyRawImpl(phrases, nGram1, nGram2, nGram3, tokenMap, phraseCorrelationConsequent, phraseCorrelationInnerTool.init)
 

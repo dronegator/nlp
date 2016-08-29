@@ -5,7 +5,7 @@ package com.github.dronegator.nlp.utils
  */
 
 import akka.stream.scaladsl.{Flow, Source}
-import com.github.dronegator.nlp.component.{ComponentFold, ComponentMap}
+import com.github.dronegator.nlp.component.{ComponentFold, ComponentScan, ComponentState, ComponentMap}
 
 package object stream {
 
@@ -54,11 +54,19 @@ package object stream {
       f.map(component)
     }
 
-    def componentScan[C](component: ComponentFold[Out, C]): Flow[In, C, Mat] = {
+    def component[B, C](component: ComponentScan[Out, C, B]): Flow[In, B, Mat] = {
+      f.scan(component.init)(component).collect(component.select)
+    }
+
+    def component[B, C](component: ComponentFold[Out, C, B]): Flow[In, B, Mat] = {
+      f.fold(component.init)(component).collect(component.select)
+    }
+
+    def componentScan[C](component: ComponentState[Out, C]): Flow[In, C, Mat] = {
       f.scan(component.init)(component)
     }
 
-    def componentFold[C](component: ComponentFold[Out, C]): Flow[In, C, Mat] = {
+    def componentFold[C](component: ComponentState[Out, C]): Flow[In, C, Mat] = {
       f.fold(component.init)(component) //.asInstanceOf[M[C]]
     }
 
@@ -70,11 +78,19 @@ package object stream {
       f.map(component)
     }
 
-    def componentScan[C](component: ComponentFold[Out, C]): Source[C, Mat] = {
+    def component[B, C](component: ComponentScan[Out, C, B]): Source[B, Mat] = {
+      f.scan(component.init)(component).collect(component.select)
+    }
+
+    def component[B, C](component: ComponentFold[Out, C, B]): Source[B, Mat] = {
+      f.fold(component.init)(component).collect(component.select)
+    }
+
+    def componentScan[C](component: ComponentState[Out, C]): Source[C, Mat] = {
       f.scan(component.init)(component)
     }
 
-    def componentFold[C](component: ComponentFold[Out, C]): Source[C, Mat] = {
+    def componentFold[C](component: ComponentState[Out, C]): Source[C, Mat] = {
       f.fold(component.init)(component) //.asInstanceOf[M[C]]
     }
 
