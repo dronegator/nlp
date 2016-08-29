@@ -26,19 +26,17 @@ object NLPTMain
 
   val (statement1, statement2, statement3, statement4, statement5) = tokenIterator.
    // log("token: ").
-    componentScan(accumulatorTool).
-    collect {
-      case (_, Some(statement)) => statement
-    }.fork5()
+    component(accumulatorTool).
+    fork5()
 
   val nGram1 = statement1.
-    componentFold(nGram1Tool)
+    component(nGram1Tool)
 
   val nGram2 = statement2.
-    componentFold(nGram2Tool)
+    component(nGram2Tool)
 
   val nGram3 = statement3.
-    componentFold(nGram3Tool)
+    component(nGram3Tool)
 
   val Some((tokenMap, lastToken)) = tokenMapIterator.
     foldLeft(Option.empty[(TokenMap, Token)]) {

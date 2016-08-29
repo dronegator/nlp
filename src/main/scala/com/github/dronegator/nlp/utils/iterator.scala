@@ -1,6 +1,7 @@
 package com.github.dronegator.nlp
 
-import com.github.dronegator.nlp.component.{ComponentState, ComponentMap}
+import akka.stream.scaladsl.Source
+import com.github.dronegator.nlp.component.{ComponentFold, ComponentScan, ComponentState, ComponentMap}
 
 import scala.math.Ordering
 
@@ -53,6 +54,14 @@ package object utils {
   implicit class IteratorStage[A, M[A] <: Iterator[A]](a: M[A]) {
     def component[B](component: ComponentMap[A, B]): M[B] = {
       a.map/*[A, Seq[A]]*/(component).asInstanceOf[M[B]]
+    }
+
+    def component[B, C](component: ComponentScan[A, C, B]): M[B] = {
+      a.scanLeft(component.init)(component).collect(component.select).asInstanceOf[M[B]]
+    }
+
+    def component[B, C](component: ComponentFold[A, C, B]): B = {
+      component.select(a.foldLeft(component.init)(component))
     }
 
     def componentScan[C](component: ComponentState[A, C]): M[C] = {
