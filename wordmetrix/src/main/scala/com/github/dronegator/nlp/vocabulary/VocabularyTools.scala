@@ -1,10 +1,11 @@
 package com.github.dronegator.nlp.vocabulary
 
 import com.github.dronegator.nlp.common.Probability
+import com.github.dronegator.nlp.main
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Phrase, Statement, Token, TokenPreDef}
-import com.github.dronegator.nlp.main.NLPTReplMain._
 import com.github.dronegator.nlp.utils.RandomUtils._
 import com.github.dronegator.nlp.utils.IteratorLog
+import com.github.dronegator.nlp.utils.CFG
 
 /**
  * Created by cray on 8/28/16.
@@ -15,7 +16,9 @@ object VocabularyTools {
 
   type Advices = List[Advice]
 
-  implicit class VocabularyTools(vocabulary: VocabularyImpl) {
+  implicit class VocabularyTools(vocabulary: VocabularyImpl) extends main.Combinators {
+    val cfg = CFG()
+    
     def generatePhrase(tokens: List[Token]): Option[Statement] =
       Iterator.
         iterate(tokens) {

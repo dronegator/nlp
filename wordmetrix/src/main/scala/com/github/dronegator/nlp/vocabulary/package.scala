@@ -1,7 +1,6 @@
 package com.github.dronegator.nlp
 
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenPreDef, Word}
-import com.github.dronegator.nlp.main.NLPTReplMain._
 
 /**
  * Created by cray on 8/17/16.
