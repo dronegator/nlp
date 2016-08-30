@@ -51,8 +51,11 @@ object WordmetrixBuild extends Build {
   val repl =
     Project(id="repl", base=file("repl")).dependsOn(wordmetrix, akkaUtils, utils)
 
+  val www =
+    Project(id="web", base=file("web")).dependsOn(wordmetrix, akkaUtils, utils)
+
   lazy val root = Project(Name,
     base = file("."),
     settings = Project.defaultSettings
-  ).dependsOn().aggregate(wordmetrix, index, indexStream, repl, akkaUtils)
+  ).dependsOn().aggregate(wordmetrix, index, indexStream, repl, akkaUtils, www)
 }
