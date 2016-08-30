@@ -261,6 +261,8 @@ object NLPTReplMain
       }
 
     case _ =>
+      println(com.github.dronegator.nlp.main.Version.versionMessageExtended
+      )
       Command.values foreach {
         case Command(command, help, subcommands) =>
           println(
