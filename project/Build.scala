@@ -12,6 +12,10 @@ object WordmetrixBuild extends Build {
   override lazy val settings = super.settings
   import  settings._
   val buildTime = System.currentTimeMillis()
+
+  val utils =
+    Project(id="utils", base=file("utils")).dependsOn()
+
   val wordmetrix =
     Project(id="wordmetrix", base=file("wordmetrix")).
       settings(
@@ -33,19 +37,22 @@ object WordmetrixBuild extends Build {
             """.stripMargin)
             Seq(file)
         }
-      ) //.dependsOn(utils)
+      ).dependsOn(utils)
+
+  val akkaUtils =
+    Project(id="akka-utils", base=file("akka-utils")).dependsOn(utils, wordmetrix)
 
   val index =
     Project(id="index", base=file("index")).dependsOn(wordmetrix)
 
   val indexStream =
-    Project(id="index-stream", base=file("index-stream")).dependsOn(wordmetrix)
+    Project(id="index-stream", base=file("index-stream")).dependsOn(wordmetrix, akkaUtils)
 
   val repl =
-    Project(id="repl", base=file("repl")).dependsOn(wordmetrix)
+    Project(id="repl", base=file("repl")).dependsOn(wordmetrix, akkaUtils, utils)
 
   lazy val root = Project(Name,
     base = file("."),
     settings = Project.defaultSettings
-  ).dependsOn().aggregate(wordmetrix, index, indexStream)
+  ).dependsOn().aggregate(wordmetrix, index, indexStream, repl, akkaUtils)
 }

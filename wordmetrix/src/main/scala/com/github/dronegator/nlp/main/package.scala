@@ -3,11 +3,6 @@ package com.github.dronegator.nlp
 import java.io._
 import java.nio.file.Paths
 
-import akka.Done
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{FileIO, Flow, Keep, Sink, Source}
-import akka.util.ByteString
 import com.github.dronegator.nlp.common.{Count, Probability}
 import com.github.dronegator.nlp.component.accumulator.Accumulator
 import com.github.dronegator.nlp.component.ngramscounter.NGramsCounter
@@ -28,14 +23,6 @@ import scala.concurrent.Future
  * Created by cray on 8/17/16.
  */
 package object main {
-
-  trait Concurent {
-    implicit val context = scala.concurrent.ExecutionContext.global
-
-    implicit val system = ActorSystem()
-
-    implicit val mat = ActorMaterializer()
-  }
 
   trait Combinators {
     def cfg: CFG
@@ -120,86 +107,5 @@ package object main {
     }
   }
 
-  trait DumpTools {
-    this: Concurent =>
-
-    def vocabulary: Vocabulary
-
-    implicit class SourceExt[Mat](source: Source[String, Mat]) /*extends AnyVal*/ {
-      def arbeiten(): Unit =
-        source.runWith(dumpSink()).await
-
-      def arbeiten(file: File): Unit =
-        source.runWith(dumpSink(file))
-
-      def arbeiten(file: Option[File]): Unit =
-        file.map(arbeiten(_)).getOrElse(arbeiten())
-    }
-
-    def tokenToDump(token: Token): String
-
-    def tokenToString(token: Token) = f"$token"
-
-    def tokenToWordString(token: Token) =
-      vocabulary.wordMap.get(token) orElse
-        TokenPreDef.withValueOpt(token) getOrElse
-        (token, "unknown") toString
-
-    trait Representer[A] {
-      def represent(a: A): String
-    }
-
-    implicit object RepresenterToken extends Representer[Token] {
-      override def represent(token: Token): String =
-        tokenToDump(token)
-    }
-
-    implicit object RepresenterPhrase extends Representer[Statement] {
-      override def represent(statement: Statement): String =
-        statement.map(tokenToDump(_)).mkString("", " ", "") //.mkString("", " :: ", " :: Nil")
-    }
-
-    def sourceFromTokenMap(data: Iterator[(Word, List[Token])]) = //(implicit representer: Representer[List[Token]]) =
-      Source.fromIterator(() => data).
-        map {
-          case (word, payload) =>
-            f"$word%-16s : ${payload.mkString("", " :: ", " :: Nil")}"
-        }
-
-    def sourceFrom[A](data: Iterator[(A, Probability)])(implicit representer: Representer[A]) =
-      Source.fromIterator(() => data).
-        map {
-          case (payload, probability) =>
-            f"$probability%-16.14f : ${representer.represent(payload)}"
-        }
-
-    def sourceFromCount[A](data: Iterator[(A, Count)])(implicit representer: Representer[A]) =
-      Source.fromIterator(() => data).
-        map {
-          case (payload, count) =>
-            f"$count%8d : ${representer.represent(payload)}"
-        }
-
-    def dumpSink(file: File): Sink[String, Future[Done]] =
-      Flow[String].
-        map(x => ByteString(x + "\n")).
-        toMat(FileIO.toPath(Paths.get(file.toString)))(Keep.right).
-        mapMaterializedValue { mat =>
-          println(s"Dumping to $file has finished with $mat")
-          Future.successful(Done)
-        }
-
-    def dumpSink(): Sink[String, Future[Done]] =
-      Flow[String].
-        toMat(Sink.foreach {
-          println(_)
-        })(Keep.right).
-        mapMaterializedValue { mat =>
-          mat map { mat =>
-            println(s"Dumping has finished with $mat")
-            mat
-          }
-        }
-  }
 
 }

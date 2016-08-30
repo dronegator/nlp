@@ -1,6 +1,5 @@
 package com.github.dronegator.nlp
 
-import akka.stream.scaladsl.Source
 import com.github.dronegator.nlp.component.{ComponentFold, ComponentScan, ComponentState, ComponentMap}
 
 import scala.math.Ordering

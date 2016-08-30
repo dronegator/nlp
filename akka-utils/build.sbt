@@ -1,4 +1,4 @@
-name := "index-stream"
+name := "akka-utils"
 
 version := "0.1"
 
@@ -20,8 +20,3 @@ libraryDependencies += "com.typesafe.akka" %% "akka-stream-testkit" % "2.4.9-RC2
 
 libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.4.9-RC2"
 
-libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.2.3" % "provided"
-
-libraryDependencies += "com.softwaremill.macwire" %% "util" % "2.2.3"
-
-libraryDependencies += "com.softwaremill.macwire" %% "proxy" % "2.2.3"
