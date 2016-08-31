@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp
 
-import com.github.dronegator.nlp.component.{ComponentFold, ComponentScan, ComponentState, ComponentMap}
+import com.github.dronegator.nlp.component.{ComponentFold, ComponentMap, ComponentScan, ComponentState}
 
 import scala.math.Ordering
 
@@ -17,32 +17,59 @@ package object utils {
   }
 
   implicit class IteratorFork[A](val iterator: Iterator[A]) extends AnyVal {
-    private def stream = iterator.toStream
-
-    def fork[B]()(implicit fork: Stream[A] => B): B =
+    def fork[B]()(implicit fork: Stream[A] => B): B = {
+      val stream = iterator.toStream
       fork(stream)
+    }
 
-    def fork[A]() =
+    def fork[A]() = {
+      val stream = iterator.toStream
       (stream.toIterator, stream.toIterator)
+    }
 
-    def fork3[A]() =
+    def fork3[A]() = {
+      val stream = iterator.toStream
       (stream.toIterator, stream.toIterator, stream.toIterator)
+    }
 
-    def fork4[A]() =
+    def fork4[A]() = {
+      val stream = iterator.toStream
+
       (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator)
+    }
 
-    def fork5[A]() =
+    def fork5[A]() = {
+      val stream = iterator.toStream
       (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator)
+    }
+
+    def fork6[A]() = {
+      val stream = iterator.toStream
+      (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator)
+    }
+
+    def fork7[A]() = {
+      val stream = iterator.toStream
+      (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator,
+        stream.toIterator)
+    }
+
+    def fork8[A]() = {
+      val stream = iterator.toStream
+      (stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator, stream.toIterator,
+        stream.toIterator, stream.toIterator)
+    }
 
     def sortBy[B](f: A => B)(implicit ord: Ordering[B]) =
-      stream.sortBy[B](f)(ord)
+      iterator.toStream.sortBy[B](f)(ord).toIterator
 
     def sorted[B >: A](implicit ord: Ordering[B]) =
-      stream.sorted[B](ord)
+      iterator.toStream.sorted[B](ord).toIterator
+
   }
 
   implicit class IteratorLog[A, M[A] <: TraversableOnce[A]](a: M[A]) {
-    def trace(s: String=""): M[A] = {
+    def trace(s: String = ""): M[A] = {
       a.map/*[A, Seq[A]]*/{x =>
         println(s"$s $x")
         x
@@ -68,7 +95,7 @@ package object utils {
     }
 
     def componentFold[C](component: ComponentState[A, C]): C = {
-      a.foldLeft(component.init)(component)//.asInstanceOf[M[C]]
+      a.foldLeft(component.init)(component) //.asInstanceOf[M[C]]
     }
   }
 
