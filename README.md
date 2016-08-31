@@ -171,9 +171,13 @@ The first version easily gathers dictionaries from  huge text corpora (I feed it
 An example of final text:
 
   I hope you enjoy your trip .
+  
   And still hungry .
+  
   There was no problem , of course , we deserve a more global problem .
+  
   It would have hit the targeted house was a statement .
+  
   Soon it will revolutionize every field .
 
 And how I got it:
@@ -219,16 +223,27 @@ And how I got it:
 It can suggest different words for a phrase (the phrase contains an intentional error for the sake of illustration):
 
   > advice The man were trying to make sure .
+  
   0.0559 The walls were trying to make sure .
+  
   0.0194 The others were trying to make sure .
+  
   0.0178 The windows were trying to make sure .
+  
   0.0138 The men were trying to make sure .
+  
   0.9000 The man was trying to make sure .
+  
   0.1000 The man either trying to make sure .
+  
   0.2004 The man were going to make sure .
+  
   0.0621 The man were supposed to make sure .
+  
   0.2315 The man were trying to make it .
+  
   0.1034 The man were trying to make sense .
+  
   0.0887 The man were trying to make out .
 
 History

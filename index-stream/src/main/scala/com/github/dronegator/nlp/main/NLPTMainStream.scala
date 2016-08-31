@@ -54,14 +54,17 @@ object NLPTMainStream
     toMat(Sink.headOption)(Keep.right)
 
   val phraseCorrelationRepeatedFlow = Flow[Statement].
+    take(0).
     component(phraseCorrelationRepeatedTool).
     toMat(Sink.headOption)(Keep.right)
 
   val phraseCorrelationConsequentFlow = Flow[Statement].
+    take(0).
     component(phraseCorrelationConsequentTool).
     toMat(Sink.headOption)(Keep.right)
 
    val phraseCorrelationInnerFlow = Flow[Statement].
+    take(0).
     component(phraseCorrelationInnerTool).
     toMat(Sink.headOption)(Keep.right)
 
