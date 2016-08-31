@@ -9,7 +9,7 @@ import scala.util.Try
 object WordmetrixBuild extends Build {
   val Name = "nlp"
 
-  override lazy val settings = super.settings
+  override lazy val settings = super.settings ++ Seq(version:= "0.2")
   import  settings._
   val buildTime = System.currentTimeMillis()
 

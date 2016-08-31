@@ -236,3 +236,5 @@ History
 [Version 0.0](https://github.com/dronegator/nlp/tree/v.0.0), 20160814, Initial release of nothing.
 
 [Version 0.1](https://github.com/dronegator/nlp/tree/v.0.1), 20160825, Prototype the index tools and functions to cover the simplified script of the game.
+
+[Version 0.2](https://github.com/dronegator/nlp/tree/v.0.2), 20160831, Improve inner architecture and packaging.
