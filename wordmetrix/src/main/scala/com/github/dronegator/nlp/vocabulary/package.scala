@@ -20,6 +20,8 @@ package object vocabulary {
 
     def tokenMap: Map[Word, List[Token]]
 
+    def phraseCorrelationRepeated: Map[Token, Int]
+
     def phraseCorrelationConsequent: Map[List[Token], Int]
 
     def phraseCorrelationInner: Map[List[Token], Int]

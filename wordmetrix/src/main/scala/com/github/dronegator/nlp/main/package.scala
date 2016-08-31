@@ -46,6 +46,7 @@ package object main {
     lazy val phraseCorrelationConsequentTool = wire[PhraseCorrelationConsequent]
 
     lazy val phraseCorrelationInnerTool = wire[PhraseCorrelationInner]
+
   }
 
   trait MainTools extends Combinators {

@@ -61,6 +61,10 @@ object NLPTMainStream
     component(phraseCorrelationConsequentTool).
     toMat(Sink.headOption)(Keep.right)
 
+   val phraseCorrelationInnerFlow = Flow[Statement].
+    component(phraseCorrelationInnerTool).
+    toMat(Sink.headOption)(Keep.right)
+
   val tokenMapSink =
     Flow[Tokenizer.Init].
       collect {
@@ -82,6 +86,7 @@ object NLPTMainStream
       alsoToMat(nGram3Flow)(Keep.both).
       alsoToMat(phraseCorrelationRepeatedFlow)(Keep.both).
       alsoToMat(phraseCorrelationConsequentFlow)(Keep.both).
+      alsoToMat(phraseCorrelationInnerFlow)(Keep.both).
       toMat(Sink.fold(List.empty[Statement]) {
         case (list, x) =>
           x :: list // Collect list of phrases
@@ -90,7 +95,7 @@ object NLPTMainStream
   val substitute = Map("’" -> "'") // TODO: Move it into some combinator
   try {
     val ((termination, futureTokenMap),
-    ((((((_, futureNGram1), futureNGram2), futureNGram3), futurePhraseCorrelationRepeated), futurePhraseCorrelationConsequent), futurePhrases)) =
+    (((((((_, futureNGram1), futureNGram2), futureNGram3), futurePhraseCorrelationRepeated), futurePhraseCorrelationConsequent), futurePhraseCorrelationInner), futurePhrases)) =
       (source.
         //trace("An original string: ").
         component(splitterTool).mapConcat(_.toList).
@@ -102,11 +107,11 @@ object NLPTMainStream
 
     println(s"Stream has finished with ${Await.result(termination, Duration.Inf)}")
 
-    val status = (futureNGram1 zip futureNGram2 zip futureNGram3 zip futurePhraseCorrelationRepeated zip futurePhraseCorrelationConsequent zip futureTokenMap zip futurePhrases).
+    val status = (futureNGram1 zip futureNGram2 zip futureNGram3 zip futurePhraseCorrelationRepeated zip futurePhraseCorrelationConsequent zip futurePhraseCorrelationInner zip futureTokenMap zip futurePhrases).
       flatMap {
-        case ((((((Some(nGram1), Some(nGram2)), Some(nGram3)), Some(phraseCorrelationRepeated)), Some(phraseCorrelationConsequent)), Some((tokenMap, lastToken))), phrases) =>
+        case (((((((Some(nGram1), Some(nGram2)), Some(nGram3)), Some(phraseCorrelationRepeated)), Some(phraseCorrelationConsequent)), Some(phraseCorrelationInner)), Some((tokenMap, lastToken))), phrases) =>
 
-          val vocabularyRaw = VocabularyRawImpl(phrases, nGram1, nGram2, nGram3, tokenMap, phraseCorrelationConsequent, phraseCorrelationInnerTool.init)
+          val vocabularyRaw = VocabularyRawImpl(phrases, nGram1, nGram2, nGram3, tokenMap, phraseCorrelationRepeated, phraseCorrelationConsequent, phraseCorrelationInner)
 
           val futureDump = Future {
             lazy val vocabulary: VocabularyImpl = vocabularyRaw

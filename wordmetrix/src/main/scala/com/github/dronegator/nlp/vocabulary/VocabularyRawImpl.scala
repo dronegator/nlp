@@ -6,13 +6,14 @@ import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Statement, Word,
  * Created by cray on 8/17/16.
  */
 object VocabularyRawImpl {
-  implicit def apply(vocabulary: Vocabulary): VocabularyRawImpl =
+  implicit def apply(vocabulary: Vocabulary): VocabularyRaw =
     VocabularyRawImpl(
       vocabulary.phrases,
       vocabulary.nGram1,
       vocabulary.nGram2,
       vocabulary.nGram3,
       vocabulary.tokenMap,
+      vocabulary.phraseCorrelationRepeated,
       vocabulary.phraseCorrelationConsequent,
       vocabulary.phraseCorrelationInner
     )
@@ -24,6 +25,7 @@ case class VocabularyRawImpl(phrases: List[Statement],
                              nGram2: Map[List[Token], Int],
                              nGram3: Map[List[Token], Int],
                              tokenMap: Map[Word, List[Token]],
+                             phraseCorrelationRepeated: Map[Token, Int],
                              phraseCorrelationConsequent: Map[List[Token], Int],
                              phraseCorrelationInner: Map[List[Token], Int])
   extends VocabularyRaw
