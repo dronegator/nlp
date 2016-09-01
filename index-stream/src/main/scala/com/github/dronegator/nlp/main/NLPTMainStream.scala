@@ -12,7 +12,7 @@ import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Statement, Token
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.stream._
 import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, VocabularyRawImpl}
-
+import com.github.dronegator.nlp.utils.concurrent.Zukunft
 import scala.concurrent.{Future, Await}
 import scala.concurrent.duration._
 
@@ -29,7 +29,7 @@ object NLPTMainStream
   val source =
     FileIO.fromPath(Paths.get(fileIn)).
       progress().
-      via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 1024*1025, allowTruncation = false)).
+      via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 1024*1025, allowTruncation = true)).
       map(_.utf8String).
       //trace("Input string: ").
       //monitor()(Keep.right).
@@ -108,7 +108,11 @@ object NLPTMainStream
         alsoToMat(tokenMapSink)(Keep.both).
         toMat(tokenSink)(Keep.both).run())
 
-    println(s"Stream has finished with ${Await.result(termination, Duration.Inf)}")
+    println(s"Stream has finished with ${termination.recover{
+      case th: Throwable =>
+        th.printStackTrace()
+        th
+    }.await}")
 
     val status = (futureNGram1 zip futureNGram2 zip futureNGram3 zip futurePhraseCorrelationRepeated zip futurePhraseCorrelationConsequent zip futurePhraseCorrelationInner zip futureTokenMap zip futurePhrases).
       flatMap {
