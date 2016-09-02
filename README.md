@@ -162,8 +162,18 @@ To use collect statistic, issue:
     
       > generate reading a book
       She was reading a book of famous people .
-  
-  The storage has to be converted to the dictionary for an android application (but the feature has not implemented yet).      
+      
+  * keywords [Word]+
+    Select substantial words from a phrase:
+      
+    > keywords My cat was drinking a milk.
+        a                    -1.000 (0.000-1.000)
+        drinking             -0.275 (0.000-0.276)
+        was                  0.000 (0.000-0.000)
+        milk                 0.088 (0.097-0.008)
+        cat                  0.114 (0.117-0.003)
+
+  The storage has to be converted to the dictionary for an android application (but the feature has not implemented yet).
 
 The outcome
 -----------
@@ -233,37 +243,17 @@ It can suggest different words for a phrase (the phrase contains an intentional 
       0.0887 The man were trying to make out .
 
 Statistic:
+
  For 100MB of a text corpora I get:
-  - ngram1 size = 80046
-  - ngram2 size = 1488376
-  - ngram3 size = 4426209
-  - phrases size = 1176200
-  - tokens size = 110011
-
- 200MB:
- - ngram1 size = 103401
- - ngram2 size = 2342440
- - ngram3 size = 7640428
- - phrases size = 2359260
- - tokens size = 144527
-
- 300MB:
- - ngram1 size = 124285
- - ngram2 size = 3101673
- - ngram3 size = 10575922
- - phrases size = 3542017
- - tokens size = 178109
-         
-
- 500MB:
-
-  - ngram1 size = 157112
-  - ngram2 size = 4443462
-  - ngram3 size = 16063365
-  - phrases size = 5901462
-  - tokens size = 230416
-
-       
+ 
+     size    ngram1  ngram2   ngram3    phrases tokens
+     25MB    43579   562136  1418363     304008  57561
+     50MB    63518   958284  2584285     572440  87290
+    100MB    80046  1488376  4426209    1176200 110011
+    200MB   103401  2342440  7640428    2359260 144527
+    300MB   124285  3101673 10575922    3542017 178109
+    400MB   144823  3849867 13499864    4709330 211151
+    500MB   157112  4443462 16063365    5901462 230416
  
 
 History

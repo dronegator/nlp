@@ -3,6 +3,7 @@ package com.github.dronegator.nlp.main
 import java.io.File
 
 import akka.stream.scaladsl.Source
+import com.github.dronegator.nlp.common.Probability
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.utils.{Match, CFG}
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyTools
@@ -25,6 +26,7 @@ object NLPTReplMain
   lazy val cfg: CFG = CFG()
 
   sealed trait SubCommand extends EnumEntry with Lowercase with SubCommand.EnumUnaply
+  var meaningMap: Map[(Token, Token), (Probability, Probability)] = _
 
   object SubCommand extends Enum[SubCommand] {
     override def values: Seq[SubCommand] = findValues
@@ -87,6 +89,8 @@ object NLPTReplMain
     case object Generate extends Command("Generate a statement from a word", Set())
 
     case object Meaning extends Command("Evaluate meaning of the words", Set())
+
+    case object Keywords extends Command("Select keywords from a phrase", Set())
 
     def unapply(name: String): Option[(Command, String, Set[SubCommand])] = withNameOption(name) map {
       case Command(x, y, z) => (x, y, z)
@@ -244,7 +248,7 @@ object NLPTReplMain
 
 
     case Meaning() :: File1(sense) :: File1(nonSense) :: OptFile(weighted) =>
-      val meaningMap = vocabulary.meaningContextMap(
+      meaningMap = vocabulary.meaningContextMap(
         io.Source.fromFile(sense).getLines().flatMap(vocabulary.tokenMap.get(_)).flatMap(_.headOption).toList,
         io.Source.fromFile(nonSense).getLines().flatMap(vocabulary.tokenMap.get(_)).flatMap(_.headOption).toList
       )
@@ -259,6 +263,19 @@ object NLPTReplMain
         case Some(x) => x
       }.arbeiten(weighted)
 
+    case Keywords() :: words =>
+      import com.github.dronegator.nlp.utils._
+
+      vocabulary.tokenizeShort(words).sliding(3).collect{
+        case before :: token :: after :: Nil =>
+          meaningMap.get((before, after)) map {
+            case (pSense, pNonSense) =>
+              vocabulary.wordMap(token) -> (pSense - pNonSense, pSense, pNonSense)
+          }
+      }.flatten.sortBy(_._2._1).foreach{
+        case (word, (p, p1,p2)) =>
+          println(f"$word%-20s $p%5.3f ($p1%5.3f-$p2%5.3f)")
+      }
 
 
     //case ContinuePhrase() :: words =>
