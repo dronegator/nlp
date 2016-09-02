@@ -232,6 +232,40 @@ It can suggest different words for a phrase (the phrase contains an intentional 
       0.1034 The man were trying to make sense .
       0.0887 The man were trying to make out .
 
+Statistic:
+ For 100MB of a text corpora I get:
+  - ngram1 size = 80046
+  - ngram2 size = 1488376
+  - ngram3 size = 4426209
+  - phrases size = 1176200
+  - tokens size = 110011
+
+ 200MB:
+ - ngram1 size = 103401
+ - ngram2 size = 2342440
+ - ngram3 size = 7640428
+ - phrases size = 2359260
+ - tokens size = 144527
+
+ 300MB:
+ - ngram1 size = 124285
+ - ngram2 size = 3101673
+ - ngram3 size = 10575922
+ - phrases size = 3542017
+ - tokens size = 178109
+         
+
+ 500MB:
+
+  - ngram1 size = 157112
+  - ngram2 size = 4443462
+  - ngram3 size = 16063365
+  - phrases size = 5901462
+  - tokens size = 230416
+
+       
+ 
+
 History
 ---------
 [Version 0.0](https://github.com/dronegator/nlp/tree/v.0.0), 20160814, Initial release of nothing.

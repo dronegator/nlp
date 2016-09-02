@@ -6,6 +6,7 @@ import akka.stream.scaladsl.Source
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.utils.{Match, CFG}
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyTools
+import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyRawTools
 import com.github.dronegator.nlp.vocabulary.VocabularyImpl
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
@@ -48,6 +49,10 @@ object NLPTReplMain
     case file :: Nil => Some(new File(file))
   })
 
+  object File1 extends Match[String, File]({
+    case file => new File(file)
+  })
+
   object Command extends Enum[Command] {
     override def values: Seq[Command] = findValues
 
@@ -80,6 +85,8 @@ object NLPTReplMain
     case object Advice extends Command("Provide an advice to improve the statement", Set())
 
     case object Generate extends Command("Generate a statement from a word", Set())
+
+    case object Meaning extends Command("Evaluate meaning of the words", Set())
 
     def unapply(name: String): Option[(Command, String, Set[SubCommand])] = withNameOption(name) map {
       case Command(x, y, z) => (x, y, z)
@@ -234,6 +241,25 @@ object NLPTReplMain
 
           case _ =>
         }
+
+
+    case Meaning() :: File1(sense) :: File1(nonSense) :: OptFile(weighted) =>
+      val meaningMap = vocabulary.meaningContextMap(
+        io.Source.fromFile(sense).getLines().flatMap(vocabulary.tokenMap.get(_)).flatMap(_.headOption).toList,
+        io.Source.fromFile(nonSense).getLines().flatMap(vocabulary.tokenMap.get(_)).flatMap(_.headOption).toList
+      )
+
+      Source.fromIterator( () => vocabulary.meaningWordMap(meaningMap).iterator ).map{
+        case (token, (sense, nonsense, common)) =>
+          vocabulary.wordMap.get(token).map{ word =>
+            f"$word $sense%14.12f $nonsense%14.12f $common%14.12f"
+          }
+      }.
+      collect{
+        case Some(x) => x
+      }.arbeiten(weighted)
+
+
 
     //case ContinuePhrase() :: words =>
     case words@(_ :+ ".") =>
