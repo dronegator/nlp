@@ -4,8 +4,8 @@ import java.io.File
 
 import akka.stream.scaladsl.Source
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
-import com.github.dronegator.nlp.utils.{CFG, Match, _}
-import com.github.dronegator.nlp.vocabulary.VocabularyImpl
+import com.github.dronegator.nlp.utils.{CFG, Match, _}, Match._
+import com.github.dronegator.nlp.vocabulary.{VocabularyHint, VocabularyImpl}
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.{VocabularyRawTools, VocabularyTools}
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
@@ -44,15 +44,6 @@ object NLPTReplMain
   import SubCommand._
 
   sealed abstract class Command(val help: String, val subcommands: Set[SubCommand]) extends EnumEntry with Lowercase with Command.EnumApply
-
-  object OptFile extends Match[List[String], Option[File]]({
-    case Nil => None
-    case file :: Nil => Some(new File(file))
-  })
-
-  object File1 extends Match[String, File]({
-    case file => new File(file)
-  })
 
   object Command extends Enum[Command] {
     override def values: Seq[Command] = findValues
@@ -101,9 +92,11 @@ object NLPTReplMain
 
   import Command._
 
-  val Array(fileIn) = args
+  val fileIn :: _ = args.toList
 
   lazy val vocabulary: VocabularyImpl = load(new File(fileIn))
+
+  override def vocabularyHint: VocabularyHint = vocabulary
 
   val consoleReader = new jline.console.ConsoleReader()
   val history = new FileHistory(new File(".wordmetrix_repl_history").getAbsoluteFile)
@@ -295,8 +288,11 @@ object NLPTReplMain
 
     case Keywords() :: words =>
       vocabulary.keywords(vocabulary.tokenizeShort(words)).sortBy(_._2._1).foreach {
-        case (word, (p, p1, p2)) =>
-          println(f"$word%-20s $p%5.3f ($p1%5.3f-$p2%5.3f)")
+        case (token, (p, p1, p2)) =>
+          vocabulary.wordMap.get(token).foreach{ word =>
+            println(f"$word%-20s $p%5.3f ($p1%5.3f-$p2%5.3f)")
+          }
+
       }
 
     case words@(_ :+ ".") => //case ContinuePhrase() :: words =>
@@ -348,4 +344,5 @@ object NLPTReplMain
     tokenToWordString(token)
 
   //      tokenToString(token)
+
 }

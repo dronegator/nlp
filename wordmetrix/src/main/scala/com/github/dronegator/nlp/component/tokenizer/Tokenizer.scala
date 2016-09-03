@@ -1,9 +1,10 @@
 package com.github.dronegator.nlp.component.tokenizer
 
-import com.github.dronegator.nlp.component.ComponentState
+import com.github.dronegator.nlp.component.{ComponentScan, ComponentState}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{DEOP, DEOW, Reset}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.utils.CFG
+import com.github.dronegator.nlp.vocabulary.{VocabularyHint, VocabularyHintImpl}
 import enumeratum._
 import enumeratum.values.IntEnumEntry
 
@@ -73,7 +74,7 @@ object Tokenizer {
 }
 
 class Tokenizer(cfgArg: => CFG)
-  extends ComponentState[Word, (TokenMap, Token, List[Token])] {
+  extends ComponentScan[Word, (TokenMap, Token, List[Token]), (TokenMap, Token, List[Token])] {
 
   def cfg = cfgArg
 
@@ -95,6 +96,15 @@ class Tokenizer(cfgArg: => CFG)
         }
     }
 
+  override val select: Select = {
+    case x =>
+      x
+  }
+}
+
+class TokenizerWithHints(cfg: => CFG, vocabulary: VocabularyHint)
+  extends Tokenizer(cfg) {
+  override def init = (vocabulary.tokenMap, vocabulary.tokenMap.valuesIterator.flatten.max + 1, List.empty[Token])
 }
 
 

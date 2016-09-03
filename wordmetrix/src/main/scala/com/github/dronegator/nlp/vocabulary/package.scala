@@ -1,6 +1,7 @@
 package com.github.dronegator.nlp
 
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenPreDef, Word}
+import com.github.dronegator.nlp.common._
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, Word}
 
 /**
  * Created by cray on 8/17/16.
@@ -9,7 +10,17 @@ package object vocabulary {
 
   // implicit class VocabularyToolsExt(val vocabulary: Vocabulary) extends VocabularyTools.VocabularyTools(vocabulary)
 
-  trait VocabularyRaw {
+  trait VocabularyHint {
+    def tokenMap: Map[Word, List[Token]]
+
+    def meaningMap: Map[(Token, Token), (Probability, Probability)]
+
+    protected def sense: Set[Token]
+
+    protected def nonsense: Set[Token]
+  }
+
+  trait VocabularyRaw extends VocabularyHint {
     def phrases: List[List[Token]]
 
     def nGram1: Map[List[Token], Int]
@@ -51,7 +62,6 @@ package object vocabulary {
     def map2ToMiddle: Map[List[Token], List[(Double, Token)]]
 
     def map1ToNextPhrase: Map[List[Token], List[(Double, Token)]]
-
-    def meaningMap: AnyRef
   }
+
 }

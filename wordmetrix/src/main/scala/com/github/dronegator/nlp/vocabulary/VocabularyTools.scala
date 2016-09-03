@@ -5,7 +5,7 @@ import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.main
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.RandomUtils._
-
+import com.github.dronegator.nlp.utils.IteratorStage
 /**
  * Created by cray on 8/28/16.
  */
@@ -15,8 +15,10 @@ object VocabularyTools {
 
   type Advices = List[Advice]
 
-  implicit class VocabularyTools(vocabulary: VocabularyImpl) extends main.Combinators {
+  implicit class VocabularyTools(vocabulary: VocabularyImpl/*TODO: Use Vocabulary instead*/) extends main.Combinators {
     val cfg = CFG()
+
+    lazy val vocabularyHint: VocabularyHint = vocabulary
 
     def generatePhrase(tokens: List[Token]): Option[Statement] =
       Iterator.
@@ -142,7 +144,8 @@ object VocabularyTools {
 
     def tokenize(s: String): Statement = {
       val tokens = splitterTool(s).
-        scanLeft((vocabulary.tokenMap, 100000000, tokenizerTool.init._3))(tokenizerTool).
+        component(tokenizerTool).
+        //scanLeft((vocabulary.tokenMap, 100000000, tokenizerTool.init._3))(tokenizerTool).
         map {
           case (_, _, tokens) => tokens
         }.
@@ -185,8 +188,10 @@ object VocabularyTools {
 
   }
 
-  implicit class VocabularyRawTools(vocabulary: VocabularyImpl) extends main.Combinators {
+  implicit class VocabularyRawTools(vocabulary: VocabularyRaw) extends main.Combinators {
     val cfg = CFG()
+
+    lazy val vocabularyHint: VocabularyHint = vocabulary
 
     def meaningContextMap(hasSense: Set[Token], hasNoSense: Set[Token]): Map[(Token, Token), (Probability, Probability)] = {
       vocabulary.nGram3.toIterator.map {

@@ -10,11 +10,11 @@ import com.github.dronegator.nlp.component.phrase_correlation_consequent.PhraseC
 import com.github.dronegator.nlp.component.phrase_correlation_repeated.{PhraseCorrelationInner, PhraseCorrelationRepeated}
 import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
 import com.github.dronegator.nlp.component.splitter.Splitter
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer
+import com.github.dronegator.nlp.component.tokenizer.{TokenizerWithHints, Tokenizer}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.concurrent.Zukunft
-import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyRaw}
+import com.github.dronegator.nlp.vocabulary.{VocabularyHint, Vocabulary, VocabularyRaw}
 import com.softwaremill.macwire._
 
 import scala.concurrent.Future
@@ -29,7 +29,7 @@ package object main {
 
     lazy val splitterTool = wire[Splitter]
 
-    lazy val tokenizerTool = wire[Tokenizer]
+    lazy val tokenizerTool = wire[TokenizerWithHints]
 
     lazy val phraseDetectorTool = wire[PhraseDetector]
 
@@ -47,6 +47,7 @@ package object main {
 
     lazy val phraseCorrelationInnerTool = wire[PhraseCorrelationInner]
 
+    def vocabularyHint: VocabularyHint
   }
 
   trait MainTools extends Combinators {

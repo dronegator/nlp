@@ -11,11 +11,11 @@ import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Statement, Token, TokenMap}
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.stream._
-import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, VocabularyRawImpl}
+import com.github.dronegator.nlp.vocabulary.{VocabularyHintImpl, VocabularyImpl, VocabularyRawImpl}
 import com.github.dronegator.nlp.utils.concurrent.Zukunft
 import scala.concurrent.{Future, Await}
 import scala.concurrent.duration._
-
+import com.github.dronegator.nlp.utils.Match._
 /**
  * Created by cray on 8/15/16.
  */
@@ -23,8 +23,14 @@ object NLPTMainStream
   extends App
   with MainTools {
 
-  val Array(fileIn, fileOut) = args
+  val fileIn :: fileOut ::  OptFile(hints) = args.toList
   lazy val cfg = CFG()
+
+  println(hints)
+  lazy val vocabularyHint = hints.map(load(_)).getOrElse{
+    println("Hints have initialized")
+    VocabularyHintImpl(Tokenizer.MapOfPredefs, Map())
+  }
 
   val source =
     FileIO.fromPath(Paths.get(fileIn)).
@@ -118,11 +124,11 @@ object NLPTMainStream
       flatMap {
         case (((((((Some(nGram1), Some(nGram2)), Some(nGram3)), Some(phraseCorrelationRepeated)), Some(phraseCorrelationConsequent)), Some(phraseCorrelationInner)), Some((tokenMap, lastToken))), phrases) =>
 
-          val vocabularyRaw = VocabularyRawImpl(phrases, nGram1, nGram2, nGram3, tokenMap, phraseCorrelationRepeated, phraseCorrelationConsequent, phraseCorrelationInner)
+          val vocabularyRaw = VocabularyRawImpl(tokenMap, vocabularyHint.meaningMap,  phrases, nGram1, nGram2, nGram3,  phraseCorrelationRepeated, phraseCorrelationConsequent, phraseCorrelationInner)
+
 
           val futureDump = Future {
             lazy val vocabulary: VocabularyImpl = vocabularyRaw
-
 //            println("== N gramm, n = 1 ==")
 //            dump(vocabularyRaw.nGram1)
 //

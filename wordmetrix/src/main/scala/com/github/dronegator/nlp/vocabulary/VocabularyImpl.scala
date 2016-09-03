@@ -2,9 +2,6 @@ package com.github.dronegator.nlp.vocabulary
 
 import com.github.dronegator.nlp.common.Probability
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
-import com.github.dronegator.nlp.utils._
-
-import scala.util.Try
 
 /**
  * Created by cray on 8/17/16.
@@ -13,26 +10,28 @@ import scala.util.Try
 object VocabularyImpl {
   implicit def apply(vocabulary: VocabularyRaw) =
     new VocabularyImpl(
+      vocabulary.tokenMap,
       vocabulary.phrases,
       vocabulary.nGram1,
       vocabulary.nGram2,
       vocabulary.nGram3,
-      vocabulary.tokenMap,
       vocabulary.phraseCorrelationRepeated,
       vocabulary.phraseCorrelationConsequent,
       vocabulary.phraseCorrelationInner
     )
 }
 
-class VocabularyImpl(phrases: List[Statement],
-                     nGram1: Map[List[Token], Int],
-                     nGram2: Map[List[Token], Int],
-                     nGram3: Map[List[Token], Int],
-                     tokenMap: Map[Word, List[Token]],
-                     phraseCorrelationRepeated: Map[Token, Int],
-                     phraseCorrelationConsequent: Map[List[Token], Int],
-                     phraseCorrelationInner: Map[List[Token], Int])
-  extends VocabularyRawImpl(phrases, nGram1, nGram2, nGram3, tokenMap, phraseCorrelationRepeated, phraseCorrelationConsequent, phraseCorrelationInner) with Vocabulary {
+case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
+                          phrases: List[Statement],
+                          nGram1: Map[List[Token], Int],
+                          nGram2: Map[List[Token], Int],
+                          nGram3: Map[List[Token], Int],
+                          phraseCorrelationRepeated: Map[Token, Int],
+                          phraseCorrelationConsequent: Map[List[Token], Int],
+                          phraseCorrelationInner: Map[List[Token], Int])
+  extends VocabularyRaw
+  with Vocabulary
+  with VocabularyHintWords {
   override lazy val wordMap: Map[Token, Word] =
     tokenMap.
       toIterator.
@@ -310,25 +309,9 @@ class VocabularyImpl(phrases: List[Statement],
 
   import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyRawTools
 
-  private def loadHints(name: String) =
-    Try {
-      io.Source.
-        fromInputStream(classOf[VocabularyImpl].getResourceAsStream(name)).
-        getLines().
-        map(_.trim).
-        filter(_.nonEmpty).
-        trace(s"$name word: ").
-        flatMap(tokenMap.get(_)).
-        flatten.
-        toSet
-    } getOrElse {
-      println(s"Resource name=$name is unavailable")
-      Set[Token]()
-    }
 
   override lazy val meaningMap: Map[(Token, Token), (Probability, Probability)] = {
-    val sense = loadHints("/hint/english/sense.txt")
-    val nonsense = loadHints("/hint/english/nonsense.txt")
+
     this.meaningContextMap(sense, nonsense)
   }
 
