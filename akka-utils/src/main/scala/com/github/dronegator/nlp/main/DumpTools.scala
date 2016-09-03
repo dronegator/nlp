@@ -83,8 +83,10 @@ trait DumpTools {
       map(x => ByteString(x + "\n")).
       toMat(FileIO.toPath(Paths.get(file.toString)))(Keep.right).
       mapMaterializedValue { mat =>
-        println(s"Dumping to $file has finished with $mat")
-        Future.successful(Done)
+        mat.map{ mat =>
+          println(s"Dumping to $file has finished with $mat")
+          Done
+        }
       }
 
   def dumpSink(): Sink[String, Future[Done]] =

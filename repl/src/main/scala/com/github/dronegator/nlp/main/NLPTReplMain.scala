@@ -3,16 +3,16 @@ package com.github.dronegator.nlp.main
 import java.io.File
 
 import akka.stream.scaladsl.Source
-import com.github.dronegator.nlp.common.Probability
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
-import com.github.dronegator.nlp.utils.{Match, CFG}
-import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyTools
-import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyRawTools
+import com.github.dronegator.nlp.utils.{CFG, Match, _}
 import com.github.dronegator.nlp.vocabulary.VocabularyImpl
+import com.github.dronegator.nlp.vocabulary.VocabularyTools.{VocabularyRawTools, VocabularyTools}
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
+import jline.console.completer.StringsCompleter
+import jline.console.history.FileHistory
 
-import scala.collection.immutable.::
+import scala.collection.JavaConverters._
 
 /**
  * Created by cray on 8/17/16.
@@ -26,7 +26,6 @@ object NLPTReplMain
   lazy val cfg: CFG = CFG()
 
   sealed trait SubCommand extends EnumEntry with Lowercase with SubCommand.EnumUnaply
-  var meaningMap: Map[(Token, Token), (Probability, Probability)] = _
 
   object SubCommand extends Enum[SubCommand] {
     override def values: Seq[SubCommand] = findValues
@@ -106,11 +105,23 @@ object NLPTReplMain
 
   lazy val vocabulary: VocabularyImpl = load(new File(fileIn))
 
-  val ConsoleReader = new jline.console.ConsoleReader()
+  val consoleReader = new jline.console.ConsoleReader()
+  val history = new FileHistory(new File(".wordmetrix_repl_history").getAbsoluteFile)
+  consoleReader.setHistory(history)
 
-  def task(): Unit = ConsoleReader.readLine("> ") match {
+  consoleReader.addCompleter(new StringsCompleter(Command.values.map(_.entryName).asJava))
+
+  Runtime.getRuntime().addShutdownHook(new Thread() {
+    override def run() {
+      println("Hope to see you again")
+      consoleReader.getHistory.asInstanceOf[FileHistory].flush()
+    }
+  })
+
+  def task(): Unit = consoleReader.readLine("> ") match {
     case s: String => try {
       exec(s.split("\\s+").filter(_.trim.nonEmpty).toList);
+      consoleReader.getHistory.asInstanceOf[FileHistory].flush()
     } catch {
       case th: Throwable =>
         printf("\n* Command failure: %s\n\n", th)
@@ -127,7 +138,7 @@ object NLPTReplMain
            |    $help
         """.stripMargin)
 
-    case NGram1() :: Dump() :: OptFile(file)  =>
+    case NGram1() :: Dump() :: OptFile(file) =>
       println("== ngram1")
       sourceFromCount(vocabulary.nGram1.toIterator).arbeiten(file)
 
@@ -246,40 +257,49 @@ object NLPTReplMain
           case _ =>
         }
 
-
     case Meaning() :: File1(sense) :: File1(nonSense) :: OptFile(weighted) =>
-      meaningMap = vocabulary.meaningContextMap(
-        io.Source.fromFile(sense).getLines().flatMap(vocabulary.tokenMap.get(_)).flatMap(_.headOption).toList,
-        io.Source.fromFile(nonSense).getLines().flatMap(vocabulary.tokenMap.get(_)).flatMap(_.headOption).toList
-      )
+      def load(file: File) =
+        io.Source.fromFile(file).
+          getLines().
+          flatMap(vocabulary.tokenMap.get(_)).
+          flatten.
+          toSet
 
-      Source.fromIterator( () => vocabulary.meaningWordMap(meaningMap).iterator ).map{
-        case (token, (sense, nonsense, common)) =>
-          vocabulary.wordMap.get(token).map{ word =>
-            f"$word $sense%14.12f $nonsense%14.12f $common%14.12f"
-          }
+      val hasSense = load(sense)
+      val hasNoSense = load(nonSense)
+
+      val meaningMap =
+        vocabulary.meaningContextMap(hasSense, hasNoSense)
+
+      Source.fromIterator { () =>
+        vocabulary.meaningWordMap(meaningMap).
+          toList.
+          sortBy {
+            case (token, (sense, nonsense, common)) =>
+              common
+          }.
+          iterator
       }.
-      collect{
-        case Some(x) => x
-      }.arbeiten(weighted)
+      filter {
+        case (token, _) =>
+          vocabulary.nGram1.get(token :: Nil).getOrElse(0) > 2 &&
+            !hasSense.contains(token) && !hasNoSense.contains(token)
+      }.
+      mapConcat {
+        case (token, (sense, nonsense, common)) =>
+          vocabulary.wordMap.get(token).map { word =>
+            f"$word $sense%14.12f $nonsense%14.12f $common%14.12f"
+          }.toList
+      }.
+      arbeiten(weighted)
 
     case Keywords() :: words =>
-      import com.github.dronegator.nlp.utils._
-
-      vocabulary.tokenizeShort(words).sliding(3).collect{
-        case before :: token :: after :: Nil =>
-          meaningMap.get((before, after)) map {
-            case (pSense, pNonSense) =>
-              vocabulary.wordMap(token) -> (pSense - pNonSense, pSense, pNonSense)
-          }
-      }.flatten.sortBy(_._2._1).foreach{
-        case (word, (p, p1,p2)) =>
+      vocabulary.keywords(vocabulary.tokenizeShort(words)).sortBy(_._2._1).foreach {
+        case (word, (p, p1, p2)) =>
           println(f"$word%-20s $p%5.3f ($p1%5.3f-$p2%5.3f)")
       }
 
-
-    //case ContinuePhrase() :: words =>
-    case words@(_ :+ ".") =>
+    case words@(_ :+ ".") => //case ContinuePhrase() :: words =>
       println("We suggest a few words for the next phrase:")
       vocabulary.suggestForNext(vocabulary.tokenize(words)).
         flatMap {
@@ -319,11 +339,13 @@ object NLPTReplMain
     task()
   } finally {
     println("end")
-    ConsoleReader.clearScreen()
-    ConsoleReader.shutdown()
+    consoleReader.clearScreen()
+    consoleReader.getHistory.asInstanceOf[FileHistory].flush()
+    consoleReader.shutdown()
   }
 
   override def tokenToDump(token: Token): String =
     tokenToWordString(token)
-//      tokenToString(token)
+
+  //      tokenToString(token)
 }

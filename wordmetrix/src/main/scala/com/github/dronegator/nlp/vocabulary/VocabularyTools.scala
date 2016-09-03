@@ -171,10 +171,42 @@ object VocabularyTools {
 
     def untokenize(tokens: List[Token]) =
       tokens.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
+
+    def keywords(statement: Statement) =
+      statement.
+        sliding(3).
+        collect {
+          case before :: token :: after :: Nil =>
+            vocabulary.meaningMap.get((before, after)) map {
+              case (pSense, pNonSense) =>
+                token -> (pSense - pNonSense, pSense, pNonSense)
+            }
+        }.flatten
+
   }
 
   implicit class VocabularyRawTools(vocabulary: VocabularyImpl) extends main.Combinators {
     val cfg = CFG()
+
+    def meaningContextMap(hasSense: Set[Token], hasNoSense: Set[Token]): Map[(Token, Token), (Probability, Probability)] = {
+      vocabulary.nGram3.toIterator.map {
+        case (before :: token :: after :: _, n) =>
+          ((before, after), if (hasSense(token)) n else 0, if (hasNoSense(token)) n else 0, n)
+      }.foldLeft(Map[(Token, Token), (Int, Int, Int)]()) {
+        case (map, (key, nSense, nNonSense, nCount)) =>
+          val value = map.get(key) match {
+            case Some((s, ns, n)) =>
+              (s + nSense, ns + nNonSense, n + nCount)
+            case None =>
+              (nSense, nNonSense, nCount)
+          }
+
+          map + (key -> value)
+      }.map {
+        case (key, (nSense, nNonSense, nCount)) =>
+          key ->(nSense.toDouble / nCount, nNonSense.toDouble / nCount)
+      }
+    }
 
     def meaningWordMap(sensibility: Map[(Token, Token), (Probability, Probability)]): Map[Token, (Probability, Probability, Probability)] = {
       vocabulary.nGram3.toIterator.map {
@@ -195,30 +227,6 @@ object VocabularyTools {
           case (key, (wSense, wNonSense, wCommon, n)) =>
             key ->(wSense / n, wNonSense / n, wCommon / n)
         }
-    }
-
-
-    def meaningContextMap(sense: List[Token], nonsense: List[Token]): Map[(Token, Token), (Probability, Probability)] = {
-      val hasSense = sense.toSet
-      val hasNoSense = nonsense.toSet
-
-      vocabulary.nGram3.toIterator.map {
-        case (before :: token :: after :: _, n) =>
-          ((before, after), if (hasSense(token)) n else 0, if (hasNoSense(token)) n else 0, n)
-      }.foldLeft(Map[(Token, Token), (Int, Int, Int)]()) {
-        case (map, (key, nSense, nNonSense, nCount)) =>
-          val value = map.get(key) match {
-            case Some((s, ns, n)) =>
-              (s + nSense, ns + nNonSense, n + nCount)
-            case None =>
-              (nSense, nNonSense, nCount)
-          }
-
-          map + (key -> value)
-      }.map {
-        case (key, (nSense, nNonSense, nCount)) =>
-          key ->(nSense.toDouble / nCount, nNonSense.toDouble / nCount)
-      }
     }
   }
 

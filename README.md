@@ -254,7 +254,10 @@ Statistic:
     300MB   124285  3101673 10575922    3542017 178109
     400MB   144823  3849867 13499864    4709330 211151
     500MB   157112  4443462 16063365    5901462 230416
- 
+
+ Links
+ --------
+[Dolch word list](https://en.wikipedia.org/wiki/Dolch_word_list) 
 
 History
 ---------

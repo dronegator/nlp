@@ -51,5 +51,7 @@ package object vocabulary {
     def map2ToMiddle: Map[List[Token], List[(Double, Token)]]
 
     def map1ToNextPhrase: Map[List[Token], List[(Double, Token)]]
+
+    def meaningMap: AnyRef
   }
 }

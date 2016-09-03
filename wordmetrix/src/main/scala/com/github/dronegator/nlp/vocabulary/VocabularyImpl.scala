@@ -1,6 +1,10 @@
 package com.github.dronegator.nlp.vocabulary
 
+import com.github.dronegator.nlp.common.Probability
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
+import com.github.dronegator.nlp.utils._
+
+import scala.util.Try
 
 /**
  * Created by cray on 8/17/16.
@@ -303,4 +307,29 @@ class VocabularyImpl(phrases: List[Statement],
       )
     } else None
   }
+
+  import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyRawTools
+
+  private def loadHints(name: String) =
+    Try {
+      io.Source.
+        fromInputStream(classOf[VocabularyImpl].getResourceAsStream(name)).
+        getLines().
+        map(_.trim).
+        filter(_.nonEmpty).
+        trace(s"$name word: ").
+        flatMap(tokenMap.get(_)).
+        flatten.
+        toSet
+    } getOrElse {
+      println(s"Resource name=$name is unavailable")
+      Set[Token]()
+    }
+
+  override lazy val meaningMap: Map[(Token, Token), (Probability, Probability)] = {
+    val sense = loadHints("/hint/english/sense.txt")
+    val nonsense = loadHints("/hint/english/nonsense.txt")
+    this.meaningContextMap(sense, nonsense)
+  }
+
 }
