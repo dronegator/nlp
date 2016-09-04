@@ -2,6 +2,7 @@ package com.github.dronegator.nlp.vocabulary
 
 import com.github.dronegator.nlp.common.Probability
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
+import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyRawTools
 
 /**
  * Created by cray on 8/17/16.
@@ -211,49 +212,6 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
         sortBy(_._2)
     }
 
-  //override
-  lazy val map1ToNextPhraseProjected: Map[List[Token], List[(Double, Token)]] =
-    phrases.reverse.
-      map { statement =>
-        filter(statement, 0.1) map (statement -> _._2)
-      }.
-      sliding(2).
-      collect {
-        case Some(x) :: Some(y) :: _ =>
-          x :: y :: Nil
-      }.
-      flatMap {
-        case (p1, v1) :: (p2, v2) :: _ =>
-
-          val tokens1 = v1.map(_._1)
-          val tokens2 = v2.map(_._1)
-          for {
-            token1 <- tokens1
-            token2 <- tokens2
-          } yield {
-            token1 :: token2 :: Nil
-          }
-      }.foldLeft(Map[List[Token], Int]()) {
-      case (map, key) =>
-        map + (key -> (map.getOrElse(key, 0) + 1))
-    } match {
-      case map =>
-        map.
-          groupBy {
-            case (key :: _, _) => key :: Nil
-          }.
-          map {
-            case (key, map) =>
-              val denominator = map.map(_._2).sum.toDouble
-              key -> map.
-                toList.
-                map {
-                  case (_ :: token :: _, count) =>
-                    (count / denominator) -> token
-                }
-          }
-    }
-
   private def restorePhrase(statement: List[Token]) =
     statement.
       flatMap(wordMap.get(_)).
@@ -267,6 +225,14 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
     restorePhrase(sequence.sortBy(order(_)))
   }
 
+  override lazy val meaningMap: Map[(Token, Token), (Probability, Probability)] = {
+    this.meaningContextMap(sense, nonsense)
+  }
+}
+
+trait VocabularyImplOutdated {
+  this: VocabularyImpl =>
+  @deprecated("This concept is a bit outdated", "v.0.0.2")
   def filter(statement: List[Token], requiredSignificance: Double, amount: Int = 2) = {
     val projection = statement.
       flatMap { token =>
@@ -311,6 +277,7 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
     } else None
   }
 
+  @deprecated("This concept is a bit outdated", "v.0.0.2")
   def filter1(vector: Map[Token, Double], requiredSignificance: Double, amount: Int = 2) = {
     val projection = vector.
       map(_._1).
@@ -348,13 +315,46 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
       )
     } else None
   }
+  @deprecated("Use mapToNextPhrase", "v.0.0.2")
+  lazy val map1ToNextPhraseProjected: Map[List[Token], List[(Double, Token)]] =
+    phrases.reverse.
+      map { statement =>
+        filter(statement, 0.1) map (statement -> _._2)
+      }.
+      sliding(2).
+      collect {
+        case Some(x) :: Some(y) :: _ =>
+          x :: y :: Nil
+      }.
+      flatMap {
+        case (p1, v1) :: (p2, v2) :: _ =>
 
-  import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyRawTools
-
-
-  override lazy val meaningMap: Map[(Token, Token), (Probability, Probability)] = {
-
-    this.meaningContextMap(sense, nonsense)
-  }
-
+          val tokens1 = v1.map(_._1)
+          val tokens2 = v2.map(_._1)
+          for {
+            token1 <- tokens1
+            token2 <- tokens2
+          } yield {
+            token1 :: token2 :: Nil
+          }
+      }.foldLeft(Map[List[Token], Int]()) {
+      case (map, key) =>
+        map + (key -> (map.getOrElse(key, 0) + 1))
+    } match {
+      case map =>
+        map.
+          groupBy {
+            case (key :: _, _) => key :: Nil
+          }.
+          map {
+            case (key, map) =>
+              val denominator = map.map(_._2).sum.toDouble
+              key -> map.
+                toList.
+                map {
+                  case (_ :: token :: _, count) =>
+                    (count / denominator) -> token
+                }
+          }
+    }
 }

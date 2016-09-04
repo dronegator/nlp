@@ -348,7 +348,7 @@ object NLPTReplMain
             println(f"${vocabulary.wordMap(token)}%-20s $probability%5.3f")
         }
 
-    case words@(_ :+ ExpandPhrase()) =>
+    case words@(_) :+ ExpandPhrase() =>
       println("We suggest to expande the phrase with a few words:")
       vocabulary.suggestForTheSame(vocabulary.tokenize(words)).
         flatMap {

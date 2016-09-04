@@ -99,48 +99,16 @@ object VocabularyTools {
         }
 
     def suggestForNext(statement: Statement): List[(Token, Probability)] = {
-      (for {
-        token <- statement
-        (token, p) <- vocabulary.map1ToNextPhrase.get(token).getOrElse(Nil)
-      } yield {
-          (token, p)
-        }).
-        groupBy(_._1).
-        map{
-          case (token, values) =>
-            token -> values.map(_._2).reduceOption(_ + _).getOrElse(0.0)
-        }.
-        toList.
-        sortBy(_._2)
-    }
-
-    def suggestForNextProjection(statement: Statement): List[(Token, Probability)] = {
-      val advice = (for {
-        (token1, _) <-
-        vocabulary.filter(statement, 2, 10).
-          toList.
-          flatMap(_._2)
-        (p, nextToken) <- vocabulary.map1ToNextPhraseProjected.get(token1 :: Nil).toList.flatten
-      } yield {
-          nextToken -> p
-        }).
-        foldLeft(Map[Token, Double]()) {
-          case (map, (token, p)) =>
-            map + (token -> (p + map.getOrElse(token, 0.0)))
-        }.
-        toList
-
-      vocabulary.filter1(advice.toMap, 2, 10).
-        map(_._2).
-        toList.
-        flatten.
-        sortBy(_._2)
+      suggestFor(vocabulary.map1ToNextPhrase, statement)
     }
 
     def suggestForTheSame(statement: Statement): List[(Token, Probability)] =
+      suggestFor(vocabulary.map1ToTheSamePhrase, statement)
+
+    protected def suggestFor(probabilitities: Map[Token, List[(Token, Probability)]], statement: Statement): List[(Token, Probability)] = {
       (for {
-        token <- statement
-        (token, p) <- vocabulary.map1ToTheSamePhrase.get(token).getOrElse(Nil)
+        token <- statement.drop(2).dropRight(1)
+        (token, p) <- probabilitities.get(token).getOrElse(Nil)
       } yield {
           (token, p)
         }).
@@ -151,7 +119,7 @@ object VocabularyTools {
         }.
         toList.
         sortBy(_._2)
-
+    }
 
     def probability(statement: Statement): Probability =
       statement.
@@ -203,18 +171,6 @@ object VocabularyTools {
 
     def untokenize(tokens: List[Token]) =
       tokens.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
-
-//    def keywords(statement: Statement) = // TOOD:obsoleted?
-//      statement.
-//        sliding(3).
-//        collect {
-//          case before :: token :: after :: Nil =>
-//            vocabulary.meaningMap.get((before, after)) map {
-//              case (pSense, pNonSense) =>
-//                token -> (pSense - pNonSense, pSense, pNonSense)
-//            }
-//        }.flatten
-
   }
 
   implicit class VocabularyHintTools(val vocabularyHint: VocabularyHint) extends main.Combinators {
@@ -278,6 +234,36 @@ object VocabularyTools {
           case (key, (wSense, wNonSense, wCommon, n)) =>
             key ->(wSense / n, wNonSense / n, wCommon / n)
         }
+    }
+  }
+
+  implicit class VocabularyToolsOutdated(vocabulary: VocabularyImpl with VocabularyImplOutdated) extends main.Combinators {
+    val cfg = CFG()
+
+    lazy val vocabularyHint: VocabularyHint = vocabulary
+
+    @deprecated("Use suggestToNextPhrase", "v.0.0.2")
+    def suggestForNextProjection(statement: Statement): List[(Token, Probability)] = {
+      val advice = (for {
+        (token1, _) <-
+        vocabulary.filter(statement, 2, 10).
+          toList.
+          flatMap(_._2)
+        (p, nextToken) <- vocabulary.map1ToNextPhraseProjected.get(token1 :: Nil).toList.flatten
+      } yield {
+          nextToken -> p
+        }).
+        foldLeft(Map[Token, Double]()) {
+          case (map, (token, p)) =>
+            map + (token -> (p + map.getOrElse(token, 0.0)))
+        }.
+        toList
+
+      vocabulary.filter1(advice.toMap, 2, 10).
+        map(_._2).
+        toList.
+        flatten.
+        sortBy(_._2)
     }
   }
 }
