@@ -35,15 +35,11 @@ class PhraseCorrelationConsequentWithHints(cfgArg: CFG, vocabularyHint: Vocabula
   override def apply(state: Init, statement: List[Token]): (List[Token], Map[List[Token], Token]) =
     state match {
       case (prev, map) =>
-        println(prev.map(toWord).mkString(" "))
+        //println(prev.map(toWord).mkString(" "))
         val prevSens = vocabularyHint.keywords(prev).collect{
           case (token, (p, _, _)) if p > 0 =>
-            println(toWord(token), p)
+          //  println(toWord(token), p)
             token
-
-//          case (token, (_, _, p)) =>
-//            println(toWord(token), p)
-//            token
         }
 
         val statementSens = vocabularyHint.keywords(statement).collect{

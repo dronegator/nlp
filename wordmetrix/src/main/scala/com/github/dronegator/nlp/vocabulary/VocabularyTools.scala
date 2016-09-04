@@ -99,6 +99,22 @@ object VocabularyTools {
         }
 
     def suggestForNext(statement: Statement): List[(Token, Probability)] = {
+      (for {
+        token <- statement
+        (token, p) <- vocabulary.map1ToNextPhrase.get(token).getOrElse(Nil)
+      } yield {
+          (token, p)
+        }).
+        groupBy(_._1).
+        map{
+          case (token, values) =>
+            token -> values.map(_._2).reduceOption(_ + _).getOrElse(0.0)
+        }.
+        toList.
+        sortBy(_._2)
+    }
+
+    def suggestForNextProjection(statement: Statement): List[(Token, Probability)] = {
       val advice = (for {
         (token1, _) <-
         vocabulary.filter(statement, 2, 10).
@@ -121,7 +137,21 @@ object VocabularyTools {
         sortBy(_._2)
     }
 
-    def suggestForTheSame(statement: Statement): List[(Token, Probability)] = ???
+    def suggestForTheSame(statement: Statement): List[(Token, Probability)] =
+      (for {
+        token <- statement
+        (token, p) <- vocabulary.map1ToTheSamePhrase.get(token).getOrElse(Nil)
+      } yield {
+          (token, p)
+        }).
+        groupBy(_._1).
+        map{
+          case (token, values) =>
+            token -> values.map(_._2).reduceOption(_ + _).getOrElse(0.0)
+        }.
+        toList.
+        sortBy(_._2)
+
 
     def probability(statement: Statement): Probability =
       statement.
@@ -195,7 +225,7 @@ object VocabularyTools {
         sliding(3).
         collect {
           case before :: token :: after :: Nil =>
-            println(s"vocabularyHint => ${vocabularyHint.meaningMap.size}")
+            //println(s"vocabularyHint => ${vocabularyHint.meaningMap.size}")
             vocabularyHint.meaningMap.get((before, after)) map {
               case (pSense, pNonSense) =>
                 token -> (pSense - pNonSense, pSense, pNonSense)

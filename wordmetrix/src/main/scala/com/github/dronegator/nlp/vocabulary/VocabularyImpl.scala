@@ -40,7 +40,8 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
           tokens.
             map(_ -> word).
             toIterator
-      }.toMap
+      }.toMap.
+      withDefaultValue("***")
 
   private lazy val count1 = nGram1.values.sum.toDouble
 
@@ -172,6 +173,26 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
 
   override lazy val map1ToNextPhrase: Map[Token, List[(Token, Probability)]] =
     phraseCorrelationConsequent.groupBy{
+      case (token :: _, _) =>
+        token
+    }.map{
+      case (token, tokens) =>
+        val cumulative = tokens.
+          map{
+            case (_, value) =>
+              value
+          }.
+          sum.toDouble
+
+        token -> tokens.map{
+          case ((_ :: token :: Nil), count) =>
+            token -> (count / cumulative)
+        }.toList.
+        sortBy(_._2)
+    }
+
+  override lazy val map1ToTheSamePhrase: Map[Token, List[(Token, Probability)]] =
+    phraseCorrelationInner.groupBy{
       case (token :: _, _) =>
         token
     }.map{

@@ -71,6 +71,8 @@ object NLPTReplMain
 
     case object Next extends Command("Dump or Stat correlation map for phrases", Set(Dump, Stat))
 
+    case object Inner extends Command("Dump or Stat correlation map for words in phrase", Set(Dump, Stat))
+
     case object Probability extends Command("Calculate a probability of the statement", Set(Dump))
 
     case object Lookup extends Command("Show probability of n-gram", Set())
@@ -78,6 +80,8 @@ object NLPTReplMain
     case object Continue extends Command("Show possible continuation of n-gram", Set())
 
     case object ContinuePhrase extends Command("Show possible continuation of a statement", Set())
+
+    case object ExpandPhrase extends Command("Suggest additional words for the same phrase", Set())
 
     case object Everything extends Command("Statistic for all items of a vocabulary", Set(Dump, Stat))
 
@@ -175,17 +179,6 @@ object NLPTReplMain
     case Tokens() :: _ =>
       println(s"== tokens size = ${vocabulary.tokenMap.size}")
 
-    case Everything() :: _ =>
-      println(
-        s"""
-           |Statistic:
-           | - ngram1 size = ${vocabulary.nGram1.size}
-           | - ngram2 size = ${vocabulary.nGram2.size}
-           | - ngram3 size = ${vocabulary.nGram3.size}
-           | - phrases size = ${vocabulary.phrases.size}
-           | - tokens size = ${vocabulary.tokenMap.size}
-         """.stripMargin)
-
     case Next() :: Dump() :: OptFile(file) =>
       println("== next")
       sourceFrom(vocabulary.map1ToNextPhrase.toIterator flatMap {
@@ -195,10 +188,35 @@ object NLPTReplMain
               (token1 :: token2 :: Nil) -> p
           }
       }).arbeiten(file)
-      //println(vocabulary.map1ToNextPhrase.keys.flatMap(vocabulary.wordMap.get(_)).toList)
 
     case Next() :: _  =>
       println(s"== tokens to next phrase size = ${vocabulary.map1ToNextPhrase.size}")
+
+    case Inner() :: Dump() :: OptFile(file) =>
+      println("== inner")
+      sourceFrom(vocabulary.map1ToTheSamePhrase.toIterator flatMap {
+        case (token1, map) =>
+          map.map {
+            case (token2, p) =>
+              (token1 :: token2 :: Nil) -> p
+          }
+      }).arbeiten(file)
+
+    case Inner() :: _  =>
+      println(s"== tokens to the same phrase size = ${vocabulary.map1ToTheSamePhrase.size}")
+
+    case Everything() :: _ =>
+      println(
+        s"""
+           |Statistic:
+           | - ngram1 size = ${vocabulary.nGram1.size}
+           | - ngram2 size = ${vocabulary.nGram2.size}
+           | - ngram3 size = ${vocabulary.nGram3.size}
+           | - phrases size = ${vocabulary.phrases.size}
+           | - tokens size = ${vocabulary.tokenMap.size}
+           | - consequent correlation size = ${vocabulary.map1ToNextPhrase.size}
+           | - inner correlation size = ${vocabulary.map1ToTheSamePhrase.size}
+         """.stripMargin)
 
     case Lookup() :: word1 :: Nil =>
       println(s"1 $word1:")
@@ -309,11 +327,9 @@ object NLPTReplMain
           vocabulary.wordMap.get(token).foreach{ word =>
             println(f"$word%-20s $p%5.3f ($p1%5.3f-$p2%5.3f)")
           }
-
       }
 
     case Continue() :: words =>
-
         (for {
           token <- vocabulary.tokenizeShort(words)
           (token, p) <- vocabulary.map1ToNextPhrase.get(token).getOrElse(Nil)
@@ -331,10 +347,20 @@ object NLPTReplMain
           case (token, probability) =>
             println(f"${vocabulary.wordMap(token)}%-20s $probability%5.3f")
         }
-      //tokens.`
-      ///
 
-    case words@(_ :+ ".") => //case ContinuePhrase() :: words =>
+    case words@(_ :+ ExpandPhrase()) =>
+      println("We suggest to expande the phrase with a few words:")
+      vocabulary.suggestForTheSame(vocabulary.tokenize(words)).
+        flatMap {
+          case (token, p) =>
+            vocabulary.wordMap.get(token).map(_ -> p)
+        }.
+        foreach {
+          case (word, p) =>
+            println(s" - $word, p = $p")
+        }
+
+    case words@(_ :+ ("." | ContinuePhrase())) =>
       println("We suggest a few words for the next phrase:")
       vocabulary.suggestForNext(vocabulary.tokenize(words)).
         flatMap {
@@ -346,13 +372,6 @@ object NLPTReplMain
             println(s" - $word, p = $p")
         }
 
-
-
-//      vocabulary.continueStatement(vocabulary.tokenizeShort(words)) foreach {
-//        case (token, probability) =>
-//          println(s" - ${RepresenterToken.represent(token)}, p = $probability")
-//      }
-
     case words@(_ :: _) =>
       vocabulary.continueStatement(vocabulary.tokenizeShort(words)) foreach {
         case (token, probability) =>
@@ -360,8 +379,7 @@ object NLPTReplMain
       }
 
     case _ =>
-      println(com.github.dronegator.nlp.main.Version.versionMessageExtended
-      )
+      println(com.github.dronegator.nlp.main.Version.versionMessageExtended)
       Command.values foreach {
         case Command(command, help, subcommands) =>
           println(

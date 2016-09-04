@@ -26,7 +26,6 @@ object NLPTMainStream
   val fileIn :: fileOut ::  OptFile(hints) = args.toList
   lazy val cfg = CFG()
 
-  println(hints)
   lazy val vocabularyHint = hints.map(load(_): VocabularyImpl).getOrElse{
     println("Hints have initialized")
     VocabularyHintImpl(Tokenizer.MapOfPredefs, Map())
@@ -70,7 +69,7 @@ object NLPTMainStream
     toMat(Sink.headOption)(Keep.right)
 
    val phraseCorrelationInnerFlow = Flow[Statement].
-    take(0).
+    //take(0).
     component(phraseCorrelationInnerTool).
     toMat(Sink.headOption)(Keep.right)
 

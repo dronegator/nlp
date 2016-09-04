@@ -7,7 +7,7 @@ import com.github.dronegator.nlp.common.{Count, Probability}
 import com.github.dronegator.nlp.component.accumulator.Accumulator
 import com.github.dronegator.nlp.component.ngramscounter.NGramsCounter
 import com.github.dronegator.nlp.component.phrase_correlation_consequent.{PhraseCorrelationConsequentWithHints, PhraseCorrelationConsequent}
-import com.github.dronegator.nlp.component.phrase_correlation_repeated.{PhraseCorrelationInner, PhraseCorrelationRepeated}
+import com.github.dronegator.nlp.component.phrase_correlation_repeated.{PhraseCorrelationInnerWithHints, PhraseCorrelationInner, PhraseCorrelationRepeated}
 import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
 import com.github.dronegator.nlp.component.splitter.Splitter
 import com.github.dronegator.nlp.component.tokenizer.{TokenizerWithHints, Tokenizer}
@@ -45,7 +45,7 @@ package object main {
 
     lazy val phraseCorrelationConsequentTool = wire[PhraseCorrelationConsequentWithHints]
 
-    lazy val phraseCorrelationInnerTool = wire[PhraseCorrelationInner]
+    lazy val phraseCorrelationInnerTool = wire[PhraseCorrelationInnerWithHints]
 
     def vocabularyHint: VocabularyHint
   }
