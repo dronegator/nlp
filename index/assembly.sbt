@@ -4,4 +4,4 @@
 
 mainClass in assembly := Some("com.github.dronegator.nlp.main.NLPTMain")
 
-assemblyOutputPath in assembly := new File("ooo")
+//assemblyOutputPath in assembly := new File("ooo")

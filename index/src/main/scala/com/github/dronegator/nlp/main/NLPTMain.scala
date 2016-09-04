@@ -1,19 +1,23 @@
 import java.io.File
 
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenMap}
 import com.github.dronegator.nlp.main.MainTools
-import com.github.dronegator.nlp.utils._
-import com.github.dronegator.nlp.vocabulary.VocabularyRawImpl
+import com.github.dronegator.nlp.utils._, Match._
+import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, VocabularyHintImpl, VocabularyRawImpl}
 
 object NLPTMain
   extends App
   with MainTools {
+  val fileIn :: fileOut ::  OptFile(hints) = args.toList
+  lazy val cfg = CFG()
 
-  val Array(fileIn, fileOut) = args
+  lazy val vocabularyHint = hints.map(load(_): VocabularyImpl).getOrElse{
+    println("Hints have initialized")
+    VocabularyHintImpl(Tokenizer.MapOfPredefs, Map())
+  }
 
   val source = io.Source.fromFile(new File(fileIn)).getLines()
-
-  lazy val cfg = CFG()
 
   val (tokenMapIterator, tokenIterator) = source.
     component(splitterTool).
@@ -73,5 +77,5 @@ object NLPTMain
 
   dump(tokenMap, lastToken)
 
-  save(new File(fileOut), VocabularyRawImpl(statement8.toList, nGram1, nGram2, nGram3, tokenMap, phraseCorrelationRepeated, phraseCorrelationConsequent, phraseCorrelationInner))
+  save(new File(fileOut), VocabularyRawImpl(tokenMap, vocabularyHint.meaningMap, statement8.toList, nGram1, nGram2, nGram3, phraseCorrelationRepeated, phraseCorrelationConsequent, phraseCorrelationInner))
 }
