@@ -6,7 +6,7 @@ import java.nio.file.Paths
 import com.github.dronegator.nlp.common.{Count, Probability}
 import com.github.dronegator.nlp.component.accumulator.Accumulator
 import com.github.dronegator.nlp.component.ngramscounter.NGramsCounter
-import com.github.dronegator.nlp.component.phrase_correlation_consequent.PhraseCorrelationConsequent
+import com.github.dronegator.nlp.component.phrase_correlation_consequent.{PhraseCorrelationConsequentWithHints, PhraseCorrelationConsequent}
 import com.github.dronegator.nlp.component.phrase_correlation_repeated.{PhraseCorrelationInner, PhraseCorrelationRepeated}
 import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
 import com.github.dronegator.nlp.component.splitter.Splitter
@@ -43,7 +43,7 @@ package object main {
 
     lazy val phraseCorrelationRepeatedTool = wire[PhraseCorrelationRepeated]
 
-    lazy val phraseCorrelationConsequentTool = wire[PhraseCorrelationConsequent]
+    lazy val phraseCorrelationConsequentTool = wire[PhraseCorrelationConsequentWithHints]
 
     lazy val phraseCorrelationInnerTool = wire[PhraseCorrelationInner]
 

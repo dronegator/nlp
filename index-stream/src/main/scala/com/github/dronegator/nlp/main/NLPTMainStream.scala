@@ -27,7 +27,7 @@ object NLPTMainStream
   lazy val cfg = CFG()
 
   println(hints)
-  lazy val vocabularyHint = hints.map(load(_)).getOrElse{
+  lazy val vocabularyHint = hints.map(load(_): VocabularyImpl).getOrElse{
     println("Hints have initialized")
     VocabularyHintImpl(Tokenizer.MapOfPredefs, Map())
   }
@@ -65,7 +65,7 @@ object NLPTMainStream
     toMat(Sink.headOption)(Keep.right)
 
   val phraseCorrelationConsequentFlow = Flow[Statement].
-    take(0).
+    //take(0).
     component(phraseCorrelationConsequentTool).
     toMat(Sink.headOption)(Keep.right)
 
@@ -147,14 +147,14 @@ object NLPTMainStream
             println("== Words, repeated in consequent phrases ==")
             dump(phraseCorrelationRepeated, vocabulary.wordMap)
 
-//            println("== Correlation of words in consequent phrases ==")
-//            dump(phraseCorrelationConsequent)
+            println("== Correlation of words in consequent phrases ==")
+            dump(phraseCorrelationConsequent)
           }
 
           println("Saving the vocabulary")
-          save(new File(fileOut), vocabularyRaw.copy(
+          save(new File(fileOut), vocabularyRaw/*.copy(
             phraseCorrelationConsequent = phraseCorrelationConsequentTool.init._2
-          ))
+          )*/)
           println("The vocabulary has been saved")
 
           futureDump map {

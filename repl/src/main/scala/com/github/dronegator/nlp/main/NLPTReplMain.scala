@@ -4,9 +4,9 @@ import java.io.File
 
 import akka.stream.scaladsl.Source
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
-import com.github.dronegator.nlp.utils.{CFG, Match, _}, Match._
+import com.github.dronegator.nlp.utils._, Match._
 import com.github.dronegator.nlp.vocabulary.{VocabularyHint, VocabularyImpl}
-import com.github.dronegator.nlp.vocabulary.VocabularyTools.{VocabularyRawTools, VocabularyTools}
+import com.github.dronegator.nlp.vocabulary.VocabularyTools.{VocabularyRawTools, VocabularyTools, VocabularyHintTools}
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
 import jline.console.completer.StringsCompleter
@@ -39,6 +39,13 @@ object NLPTReplMain
     case object Stat extends SubCommand
 
     def unapply(name: String) = withNameOption(name)
+
+    def unapply(names: List[String]) = names match {
+      case name :: Nil =>
+        withNameOption(name)
+      case _ =>
+        None
+    }
   }
 
   import SubCommand._
@@ -179,9 +186,19 @@ object NLPTReplMain
            | - tokens size = ${vocabulary.tokenMap.size}
          """.stripMargin)
 
-    case Next() :: Dump() :: _ =>
+    case Next() :: Dump() :: OptFile(file) =>
       println("== next")
-      println(vocabulary.map1ToNextPhrase.keys.toList.flatten.flatMap(vocabulary.wordMap.get(_)))
+      sourceFrom(vocabulary.map1ToNextPhrase.toIterator flatMap {
+        case (token1, map) =>
+          map.map {
+            case (token2, p) =>
+              (token1 :: token2 :: Nil) -> p
+          }
+      }).arbeiten(file)
+      //println(vocabulary.map1ToNextPhrase.keys.flatMap(vocabulary.wordMap.get(_)).toList)
+
+    case Next() :: _  =>
+      println(s"== tokens to next phrase size = ${vocabulary.map1ToNextPhrase.size}")
 
     case Lookup() :: word1 :: Nil =>
       println(s"1 $word1:")
@@ -295,6 +312,28 @@ object NLPTReplMain
 
       }
 
+    case Continue() :: words =>
+
+        (for {
+          token <- vocabulary.tokenizeShort(words)
+          (token, p) <- vocabulary.map1ToNextPhrase.get(token).getOrElse(Nil)
+        } yield {
+          (token, p)
+        }).
+        groupBy(_._1).
+        map{
+          case (token, values) =>
+            token -> values.map(_._2).reduceOption(_ + _).getOrElse(0.0)
+        }.
+        toList.
+        sortBy(_._2).
+        foreach{
+          case (token, probability) =>
+            println(f"${vocabulary.wordMap(token)}%-20s $probability%5.3f")
+        }
+      //tokens.`
+      ///
+
     case words@(_ :+ ".") => //case ContinuePhrase() :: words =>
       println("We suggest a few words for the next phrase:")
       vocabulary.suggestForNext(vocabulary.tokenize(words)).
@@ -307,11 +346,12 @@ object NLPTReplMain
             println(s" - $word, p = $p")
         }
 
-    case Continue() :: words =>
-      vocabulary.continueStatement(vocabulary.tokenizeShort(words)) foreach {
-        case (token, probability) =>
-          println(s" - ${RepresenterToken.represent(token)}, p = $probability")
-      }
+
+
+//      vocabulary.continueStatement(vocabulary.tokenizeShort(words)) foreach {
+//        case (token, probability) =>
+//          println(s" - ${RepresenterToken.represent(token)}, p = $probability")
+//      }
 
     case words@(_ :: _) =>
       vocabulary.continueStatement(vocabulary.tokenizeShort(words)) foreach {

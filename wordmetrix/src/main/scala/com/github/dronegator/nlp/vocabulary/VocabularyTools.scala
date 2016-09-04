@@ -57,7 +57,6 @@ object VocabularyTools {
     }
 
     def continueStatement(statement: Statement): List[(Token, Probability)] = {
-      println(statement)
       statement.takeRight(2) match {
         case token1 :: Nil =>
           vocabulary.map1ToNext.get(token1 :: Nil).getOrElse(List()).map(swap)
@@ -105,7 +104,7 @@ object VocabularyTools {
         vocabulary.filter(statement, 2, 10).
           toList.
           flatMap(_._2)
-        (p, nextToken) <- vocabulary.map1ToNextPhrase.get(token1 :: Nil).toList.flatten
+        (p, nextToken) <- vocabulary.map1ToNextPhraseProjected.get(token1 :: Nil).toList.flatten
       } yield {
           nextToken -> p
         }).
@@ -175,12 +174,29 @@ object VocabularyTools {
     def untokenize(tokens: List[Token]) =
       tokens.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
 
+//    def keywords(statement: Statement) = // TOOD:obsoleted?
+//      statement.
+//        sliding(3).
+//        collect {
+//          case before :: token :: after :: Nil =>
+//            vocabulary.meaningMap.get((before, after)) map {
+//              case (pSense, pNonSense) =>
+//                token -> (pSense - pNonSense, pSense, pNonSense)
+//            }
+//        }.flatten
+
+  }
+
+  implicit class VocabularyHintTools(val vocabularyHint: VocabularyHint) extends main.Combinators {
+    override def cfg: CFG = CFG()
+
     def keywords(statement: Statement) =
       statement.
         sliding(3).
         collect {
           case before :: token :: after :: Nil =>
-            vocabulary.meaningMap.get((before, after)) map {
+            println(s"vocabularyHint => ${vocabularyHint.meaningMap.size}")
+            vocabularyHint.meaningMap.get((before, after)) map {
               case (pSense, pNonSense) =>
                 token -> (pSense - pNonSense, pSense, pNonSense)
             }
@@ -234,5 +250,4 @@ object VocabularyTools {
         }
     }
   }
-
 }
