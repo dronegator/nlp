@@ -254,9 +254,12 @@ Statistic:
     300MB   124285  3101673 10575922    3542017 178109
     400MB   144823  3849867 13499864    4709330 211151
     500MB   157112  4443462 16063365    5901462 230416
+    
+    
+![alt tag](doc/statistic.png)    
 
- Links
- --------
+Links
+--------
 [Dolch word list](https://en.wikipedia.org/wiki/Dolch_word_list) 
 
 History
@@ -266,3 +269,8 @@ History
 [Version 0.1](https://github.com/dronegator/nlp/tree/v.0.1), 20160825, Prototype the index tools and functions to cover the simplified script of the game.
 
 [Version 0.2](https://github.com/dronegator/nlp/tree/v.0.2), 20160831, Improve inner architecture and packaging.
+
+The current achievments
+---------------------------
+Separate meaningful words in phrase on the base of context
+Implement itterative learning
