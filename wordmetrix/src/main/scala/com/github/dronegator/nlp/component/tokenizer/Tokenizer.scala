@@ -19,6 +19,8 @@ object Tokenizer {
 
   type Statement = List[Token]
 
+  type Fragment = List[Token]
+
   type Phrase = List[Word]
 
   type TokenMap = Map[Word, List[Token]]

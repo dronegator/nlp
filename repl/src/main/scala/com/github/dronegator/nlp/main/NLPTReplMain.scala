@@ -117,7 +117,7 @@ object NLPTReplMain
 
   Runtime.getRuntime().addShutdownHook(new Thread() {
     override def run() {
-      println("Hope to see you again")
+      println("We hope to see you again")
       consoleReader.getHistory.asInstanceOf[FileHistory].flush()
     }
   })
@@ -273,6 +273,38 @@ object NLPTReplMain
         }
 
     case com@Advice() :: words =>
+      //val nPow = pow.toInt
+      val a = 0.047709
+      val b = 0.248645
+      val c = 554643e-08
+      def weight(x: Int) =
+        a*Math.pow(b,x)+c
+
+
+      val statement = vocabulary.tokenize(words)
+      val originProbability = vocabulary.probability(statement) / weight(statement.length)
+      println(f"probability = $originProbability%16.14f ")
+
+      vocabulary.advice(statement).
+        map{
+          case (statement, probability) =>
+            (statement, probability, probability / weight(statement.length))
+        }.
+        sortBy{
+          _._3
+        }.
+        foreach {
+          case (statement, probability, p) if p > originProbability  =>
+            val phrase = statement.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
+            println(f"$probability%16.14f $p%16.14f $phrase")
+
+          case _ =>
+        }
+
+    case com@Advice() :: words =>
+      /*
+      * This one is obsoleted
+       */
       vocabulary.advicePlain(vocabulary.tokenize(words)).
         foreach {
           case (statements, n) if !statements.isEmpty =>
@@ -284,7 +316,6 @@ object NLPTReplMain
 
           case _ =>
         }
-
     case Meaning() :: File1(sense) :: File1(nonSense) :: OptFile(weighted) =>
       def load(file: File) =
         io.Source.fromFile(file).

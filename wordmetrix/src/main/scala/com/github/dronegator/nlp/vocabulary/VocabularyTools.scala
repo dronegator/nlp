@@ -11,11 +11,15 @@ import com.github.dronegator.nlp.utils.IteratorStage
  */
 object VocabularyTools {
 
-  case class Advice(token: Option[Token], tokens: List[(Token, Probability)], removal: Option[Probability])
+//  case class Advice(token: Option[Token], tokens: List[(Token, Probability)], removal: Option[Probability])
+//
+//  type Advices = List[Advice]
 
-  type Advices = List[Advice]
+  type Advices = List[(Statement, Probability)]
 
-  implicit class VocabularyTools(vocabulary: VocabularyImpl/*TODO: Use Vocabulary instead*/) extends main.Combinators {
+  implicit class VocabularyTools(val vocabulary: VocabularyImpl/*TODO: Use Vocabulary instead*/)
+    extends main.Combinators
+    with ToolAdviceTrait {
     val cfg = CFG()
 
     lazy val vocabularyHint: VocabularyHint = vocabulary
@@ -70,8 +74,6 @@ object VocabularyTools {
     }
 
     def prependPhrase(statement: Statement): List[(Token, Probability)] = ???
-
-    def advice(statement: Statement): Advices = ???
 
     @deprecated("Use advice instead", "v.0.2")
     def advicePlain(statement: Statement): Iterator[(List[(Statement, Double)], Int)] =
