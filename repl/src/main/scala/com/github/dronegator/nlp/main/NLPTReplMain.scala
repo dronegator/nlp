@@ -290,9 +290,9 @@ object NLPTReplMain
           case (statement, probability) =>
             (statement, probability, probability / weight(statement.length))
         }.
-        sortBy{
-          _._3
-        }.
+//        sortBy{
+//          _._3
+//        }.
         foreach {
           case (statement, probability, p) if p > originProbability  =>
             val phrase = statement.flatMap(vocabulary.wordMap.get(_)).mkString(" ")

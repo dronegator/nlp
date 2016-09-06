@@ -44,7 +44,7 @@ trait ToolAdviceTrait {
   this: VocabularyTools =>
   def vocabulary: Vocabulary
 
-  private val checkers = /*checkIdentity :: checkReorder:: */ checkRemoval :: checkInsertion :: checkExchange :: Nil
+  private val checkers = /* checkIdentity :: checkReorder:: */ checkRemoval :: checkInsertion :: checkExchange :: Nil
 
   private def checkIdentity: Checker = {
     case Cut((_, token, _, position)) =>
@@ -87,30 +87,30 @@ trait ToolAdviceTrait {
       Exchange(position, before :: token :: Nil, token :: before :: Nil) :: Nil
   }
 
-  def advice(statement: Statement): Advices = {
-    val variaty = Iterator.iterate((statement.drop(1), statement.take(1))) {
+
+  def variety(statement: Statement) =
+    Iterator.iterate((statement.drop(1), statement.take(1))) {
       case (token :: tokens, prefix) =>
         (tokens, token :: prefix)
     }.
       takeWhile(_._1.nonEmpty).
       map { cut =>
-//        println(cut)
-//        println(checkers.map(_.lift(cut)).flatten.flatten)
         checkers.map(_.lift(cut)).flatten.flatten
-      }.toList
+      }.
+      filter(_.nonEmpty).
+      toList
 
-
-
-    def generator2(variety: List[List[Correction]]): List[List[Token]] = {
-      variety.flatMap{ tokenVariety =>
-        tokenVariety.map{
-          case Correction(position, _, offered) =>
-            val (prefix, suffix) = statement.splitAt(position+1)
-            prefix ++ offered ++ suffix.drop(1)
-        }
+  def varyOnePosition(variety: List[List[ToolAdviceTrait.Correction]], statement: Statement) = {
+    variety.flatMap { tokenVariety =>
+      tokenVariety.map {
+        case Correction(position, _, offered) =>
+          val (prefix, suffix) = statement.splitAt(position + 1)
+          prefix ++ offered ++ suffix.drop(1)
       }
     }
+  }
 
+  def varyOverall(variety: List[List[ToolAdviceTrait.Correction]]) = {
     def generator(variety: List[List[Correction]]): List[List[Token]] = {
       //println(variety.length)
       variety match {
@@ -126,17 +126,19 @@ trait ToolAdviceTrait {
       }
     }
 
+    generator(variety).
+      map { statement =>
 
-    generator2(variaty.toList.filter(_.nonEmpty)).
-      map { statement =>
-        //println(statement)
-        statement
-        //(PStart.value :: PStart.value :: statement) :+ PEnd.value
-      }.
-      map { statement =>
-        //println(statement, probability(statement))
-        statement -> probability(statement)
+        (PStart.value :: PStart.value :: statement) :+ PEnd.value
       }
   }
 
+  def advice(statement: Statement): Advices = {
+    varyOnePosition(variety(statement), statement).
+    //varyOverall(variety(statement)).
+      map { statement =>
+        //println(statement)
+        statement -> probability(statement)
+      }
+  }
 }
