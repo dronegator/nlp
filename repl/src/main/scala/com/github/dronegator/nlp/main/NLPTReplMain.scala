@@ -42,6 +42,8 @@ object NLPTReplMain
     
     case object Partial extends SubCommand
 
+    case object Optimal extends SubCommand
+
     def unapply(name: String) = withNameOption(name)
 
     def unapply(names: List[String]) = names match {
@@ -276,7 +278,8 @@ object NLPTReplMain
             println(vocabulary.untokenize(tokens))
         }
 
-    case Advice() :: (vary@(Full() | Partial())) :: words  =>
+
+    case Advice() :: (vary@(Full() | Partial() | Optimal())) :: words  =>
       (1 to 20).foreach{ n =>
         println(vocabulary.statementDenominator((1 to 20).take(n).toList))
       }
@@ -291,6 +294,9 @@ object NLPTReplMain
         case Full() =>
           println("full sweep")
           vocabulary.adviceOverall(statement)
+        case Optimal() =>
+          println("optimal sweep")
+          vocabulary.adivceOptimal(statement)
         case _ =>
           vocabulary.advice(statement)
       }
