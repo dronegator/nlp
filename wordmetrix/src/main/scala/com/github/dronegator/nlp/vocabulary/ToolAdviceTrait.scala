@@ -44,7 +44,7 @@ trait ToolAdviceTrait {
   this: VocabularyTools =>
   def vocabulary: Vocabulary
 
-  private val checkers = /* checkIdentity :: checkReorder:: */ checkRemoval :: checkInsertion :: checkExchange :: Nil
+  private val checkers = checkIdentity :: /* checkReorder:: */ checkRemoval :: checkInsertion :: checkExchange :: Nil
 
   private def checkIdentity: Checker = {
     case Cut((_, token, _, position)) =>
@@ -112,10 +112,9 @@ trait ToolAdviceTrait {
 
   def varyOverall(variety: List[List[ToolAdviceTrait.Correction]]) = {
     def generator(variety: List[List[Correction]]): List[List[Token]] = {
-      //println(variety.length)
       variety match {
         case head :: tail =>
-          head.map {
+          head.take(4).map {
             case Correction(_, _, offered) =>
               generator(tail) map { suffix =>
                 offered ++ suffix
@@ -135,9 +134,14 @@ trait ToolAdviceTrait {
 
   def advice(statement: Statement): Advices = {
     varyOnePosition(variety(statement), statement).
-    //varyOverall(variety(statement)).
       map { statement =>
-        //println(statement)
+        statement -> probability(statement)
+      }
+  }
+
+  def adviceOverall(statement: Statement): Advices = {
+    varyOverall(variety(statement)).
+      map { statement =>
         statement -> probability(statement)
       }
   }

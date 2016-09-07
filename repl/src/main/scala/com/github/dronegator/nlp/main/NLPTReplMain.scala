@@ -25,18 +25,22 @@ object NLPTReplMain
   with DumpTools {
   lazy val cfg: CFG = CFG()
 
-  sealed trait SubCommand extends EnumEntry with Lowercase with SubCommand.EnumUnaply
+  sealed trait SubCommand extends EnumEntry with Lowercase with SubCommand.Overall
 
   object SubCommand extends Enum[SubCommand] {
     override def values: Seq[SubCommand] = findValues
 
-    trait EnumUnaply {
+    trait Overall {
       def unapply(name: String) = withNameOption(name) filter (this == _) isDefined
     }
 
     case object Dump extends SubCommand
 
     case object Stat extends SubCommand
+    
+    case object Full extends SubCommand
+    
+    case object Partial extends SubCommand
 
     def unapply(name: String) = withNameOption(name)
 
@@ -85,7 +89,7 @@ object NLPTReplMain
 
     case object Everything extends Command("Statistic for all items of a vocabulary", Set(Dump, Stat))
 
-    case object Advice extends Command("Provide an advice to improve the statement", Set())
+    case object Advice extends Command("Provide an advice to improve the statement", Set(Full, Partial))
 
     case object Generate extends Command("Generate a statement from a word", Set())
 
@@ -165,12 +169,12 @@ object NLPTReplMain
 
     case Phrases() :: Dump() :: OptFile(file) =>
       println("== phrases")
-      sourceFrom(vocabulary.phrases.toIterator map { x =>
+      sourceFrom(vocabulary.statements.toIterator map { x =>
         x -> vocabulary.probability(x)
       }).arbeiten(file)
 
     case Phrases() :: _ =>
-      println(s"== phrases size = ${vocabulary.phrases.size}")
+      println(s"== phrases size = ${vocabulary.statements.size}")
 
     case Tokens() :: Dump() :: OptFile(file) =>
       println("== tokens")
@@ -212,7 +216,7 @@ object NLPTReplMain
            | - ngram1 size = ${vocabulary.nGram1.size}
            | - ngram2 size = ${vocabulary.nGram2.size}
            | - ngram3 size = ${vocabulary.nGram3.size}
-           | - phrases size = ${vocabulary.phrases.size}
+           | - phrases size = ${vocabulary.statements.size}
            | - tokens size = ${vocabulary.tokenMap.size}
            | - consequent correlation size = ${vocabulary.map1ToNextPhrase.size}
            | - inner correlation size = ${vocabulary.map1ToTheSamePhrase.size}
@@ -248,7 +252,7 @@ object NLPTReplMain
       }
 
     case Probability() :: Dump() :: OptFile(file) =>
-      SourceExt(Source(vocabulary.phrases).map { tokens =>
+      SourceExt(Source(vocabulary.statements).map { tokens =>
         val probability = vocabulary.probability(tokens)
         val statement = vocabulary.untokenize(tokens)
         (f"${tokens.length}%-3d ${probability}%-16.14f $statement")
@@ -272,29 +276,35 @@ object NLPTReplMain
             println(vocabulary.untokenize(tokens))
         }
 
-    case com@Advice() :: words =>
-      //val nPow = pow.toInt
-      val a = 0.047709
-      val b = 0.248645
-      val c = 554643e-08
-      def weight(x: Int) =
-        a*Math.pow(b,x)+c
-
+    case Advice() :: (vary@(Full() | Partial())) :: words  =>
+      (1 to 20).foreach{ n =>
+        println(vocabulary.statementDenominator((1 to 20).take(n).toList))
+      }
 
       val statement = vocabulary.tokenize(words)
-      val originProbability = vocabulary.probability(statement) / weight(statement.length)
+
+      val originProbability = vocabulary.probability(statement) / vocabulary.statementDenominator(statement)
+
       println(f"probability = $originProbability%16.14f ")
 
-      vocabulary.advice(statement).
+      val advice = vary match {
+        case Full() =>
+          println("full sweep")
+          vocabulary.adviceOverall(statement)
+        case _ =>
+          vocabulary.advice(statement)
+      }
+
+      advice.
         map{
           case (statement, probability) =>
-            (statement, probability, probability / weight(statement.length))
+            (statement, probability, probability / vocabulary.statementDenominator(statement) * math.pow(1.1,statement.length))
         }.
-//        sortBy{
-//          _._3
-//        }.
+        sortBy{
+          _._3
+        }.
         foreach {
-          case (statement, probability, p) if p > originProbability  =>
+          case (statement, probability, p) if p > originProbability && statement.length > 4 =>
             val phrase = statement.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
             println(f"$probability%16.14f $p%16.14f $phrase")
 

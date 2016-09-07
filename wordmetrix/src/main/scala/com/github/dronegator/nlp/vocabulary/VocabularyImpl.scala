@@ -12,7 +12,7 @@ object VocabularyImpl {
   implicit def apply(vocabulary: VocabularyRaw) =
     new VocabularyImpl(
       vocabulary.tokenMap,
-      vocabulary.phrases,
+      vocabulary.statements,
       vocabulary.nGram1,
       vocabulary.nGram2,
       vocabulary.nGram3,
@@ -23,7 +23,7 @@ object VocabularyImpl {
 }
 
 case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
-                          phrases: List[Statement],
+                          statements: List[Statement],
                           nGram1: Map[List[Token], Int],
                           nGram2: Map[List[Token], Int],
                           nGram3: Map[List[Token], Int],
@@ -173,43 +173,43 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
   }
 
   override lazy val map1ToNextPhrase: Map[Token, List[(Token, Probability)]] =
-    phraseCorrelationConsequent.groupBy{
+    phraseCorrelationConsequent.groupBy {
       case (token :: _, _) =>
         token
-    }.map{
+    }.map {
       case (token, tokens) =>
         val cumulative = tokens.
-          map{
+          map {
             case (_, value) =>
               value
           }.
           sum.toDouble
 
-        token -> tokens.map{
+        token -> tokens.map {
           case ((_ :: token :: Nil), count) =>
             token -> (count / cumulative)
         }.toList.
-        sortBy(_._2)
+          sortBy(_._2)
     }
 
   override lazy val map1ToTheSamePhrase: Map[Token, List[(Token, Probability)]] =
-    phraseCorrelationInner.groupBy{
+    phraseCorrelationInner.groupBy {
       case (token :: _, _) =>
         token
-    }.map{
+    }.map {
       case (token, tokens) =>
         val cumulative = tokens.
-          map{
+          map {
             case (_, value) =>
               value
           }.
           sum.toDouble
 
-        token -> tokens.map{
+        token -> tokens.map {
           case ((_ :: token :: Nil), count) =>
             token -> (count / cumulative)
         }.toList.
-        sortBy(_._2)
+          sortBy(_._2)
     }
 
   private def restorePhrase(statement: List[Token]) =
@@ -228,6 +228,24 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
   override lazy val meaningMap: Map[(Token, Token), (Probability, Probability)] = {
     this.meaningContextMap(sense, nonsense)
   }
+
+  private lazy val posToProbability =
+    statements
+      .toIterator
+      .foldLeft(Map[Int, (Probability, Int)]()) {
+        case (map, statement) =>
+          val length = statement.length
+          val (p, n) = map.getOrElse(length, (0.0, 0))
+          val probability = VocabularyTools.VocabularyTools(this).probability(statement) + p
+          map + (length ->(probability, n + 1))
+      }
+      .map{
+        case (key, (p, n)) =>
+          key -> (p / n)
+      }
+
+  override def statementDenominator(statement: Statement): Probability =
+    posToProbability.getOrElse(statement.length, 1.0)
 }
 
 trait VocabularyImplOutdated {
@@ -315,9 +333,10 @@ trait VocabularyImplOutdated {
       )
     } else None
   }
+
   @deprecated("Use mapToNextPhrase", "v.0.0.2")
   lazy val map1ToNextPhraseProjected: Map[List[Token], List[(Double, Token)]] =
-    phrases.reverse.
+    statements.reverse.
       map { statement =>
         filter(statement, 0.1) map (statement -> _._2)
       }.
