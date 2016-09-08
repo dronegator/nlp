@@ -148,7 +148,96 @@ trait ToolAdviceTrait {
   }
 
 
-  def adivceOptimal(statement: Statement): Advices = {
+  def adviceOptimal(statement: Statement): Advices = {
+    def advice(rStatement: Statement): List[(Probability, Statement, Option[Token])] = {
+      println(s"in: ${(rStatement).map(vocabulary.wordMap(_))}")
+      val out = rStatement match {
+        case after :: current :: (rStatement@(_ :: _)) =>
+          val adviceRest = advice(current :: rStatement)
+
+          lazy val substitute = adviceRest.flatMap {
+            case (probability, statement@(before :: _), another) =>
+              val token = another.getOrElse(current)
+
+              vocabulary.map2ToMiddle
+                .get(before :: after :: Nil).getOrElse(List()).filter{
+                  case (p, offer) => offer != current
+                }
+                .take(3)
+                //.takeWhile(_._2 != token)
+                .collect {
+                  case (p, offer) if current != offer =>
+                    println(s"   middle ${(vocabulary.wordMap(before),vocabulary.wordMap(offer),vocabulary.wordMap(after))}")
+                    (probability * p, offer :: statement, None)
+                }
+          }
+
+          lazy val identical = adviceRest collect {
+            case (probability, statement@(before :: _), None) =>
+              (probability, current :: statement, None)
+          }
+
+          lazy val remove = adviceRest
+
+          lazy val insert = adviceRest.flatMap {
+            case (probability, statement@(before :: _), another) =>
+              val token = another.getOrElse(current)
+
+              vocabulary.map2ToMiddle
+                .getOrElse(before :: token :: Nil, List())
+                .take(3)
+                .map {
+                  case (p, offer) =>
+                    println(s"   insert ${(vocabulary.wordMap(token), vocabulary.wordMap(offer), vocabulary.wordMap(before))}")
+                    (probability * p, token :: offer :: statement, None)
+                }
+          }
+
+          lazy val reverse = adviceRest.flatMap {
+            case (probability, statement@(before :: _), None) =>
+              (probability, after :: statement, Some(current)) :: Nil
+
+            case _ =>
+              Nil
+          }
+
+          substitute ++
+            identical ++
+            remove ++
+            insert /*++
+        reverse*/
+        case after :: current :: _ =>
+          (1.0, current :: Nil, None) :: Nil
+      }
+      out foreach {
+        case (p, statement, _) =>
+          println(s" $p --> ${statement.map(vocabulary.wordMap(_))}")
+      }
+
+      out.toIterator.distinctBy(_._2).toList
+    }
+
+    statement.tail.reverse match {
+      case statement1 =>
+        advice(statement1) map {
+          case (probability, statement1, _) =>
+
+            val s = statement.head :: (statement1).reverse
+
+            val p = this.probability(s)
+
+            //println(probability, p,  s)
+
+            (s, p)
+        }
+
+      case _ =>
+        Nil
+    }
+
+  }
+  
+  def adivceOptimalOld(statement: Statement): Advices = {
     def advice(rStatement: Statement, after: Token): List[(Probability, Statement, Option[Token])] = {
       println(s"in: ${(after :: rStatement).map(vocabulary.wordMap(_))}")
       val out = rStatement match {

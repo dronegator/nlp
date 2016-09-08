@@ -296,7 +296,7 @@ object NLPTReplMain
           vocabulary.adviceOverall(statement)
         case Optimal() =>
           println("optimal sweep")
-          vocabulary.adivceOptimal(statement)
+          vocabulary.adviceOptimal(statement)
         case _ =>
           vocabulary.advice(statement)
       }
