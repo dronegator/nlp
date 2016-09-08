@@ -310,7 +310,7 @@ object NLPTReplMain
           _._3
         }.
         foreach {
-          case (statement, probability, p) if p > originProbability && statement.length > 4 =>
+          case (statement, probability, p) => //if p > originProbability && statement.length > 4 =>
             val phrase = statement.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
             println(f"$probability%16.14f $p%16.14f $phrase")
 

@@ -6,6 +6,7 @@ import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.utils.Match
 import com.github.dronegator.nlp.vocabulary.ToolAdviceTrait._
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.{VocabularyTools, Advices}
+import com.github.dronegator.nlp.utils._
 
 /**
  * Created by cray on 9/5/16.
@@ -147,52 +148,52 @@ trait ToolAdviceTrait {
   }
 
 
-  def adivceOptimal(statement: Statement): Advices  = {
+  def adivceOptimal(statement: Statement): Advices = {
     def advice(rStatement: Statement, after: Token): List[(Probability, Statement, Option[Token])] = {
       println(s"in: ${(after :: rStatement).map(vocabulary.wordMap(_))}")
       val out = rStatement match {
         case current :: (rStatement@(_ :: _)) =>
-          val qq =              advice(rStatement, current)
+          val adviceRest = advice(rStatement, current)
 
-          lazy val substitute = qq.flatMap {
+          lazy val substitute = adviceRest.flatMap {
             case (probability, statement@(before :: _), another) =>
               val token = another.getOrElse(current)
 
               vocabulary.map2ToMiddle
-              .get(before :: after :: Nil).getOrElse(List()).filter{
-                case (p, offer) => offer != current
-              }
-              .take(1)
-              //.takeWhile(_._2 != token)
-              .collect {
-                case (p, offer) if current != offer =>
-                  println(s"   middle ${(vocabulary.wordMap(before),vocabulary.wordMap(offer),vocabulary.wordMap(after))}")
-                  (probability * p, offer :: statement, None)
-              }
+                .get(before :: after :: Nil).getOrElse(List()).filter{
+                  case (p, offer) => offer != current
+                }
+                .take(3)
+                //.takeWhile(_._2 != token)
+                .collect {
+                  case (p, offer) if current != offer =>
+                    println(s"   middle ${(vocabulary.wordMap(before),vocabulary.wordMap(offer),vocabulary.wordMap(after))}")
+                    (probability * p, offer :: statement, None)
+                }
           }
 
-          lazy val identical = qq collect {
+          lazy val identical = adviceRest collect {
             case (probability, statement@(before :: _), None) =>
               (probability, current :: statement, None)
           }
 
-          lazy val remove = qq
+          lazy val remove = adviceRest
 
-          lazy val insert = qq.flatMap {
+          lazy val insert = adviceRest.flatMap {
             case (probability, statement@(before :: _), another) =>
               val token = another.getOrElse(current)
 
               vocabulary.map2ToMiddle
-                .getOrElse(before :: token ::  Nil, List())
-                .take(1)
+                .getOrElse(before :: token :: Nil, List())
+                .take(3)
                 .map {
                   case (p, offer) =>
-                    println(s"   insert ${(vocabulary.wordMap(token),vocabulary.wordMap(offer),vocabulary.wordMap(before))}")
-                    (probability * p,  token :: offer :: statement, None)
+                    println(s"   insert ${(vocabulary.wordMap(token), vocabulary.wordMap(offer), vocabulary.wordMap(before))}")
+                    (probability * p, token :: offer :: statement, None)
                 }
           }
 
-          lazy val reverse = qq.flatMap {
+          lazy val reverse = adviceRest.flatMap {
             case (probability, statement@(before :: _), None) =>
               (probability, after :: statement, Some(current)) :: Nil
 
@@ -201,8 +202,8 @@ trait ToolAdviceTrait {
           }
 
           substitute ++
-          identical ++
-          remove ++
+            identical ++
+            remove ++
             insert /*++
         reverse*/
         case current :: _ =>
@@ -213,7 +214,7 @@ trait ToolAdviceTrait {
           println(s" $p --> ${statement.map(vocabulary.wordMap(_))}")
       }
 
-      out
+      out.toIterator.distinctBy(_._2).toList
     }
 
     statement.tail.reverse match {
@@ -221,7 +222,7 @@ trait ToolAdviceTrait {
         advice(statement1, token) map {
           case (probability, statement1, _) =>
 
-            val s = statement.head :: (  token :: statement1).reverse
+            val s = statement.head :: (token :: statement1).reverse
 
             val p = this.probability(s)
 
