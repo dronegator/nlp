@@ -311,13 +311,17 @@ object NLPTReplMain
 
       val originProbability = vocabulary.probability(statement) / vocabulary.statementDenominator(statement)
 
-      val changeLimit = switches.get("change-limit").map(_.toInt).getOrElse(Math.max(statement.length / 3, 3))
+      val variability = switches.get("variability").map(_.toInt).getOrElse(5)
+
+      val changeLimit = switches.get("limit").map(_.toInt).getOrElse(Math.max(statement.length / 3, 3))
 
       val useBest = switches.get("best").isDefined
+
       val uncertainty = switches.getOrElse("uncertainty", "0.0").toDouble
 
       val advice = vocabulary.adviceOptimal(
         statement,
+        variability = variability,
         keywords = keywords,
         changeLimit = changeLimit,
         uncertainty = uncertainty
@@ -348,6 +352,8 @@ object NLPTReplMain
         }
 
       println(f"probability = $originProbability%16.14f")
+
+      println(f"variability = $variability")
 
       println(f"changeLimit = $changeLimit")
 

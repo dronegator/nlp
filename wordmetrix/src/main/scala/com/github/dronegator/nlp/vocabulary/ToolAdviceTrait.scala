@@ -16,7 +16,7 @@ trait ToolAdviceTrait
   this: VocabularyTools =>
   def vocabulary: Vocabulary
 
-  def adviceOptimal(statement: Statement, keywords: Set[Token] = Set(), changeLimit: Int = 2, uncertainty: Double = 0.0): Advices = {
+  def adviceOptimal(statement: Statement, keywords: Set[Token] = Set(), changeLimit: Int = 2, uncertainty: Double = 0.0, variability: Int = 7): Advices = {
     def checkLimit(rest: (Int, Int, Probability, Statement, Option[Token])) = {
       changeLimit >= rest._1
     }
@@ -36,7 +36,7 @@ trait ToolAdviceTrait
                   .get(before :: after :: Nil).getOrElse(List()).filter {
                   case (p, offer) => offer != current
                 }
-                  .take(5)
+                  .take(variability)
                   .collect {
                     case (_, offer) if current != offer =>
                       val p = vocabulary
@@ -73,7 +73,7 @@ trait ToolAdviceTrait
 
               vocabulary.map2ToMiddle
                 .getOrElse(before :: token :: Nil, List())
-                .take(5)
+                .take(variability)
                 .map {
                   case (p, offer) =>
 
