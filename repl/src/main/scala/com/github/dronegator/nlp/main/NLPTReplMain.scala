@@ -3,7 +3,7 @@ package com.github.dronegator.nlp.main
 import java.io.File
 
 import akka.stream.scaladsl.Source
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{TokenPreDef, Token}
 import com.github.dronegator.nlp.utils._, Match._
 import com.github.dronegator.nlp.vocabulary.{VocabularyHint, VocabularyImpl}
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.{VocabularyRawTools, VocabularyTools, VocabularyHintTools}
@@ -280,27 +280,54 @@ object NLPTReplMain
 
       val statement = vocabulary.tokenize(words)
 
+      val keywords: Set[Token] = {
+        val keywords: Set[Token] =
+          switches.get("keywords")
+            .toSet[String]
+            .flatMap { x =>
+              x.split(":").toSet[String].flatMap(x => vocabulary.tokenMap.getOrElse(x, Nil))
+            }
+
+        if (keywords.isEmpty) {
+          if (switches.contains("keywords")) {
+            statement.toSet --
+              vocabulary.keywords(statement)
+                .collect {
+                  case (keyword, (p, _, _)) if p < 0.0 =>
+                    keyword
+                }
+                .toSet --
+              TokenPreDef.values.map(_.value).toSet
+          } else {
+            Set()
+          }
+        } else {
+          keywords
+        }
+      }
+
       val originProbability = vocabulary.probability(statement) / vocabulary.statementDenominator(statement)
 
-      println(f"probability = $originProbability%16.14f ")
+      val changeLimit = switches.get("change-limit").map(_.toInt).getOrElse(Math.min(statement.length / 3, 3))
 
       val useBest = switches.get("best").isDefined
       val uncertainty = switches.getOrElse("uncertainty", "0.0").toDouble
 
       val advice = vocabulary.adviceOptimal(
         statement,
-        changeLimit = switches.getOrElse("change-limit", "2").toInt,
+        keywords = keywords,
+        changeLimit = changeLimit,
         uncertainty = uncertainty
       )
 
       advice.
-        map{
+        map {
           case (statement, probability) =>
-            println(vocabulary.statementDenominator(statement), probability, probability / vocabulary.statementDenominator(statement) * math.pow(1.1,statement.length))
+            println(vocabulary.statementDenominator(statement), probability, probability / vocabulary.statementDenominator(statement) * math.pow(1.1, statement.length))
 
-            (statement, probability, probability / vocabulary.statementDenominator(statement) * math.pow(1.1,statement.length))
+            (statement, probability, probability / vocabulary.statementDenominator(statement) * math.pow(1.1, statement.length))
         }.
-        sortBy{
+        sortBy {
           _._3
         }.
         foreach {
@@ -308,9 +335,18 @@ object NLPTReplMain
             val phrase = statement.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
             println(f"$probability%16.14f $p%16.14f $phrase")
 
-          case qq @ (statement, probability, p)=>
+          case qq@(statement, probability, p) =>
             println(qq, p > originProbability)
         }
+
+      keywords
+        .foreach { keyword =>
+          println(s"keyword = ${vocabulary.wordMap.getOrElse(keyword, "")}")
+        }
+
+      println(f"probability = $originProbability%16.14f")
+
+      println(f"changeLimit = $changeLimit")
 
     case Meaning() :: File1(sense) :: File1(nonSense) :: OptFile(weighted) =>
       def load(file: File) =

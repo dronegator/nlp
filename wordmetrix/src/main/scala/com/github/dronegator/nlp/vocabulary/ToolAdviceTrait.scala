@@ -16,9 +16,9 @@ trait ToolAdviceTrait
   this: VocabularyTools =>
   def vocabulary: Vocabulary
 
-  def adviceOptimal(statement: Statement, changeLimit: Int = 2, uncertainty: Double = 0.0): Advices = {
+  def adviceOptimal(statement: Statement, keywords: Set[Token] = Set(), changeLimit: Int = 2, uncertainty: Double = 0.0): Advices = {
     def checkLimit(rest: (Int, Int, Probability, Statement, Option[Token])) = {
-      changeLimit > rest._1
+      changeLimit >= rest._1
     }
 
     def advice(rStatement: Statement): List[(Int, Int, Probability, Statement, Option[Token])] = {
@@ -26,24 +26,26 @@ trait ToolAdviceTrait
         case after :: current :: (rStatement@(_ :: _ :: _)) =>
           val adviceRest = advice(current :: rStatement)
 
-          lazy val substitute = adviceRest.filter(checkLimit).flatMap {
-            case (changes, severe, probability, statement@(before :: t :: _), another) =>
-              val token = another.getOrElse(current)
+          lazy val substitute = adviceRest.filter(checkLimit)
+            .filterNot(keywords contains _._5.getOrElse(current))
+            .flatMap {
+              case (changes, severe, probability, statement@(before :: t :: _), another) =>
+                val token = another.getOrElse(current)
 
-              vocabulary.map2ToMiddle
-                .get(before :: after :: Nil).getOrElse(List()).filter{
+                vocabulary.map2ToMiddle
+                  .get(before :: after :: Nil).getOrElse(List()).filter {
                   case (p, offer) => offer != current
                 }
-                .take(5)
-                .collect {
-                  case (_, offer) if current != offer =>
-                    val p = vocabulary
-                      .pNGram3
-                      .getOrElse(t :: before :: offer :: Nil, 0.0)
+                  .take(5)
+                  .collect {
+                    case (_, offer) if current != offer =>
+                      val p = vocabulary
+                        .pNGram3
+                        .getOrElse(t :: before :: offer :: Nil, 0.0)
 
-                    (changes + 1, severe, probability * p, offer :: statement, None)
-                }
-          }
+                      (changes + 1, severe, probability * p, offer :: statement, None)
+                  }
+            }
 
           lazy val identical = adviceRest.collect {
             case (changes, severe, probability, statement@(t1 :: t2 :: _), another) =>
@@ -56,11 +58,14 @@ trait ToolAdviceTrait
               (changes, severe, p * probability, token :: statement, None)
           }
 
-          lazy val remove = adviceRest.filter(checkLimit)
-            .map {
-              case (changes, severe, probability, statement, another) =>
-                (changes + 1, severe, probability, statement, another)
-            }
+          lazy val remove =
+            if (keywords contains current) List()
+            else
+              adviceRest.filter(checkLimit)
+                .map {
+                  case (changes, severe, probability, statement, another) =>
+                    (changes + 1, severe, probability, statement, another)
+                }
 
           lazy val insert = adviceRest.filter(checkLimit).flatMap {
             case (changes, severe, probability, statement@(before :: t :: _), another) =>
@@ -84,19 +89,22 @@ trait ToolAdviceTrait
                 }
           }
 
-          lazy val reverse = adviceRest.filter(checkLimit).flatMap {
-            case (changes, severe, probability, statement@(before :: t :: _), another) =>
-              val token = another.getOrElse(current)
+          lazy val reverse = adviceRest
+            .filter(checkLimit)
+            .filterNot(keywords contains _._5.getOrElse(current))
+            .flatMap {
+              case (changes, severe, probability, statement@(before :: t :: _), another) =>
+                val token = another.getOrElse(current)
 
-              val p = vocabulary
-                .pNGram3
-                .getOrElse(t :: before :: after :: Nil, 0.0)
+                val p = vocabulary
+                  .pNGram3
+                  .getOrElse(t :: before :: after :: Nil, 0.0)
 
-              (changes + 1, severe, probability * p, after :: statement, Some(token)) :: Nil
+                (changes + 1, severe, probability * p, after :: statement, Some(token)) :: Nil
 
-            case x =>
-              Nil
-          }
+              case x =>
+                Nil
+            }
 
           substitute ++
             remove ++
