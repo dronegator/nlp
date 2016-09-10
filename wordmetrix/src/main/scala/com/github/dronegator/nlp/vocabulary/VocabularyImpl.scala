@@ -226,7 +226,7 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
   }
 
   override lazy val meaningMap: Map[(Token, Token), (Probability, Probability)] = {
-    this.meaningContextMap(sense, nonsense)
+    this.meaningContextMap(sense, auxiliary)
   }
 
   private lazy val posToProbability =

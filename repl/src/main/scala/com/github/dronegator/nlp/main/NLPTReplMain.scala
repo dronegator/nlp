@@ -320,7 +320,7 @@ object NLPTReplMain
       val uncertainty = switches.getOrElse("uncertainty", "0.0").toDouble
 
       val auxiliary = if (switches.contains("auxiliary"))
-        vocabulary.nonsense
+        vocabulary.auxiliary
       else
         Set[Token]()
 

@@ -17,7 +17,7 @@ package object vocabulary {
 
     def sense: Set[Token]
 
-    def nonsense: Set[Token]
+    def auxiliary: Set[Token]
   }
 
   trait VocabularyRaw extends VocabularyHint {
