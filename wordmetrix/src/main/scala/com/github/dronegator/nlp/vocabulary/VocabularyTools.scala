@@ -6,6 +6,7 @@ import com.github.dronegator.nlp.main
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.RandomUtils._
 import com.github.dronegator.nlp.utils.IteratorStage
+import com.github.dronegator.nlp.utils.IteratorLog
 /**
  * Created by cray on 8/28/16.
  */
@@ -138,6 +139,7 @@ object VocabularyTools {
           case tokens =>
             vocabulary.pNGram3.get(tokens.take(3)).getOrElse(0.0)
         }.
+        trace("probability => ").
         reduceOption(_ * _).
         getOrElse(1.0)
 

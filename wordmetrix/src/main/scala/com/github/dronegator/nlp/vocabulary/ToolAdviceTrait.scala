@@ -22,42 +22,58 @@ trait ToolAdviceTrait
     }
 
     def advice(rStatement: Statement): List[(Int, Int, Probability, Statement, Option[Token])] = {
-      //println(s"in: ${(rStatement).map(vocabulary.wordMap(_))}")
+      println(s"in: ${(rStatement).map(vocabulary.wordMap(_))}")
       val out = rStatement match {
         case after :: current :: (rStatement@(_ :: _ :: _)) =>
           val adviceRest = advice(current :: rStatement)
+            .filter {
+              _._3 > 0
+            }
 
           lazy val substitute = adviceRest.filter(checkLimit).flatMap {
-            case (changes, severe, probability, statement@(before :: _), another) =>
+            case (changes, severe, probability, statement@(before :: t :: _), another) =>
               val token = another.getOrElse(current)
 
               vocabulary.map2ToMiddle
                 .get(before :: after :: Nil).getOrElse(List()).filter{
                   case (p, offer) => offer != current
                 }
-                .take(5)
+                .take(1)
                 //.takeWhile(_._2 != token)
                 .collect {
-                  case (p, offer) if current != offer =>
+                  case (_, offer) if current != offer =>
+                    val p = vocabulary
+                      .pNGram3
+                      .getOrElse(t :: before :: offer :: Nil, 0.0)
+
+                    println(s"  substitute p = $p, $t, $before, $offer ")
+
+
                     println(s"   middle ${(vocabulary.wordMap(before),vocabulary.wordMap(offer),vocabulary.wordMap(after))}")
-                    (changes + 1, severe, probability, offer :: statement, None)
+                    (changes + 1, severe, probability * p, offer :: statement, None)
                 }
           }
 
           lazy val identical = adviceRest.collect {
-            case (changes, severe, probability, statement@(before :: _), another) =>
+            case (changes, severe, probability, statement@(t1 :: t2 :: _), another) =>
               val token = another.getOrElse(current)
-              (changes, severe, probability, token :: statement, None)
+
+              val p = vocabulary
+                .pNGram3
+                .getOrElse(t2 :: t1 :: token :: Nil, 0.0)
+              println(s"  identical p = $p, $t2, $t1, $token ")
+
+              (changes, severe, p * probability, token :: statement, None)
           }
 
           lazy val remove = adviceRest.filter(checkLimit)
             .map {
-              case (changes, severe, probability, statement@(before :: _), another) =>
+              case (changes, severe, probability, statement, another) =>
                 (changes + 1, severe, probability, statement, another)
             }
 
           lazy val insert = adviceRest.filter(checkLimit).flatMap {
-            case (changes, severe, probability, statement@(before :: _), another) =>
+            case (changes, severe, probability, statement@(before :: t :: _), another) =>
               val token = another.getOrElse(current)
 
               vocabulary.map2ToMiddle
@@ -65,46 +81,60 @@ trait ToolAdviceTrait
                 .take(5)
                 .map {
                   case (p, offer) =>
+
+                    val p1 = vocabulary
+                      .pNGram3
+                      .getOrElse(t :: before :: offer :: Nil, 0.0)
+
+                    val p2 = vocabulary
+                      .pNGram3
+                      .getOrElse(before :: offer :: token :: Nil, 0.0)
+
+                    println(s"   insert p1 = $p1, $t, $before, $offer  ")
+
+                    println(s"   insert p2 = $p2, $before, $offer, $token ")
+
                     println(s"   insert ${(vocabulary.wordMap(token), vocabulary.wordMap(offer), vocabulary.wordMap(before))}")
-                    (changes + 1, severe, probability, token :: offer :: statement, None)
+                    (changes + 1, severe, probability * p1 * p2, token :: offer :: statement, None)
                 }
           }
 
           lazy val reverse = adviceRest.filter(checkLimit).flatMap {
-            case (changes, severe, probability, statement@(before :: _), another) =>
+            case (changes, severe, probability, statement@(before :: t :: _), another) =>
               val token = another.getOrElse(current)
-              (changes + 1, severe, probability, after :: statement, Some(token)) :: Nil
+
+              val p = vocabulary
+                .pNGram3
+                .getOrElse(t :: before :: after :: Nil, 0.0)
+              println(s"  reverse p = $p, $t, $before, $after ")
+
+              (changes + 1, severe, probability * p, after :: statement, Some(token)) :: Nil
 
             case x =>
               Nil
           }
 
           substitute ++
-            remove ++
-            insert ++
-            identical ++
-            reverse
+                        remove ++
+                        insert ++
+                        reverse ++
+            identical
 
-        case after :: current :: _ =>
-          (0, 0, 1.0, after :: current :: Nil, None) :: Nil
+        case after :: statement =>
+          println(s"tail $statement")
+          (0, 0, 1.0, statement, None) :: Nil
       }
 
+      println("----------------")
       val outFiltered =
-        out        .collect {
-              case (changes, severe, probability, statement@(t1 :: t2 :: t3 :: _), optionalToken) =>
-                println(s"   prob ${(vocabulary.wordMap(t3), vocabulary.wordMap(t2), vocabulary.wordMap(t1))}")
-                val p = vocabulary
-                  .pNGram3
-                  .getOrElse(t3 :: t2 :: t1 :: Nil, 0.0)
-
-                (changes, severe, p * probability, statement, optionalToken)
-              case q =>
-                q
-            }
-//            .filter {
-//              _._3 > 0
-//            }
-            .sortBy(-_._3)
+        out.collect {
+          case (changes, severe, probability, statement, optionalToken) =>
+            (changes, severe, probability, statement, optionalToken)
+        }
+      //            .filter {
+      //              _._3 > 0
+      //            }
+      //        .sortBy(-_._3)
 
       outFiltered foreach {
         case (changes, severe, p, statement, _) =>
@@ -114,16 +144,18 @@ trait ToolAdviceTrait
       outFiltered.toIterator.distinctBy(_._4).toList
     }
 
+    println("qq", statement)
     statement.reverse match {
       case statement1 =>
         advice(statement1) map {
-          case (changes, severe, probability, statement1, _) =>
+          case (changes, severe, probability, statement1@(t1 :: t2 :: _), _) =>
 
-            val s = (statement1).reverse
+            val p1 = probability * vocabulary.pNGram3.getOrElse(t2 :: t1 :: PEnd.value :: Nil, 0.0)
+            val s = (PEnd.value :: statement1).reverse
 
             val p = this.probability(s)
 
-            println(probability, p, s)
+            println(probability, p, p1, s, t2 :: t1 :: PEnd.value :: Nil, vocabulary.pNGram3.getOrElse(t2 :: t1 :: PEnd.value :: Nil, 0.0))
 
             (s, p)
         }
