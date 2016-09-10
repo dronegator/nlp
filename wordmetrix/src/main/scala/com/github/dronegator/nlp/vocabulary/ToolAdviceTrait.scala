@@ -16,19 +16,15 @@ trait ToolAdviceTrait
   this: VocabularyTools =>
   def vocabulary: Vocabulary
 
-  def adviceOptimal(statement: Statement, changeLimit: Int = 3): Advices = {
+  def adviceOptimal(statement: Statement, changeLimit: Int = 2, uncertainty: Double = 0.0): Advices = {
     def checkLimit(rest: (Int, Int, Probability, Statement, Option[Token])) = {
       changeLimit >= rest._1
     }
 
     def advice(rStatement: Statement): List[(Int, Int, Probability, Statement, Option[Token])] = {
-      println(s"in: ${(rStatement).map(vocabulary.wordMap(_))}")
       val out = rStatement match {
         case after :: current :: (rStatement@(_ :: _ :: _)) =>
           val adviceRest = advice(current :: rStatement)
-            .filter {
-              _._3 > 0
-            }
 
           lazy val substitute = adviceRest.filter(checkLimit).flatMap {
             case (changes, severe, probability, statement@(before :: t :: _), another) =>
@@ -38,18 +34,13 @@ trait ToolAdviceTrait
                 .get(before :: after :: Nil).getOrElse(List()).filter{
                   case (p, offer) => offer != current
                 }
-                .take(1)
-                //.takeWhile(_._2 != token)
+                .take(5)
                 .collect {
                   case (_, offer) if current != offer =>
                     val p = vocabulary
                       .pNGram3
                       .getOrElse(t :: before :: offer :: Nil, 0.0)
 
-                    println(s"  substitute p = $p, $t, $before, $offer ")
-
-
-                    println(s"   middle ${(vocabulary.wordMap(before),vocabulary.wordMap(offer),vocabulary.wordMap(after))}")
                     (changes + 1, severe, probability * p, offer :: statement, None)
                 }
           }
@@ -61,7 +52,6 @@ trait ToolAdviceTrait
               val p = vocabulary
                 .pNGram3
                 .getOrElse(t2 :: t1 :: token :: Nil, 0.0)
-              println(s"  identical p = $p, $t2, $t1, $token ")
 
               (changes, severe, p * probability, token :: statement, None)
           }
@@ -90,11 +80,6 @@ trait ToolAdviceTrait
                       .pNGram3
                       .getOrElse(before :: offer :: token :: Nil, 0.0)
 
-                    println(s"   insert p1 = $p1, $t, $before, $offer  ")
-
-                    println(s"   insert p2 = $p2, $before, $offer, $token ")
-
-                    println(s"   insert ${(vocabulary.wordMap(token), vocabulary.wordMap(offer), vocabulary.wordMap(before))}")
                     (changes + 1, severe, probability * p1 * p2, token :: offer :: statement, None)
                 }
           }
@@ -106,7 +91,6 @@ trait ToolAdviceTrait
               val p = vocabulary
                 .pNGram3
                 .getOrElse(t :: before :: after :: Nil, 0.0)
-              println(s"  reverse p = $p, $t, $before, $after ")
 
               (changes + 1, severe, probability * p, after :: statement, Some(token)) :: Nil
 
@@ -115,36 +99,25 @@ trait ToolAdviceTrait
           }
 
           substitute ++
-                        remove ++
-                        insert ++
-                        reverse ++
+            remove ++
+            insert ++
+            reverse ++
             identical
 
         case after :: statement =>
-          println(s"tail $statement")
           (0, 0, 1.0, statement, None) :: Nil
       }
 
-      println("----------------")
-      val outFiltered =
-        out.collect {
-          case (changes, severe, probability, statement, optionalToken) =>
-            (changes, severe, probability, statement, optionalToken)
+      out
+        .toIterator
+        .filter {
+          _._3 > uncertainty
         }
-      //            .filter {
-      //              _._3 > 0
-      //            }
-      //        .sortBy(-_._3)
-
-      outFiltered foreach {
-        case (changes, severe, p, statement, _) =>
-          println(s" $changes $p --> ${statement.map(vocabulary.wordMap(_))}")
-      }
-
-      outFiltered.toIterator.distinctBy(_._4).toList
+        .sortBy(-_._3)
+        .distinctBy(_._4)
+        .toList
     }
 
-    println("qq", statement)
     statement.reverse match {
       case statement1 =>
         advice(statement1) map {

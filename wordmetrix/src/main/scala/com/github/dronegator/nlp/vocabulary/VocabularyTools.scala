@@ -139,7 +139,7 @@ object VocabularyTools {
           case tokens =>
             vocabulary.pNGram3.get(tokens.take(3)).getOrElse(0.0)
         }.
-        trace("probability => ").
+        //trace("probability => ").
         reduceOption(_ * _).
         getOrElse(1.0)
 
