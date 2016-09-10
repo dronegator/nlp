@@ -18,7 +18,7 @@ trait ToolAdviceTrait
 
   def adviceOptimal(statement: Statement, changeLimit: Int = 2, uncertainty: Double = 0.0): Advices = {
     def checkLimit(rest: (Int, Int, Probability, Statement, Option[Token])) = {
-      changeLimit >= rest._1
+      changeLimit > rest._1
     }
 
     def advice(rStatement: Statement): List[(Int, Int, Probability, Statement, Option[Token])] = {

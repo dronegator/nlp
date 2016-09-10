@@ -37,12 +37,6 @@ object NLPTReplMain
     case object Dump extends SubCommand
 
     case object Stat extends SubCommand
-    
-    case object Full extends SubCommand
-    
-    case object Partial extends SubCommand
-
-    case object Optimal extends SubCommand
 
     def unapply(name: String) = withNameOption(name)
 
@@ -91,7 +85,7 @@ object NLPTReplMain
 
     case object Everything extends Command("Statistic for all items of a vocabulary", Set(Dump, Stat))
 
-    case object Advice extends Command("Provide an advice to improve the statement", Set(Full, Partial))
+    case object Advice extends Command("Provide an advice to improve the statement", Set())
 
     case object Generate extends Command("Generate a statement from a word", Set())
 
@@ -195,7 +189,7 @@ object NLPTReplMain
           }
       }).arbeiten(file)
 
-    case Next() :: _  =>
+    case Next() :: _ =>
       println(s"== tokens to next phrase size = ${vocabulary.map1ToNextPhrase.size}")
 
     case Inner() :: Dump() :: OptFile(file) =>
@@ -208,7 +202,7 @@ object NLPTReplMain
           }
       }).arbeiten(file)
 
-    case Inner() :: _  =>
+    case Inner() :: _ =>
       println(s"== tokens to the same phrase size = ${vocabulary.map1ToTheSamePhrase.size}")
 
     case Everything() :: _ =>
@@ -279,8 +273,8 @@ object NLPTReplMain
         }
 
 
-    case Advice() :: (vary@(Full() | Partial() | Optimal())) :: words  =>
-      (1 to 20).foreach{ n =>
+    case Advice() :: Switches(switches, words) =>
+      (1 to 20).foreach { n =>
         println(vocabulary.statementDenominator((1 to 20).take(n).toList))
       }
 
@@ -290,48 +284,34 @@ object NLPTReplMain
 
       println(f"probability = $originProbability%16.14f ")
 
-      val advice = vary match {
-        case Full() =>
-          println("full sweep")
-          vocabulary.adviceOverall(statement)
-        case Optimal() =>
-          println("optimal sweep")
-          vocabulary.adviceOptimal(statement)
-        case _ =>
-          vocabulary.advice(statement)
-      }
+      val useBest = switches.get("best").isDefined
+      val uncertainty = switches.getOrElse("uncertainty", "0.0").toDouble
+
+      val advice = vocabulary.adviceOptimal(
+        statement,
+        changeLimit = switches.getOrElse("change-limit", "2").toInt,
+        uncertainty = uncertainty
+      )
 
       advice.
         map{
           case (statement, probability) =>
+            println(vocabulary.statementDenominator(statement), probability, probability / vocabulary.statementDenominator(statement) * math.pow(1.1,statement.length))
+
             (statement, probability, probability / vocabulary.statementDenominator(statement) * math.pow(1.1,statement.length))
         }.
         sortBy{
           _._3
         }.
         foreach {
-          case (statement, probability, p) => //if p > originProbability && statement.length > 4 =>
+          case (statement, probability, p) if p > uncertainty && (!useBest) || (p >= originProbability && statement.length > 4) =>
             val phrase = statement.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
             println(f"$probability%16.14f $p%16.14f $phrase")
 
-          case _ =>
+          case qq @ (statement, probability, p)=>
+            println(qq, p > originProbability)
         }
 
-    case com@Advice() :: words =>
-      /*
-      * This one is obsoleted
-       */
-      vocabulary.advicePlain(vocabulary.tokenize(words)).
-        foreach {
-          case (statements, n) if !statements.isEmpty =>
-            statements.foreach {
-              case (statement, d) =>
-                val phrase = statement.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
-                println(f"$d%5.4f $phrase")
-            }
-
-          case _ =>
-        }
     case Meaning() :: File1(sense) :: File1(nonSense) :: OptFile(weighted) =>
       def load(file: File) =
         io.Source.fromFile(file).
@@ -355,42 +335,42 @@ object NLPTReplMain
           }.
           iterator
       }.
-      filter {
-        case (token, _) =>
-          vocabulary.nGram1.get(token :: Nil).getOrElse(0) > 2 &&
-            !hasSense.contains(token) && !hasNoSense.contains(token)
-      }.
-      mapConcat {
-        case (token, (sense, nonsense, common)) =>
-          vocabulary.wordMap.get(token).map { word =>
-            f"$word $sense%14.12f $nonsense%14.12f $common%14.12f"
-          }.toList
-      }.
-      arbeiten(weighted)
+        filter {
+          case (token, _) =>
+            vocabulary.nGram1.get(token :: Nil).getOrElse(0) > 2 &&
+              !hasSense.contains(token) && !hasNoSense.contains(token)
+        }.
+        mapConcat {
+          case (token, (sense, nonsense, common)) =>
+            vocabulary.wordMap.get(token).map { word =>
+              f"$word $sense%14.12f $nonsense%14.12f $common%14.12f"
+            }.toList
+        }.
+        arbeiten(weighted)
 
     case Keywords() :: words =>
       vocabulary.keywords(vocabulary.tokenizeShort(words)).sortBy(_._2._1).foreach {
         case (token, (p, p1, p2)) =>
-          vocabulary.wordMap.get(token).foreach{ word =>
+          vocabulary.wordMap.get(token).foreach { word =>
             println(f"$word%-20s $p%5.3f ($p1%5.3f-$p2%5.3f)")
           }
       }
 
     case Continue() :: words =>
-        (for {
-          token <- vocabulary.tokenizeShort(words)
-          (token, p) <- vocabulary.map1ToNextPhrase.get(token).getOrElse(Nil)
-        } yield {
+      (for {
+        token <- vocabulary.tokenizeShort(words)
+        (token, p) <- vocabulary.map1ToNextPhrase.get(token).getOrElse(Nil)
+      } yield {
           (token, p)
         }).
         groupBy(_._1).
-        map{
+        map {
           case (token, values) =>
             token -> values.map(_._2).reduceOption(_ + _).getOrElse(0.0)
         }.
         toList.
         sortBy(_._2).
-        foreach{
+        foreach {
           case (token, probability) =>
             println(f"${vocabulary.wordMap(token)}%-20s $probability%5.3f")
         }
