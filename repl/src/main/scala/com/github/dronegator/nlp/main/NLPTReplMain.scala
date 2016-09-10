@@ -111,6 +111,7 @@ object NLPTReplMain
 
   val consoleReader = new jline.console.ConsoleReader()
   val history = new FileHistory(new File(".wordmetrix_repl_history").getAbsoluteFile)
+
   consoleReader.setHistory(history)
 
   consoleReader.addCompleter(new StringsCompleter(Command.values.map(_.entryName).asJava))
@@ -269,7 +270,9 @@ object NLPTReplMain
       vocabulary.generatePhrase(vocabulary.tokenizeShort(words)).
         foreach {
           case tokens =>
-            println(vocabulary.untokenize(tokens))
+            val phrase = vocabulary.untokenize(tokens)
+            println(phrase)
+            history.add(phrase)
         }
 
 
@@ -308,7 +311,7 @@ object NLPTReplMain
 
       val originProbability = vocabulary.probability(statement) / vocabulary.statementDenominator(statement)
 
-      val changeLimit = switches.get("change-limit").map(_.toInt).getOrElse(Math.min(statement.length / 3, 3))
+      val changeLimit = switches.get("change-limit").map(_.toInt).getOrElse(Math.max(statement.length / 3, 3))
 
       val useBest = switches.get("best").isDefined
       val uncertainty = switches.getOrElse("uncertainty", "0.0").toDouble
