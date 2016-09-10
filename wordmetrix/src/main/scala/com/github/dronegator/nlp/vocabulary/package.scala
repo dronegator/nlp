@@ -15,9 +15,9 @@ package object vocabulary {
 
     def meaningMap: Map[(Token, Token), (Probability, Probability)]
 
-    protected def sense: Set[Token]
+    def sense: Set[Token]
 
-    protected def nonsense: Set[Token]
+    def nonsense: Set[Token]
   }
 
   trait VocabularyRaw extends VocabularyHint {

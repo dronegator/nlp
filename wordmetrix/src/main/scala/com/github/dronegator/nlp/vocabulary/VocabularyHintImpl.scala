@@ -37,8 +37,8 @@ trait VocabularyHintWords {
       Set[Token]()
     }
 
-  protected lazy val sense: Set[Token] = loadHints("/hint/english/sense.txt")
-  protected lazy val nonsense: Set[Token] = loadHints("/hint/english/nonsense.txt")
+  lazy val sense: Set[Token] = loadHints("/hint/english/sense.txt")
+  lazy val nonsense: Set[Token] = loadHints("/hint/english/nonsense.txt")
 }
 
 case class VocabularyHintImpl(tokenMap: Map[Word, List[Token]],

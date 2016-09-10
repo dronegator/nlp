@@ -319,10 +319,18 @@ object NLPTReplMain
 
       val uncertainty = switches.getOrElse("uncertainty", "0.0").toDouble
 
+      val auxiliary = if (switches.contains("auxiliary"))
+        vocabulary.nonsense
+      else
+        Set[Token]()
+
+
+
       val advice = vocabulary.adviceOptimal(
         statement,
         variability = variability,
         keywords = keywords,
+        auxiliary = auxiliary,
         changeLimit = changeLimit,
         uncertainty = uncertainty
       )
@@ -356,6 +364,10 @@ object NLPTReplMain
       println(f"variability = $variability")
 
       println(f"changeLimit = $changeLimit")
+
+      if (auxiliary.nonEmpty) {
+        println(s"Vary only auxiliary words")
+      }
 
     case Meaning() :: File1(sense) :: File1(nonSense) :: OptFile(weighted) =>
       def load(file: File) =

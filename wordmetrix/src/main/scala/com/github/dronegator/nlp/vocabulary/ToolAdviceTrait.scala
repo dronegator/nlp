@@ -16,10 +16,13 @@ trait ToolAdviceTrait
   this: VocabularyTools =>
   def vocabulary: Vocabulary
 
-  def adviceOptimal(statement: Statement, keywords: Set[Token] = Set(), changeLimit: Int = 2, uncertainty: Double = 0.0, variability: Int = 7): Advices = {
+  def adviceOptimal(statement: Statement, keywords: Set[Token] = Set(), auxiliary: Set[Token] = Set(), changeLimit: Int = 2, uncertainty: Double = 0.0, variability: Int = 7): Advices = {
     def checkLimit(rest: (Int, Int, Probability, Statement, Option[Token])) = {
       changeLimit >= rest._1
     }
+
+    def ifAuxilary(token: Token) =
+      auxiliary.isEmpty || auxiliary.contains(token)
 
     def advice(rStatement: Statement): List[(Int, Int, Probability, Statement, Option[Token])] = {
       val out = rStatement match {
@@ -28,17 +31,20 @@ trait ToolAdviceTrait
 
           lazy val substitute = adviceRest.filter(checkLimit)
             .filterNot(keywords contains _._5.getOrElse(current))
+            .filter(x => ifAuxilary(x._5.getOrElse(current)))
             .flatMap {
               case (changes, severe, probability, statement@(before :: t :: _), another) =>
                 val token = another.getOrElse(current)
 
                 vocabulary.map2ToMiddle
-                  .get(before :: after :: Nil).getOrElse(List()).filter {
-                  case (p, offer) => offer != current
-                }
+                  .get(before :: after :: Nil).getOrElse(List())
+                  .filter {
+                    case (p, offer) =>
+                      offer != current
+                  }
                   .take(variability)
                   .collect {
-                    case (_, offer) if current != offer =>
+                    case (_, offer) if current != offer && ifAuxilary(offer) =>
                       val p = vocabulary
                         .pNGram3
                         .getOrElse(t :: before :: offer :: Nil, 0.0)
@@ -59,7 +65,7 @@ trait ToolAdviceTrait
           }
 
           lazy val remove =
-            if (keywords contains current) List()
+            if (keywords.contains(current) || !ifAuxilary(current)) List()
             else
               adviceRest.filter(checkLimit)
                 .map {
@@ -73,6 +79,7 @@ trait ToolAdviceTrait
 
               vocabulary.map2ToMiddle
                 .getOrElse(before :: token :: Nil, List())
+                .filter(x => ifAuxilary(x._2))
                 .take(variability)
                 .map {
                   case (p, offer) =>
