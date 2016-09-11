@@ -18,3 +18,12 @@ project/plugins/project/
 
 #idea
 .idea/*
+*.iml
+
+#
+/*lst
+/*dat
+/*txt
+/*jpg
+.*
+

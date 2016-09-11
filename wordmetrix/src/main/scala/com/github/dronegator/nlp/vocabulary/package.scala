@@ -1,7 +1,7 @@
 package com.github.dronegator.nlp
 
 import com.github.dronegator.nlp.common._
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, Word}
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Statement, Token, Word}
 
 /**
  * Created by cray on 8/17/16.
@@ -15,13 +15,13 @@ package object vocabulary {
 
     def meaningMap: Map[(Token, Token), (Probability, Probability)]
 
-    protected def sense: Set[Token]
+    def sense: Set[Token]
 
-    protected def nonsense: Set[Token]
+    def auxiliary: Set[Token]
   }
 
   trait VocabularyRaw extends VocabularyHint {
-    def phrases: List[List[Token]]
+    def statements: List[List[Token]]
 
     def nGram1: Map[List[Token], Int]
 
@@ -64,6 +64,8 @@ package object vocabulary {
     def map1ToNextPhrase: Map[Token, List[(Token, Double)]]
 
     def map1ToTheSamePhrase: Map[Token, List[(Token, Probability)]]
+
+    def statementDenominator(statement: Statement): Double
   }
 
 }

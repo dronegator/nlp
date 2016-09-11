@@ -66,6 +66,20 @@ package object utils {
     def sorted[B >: A](implicit ord: Ordering[B]) =
       iterator.toStream.sorted[B](ord).toIterator
 
+    def distinctBy[B](f: A => B) =
+      iterator.scanLeft((Map[B, A](), Option.empty[A])){
+        case ((map, _), a) =>
+          val b = f(a)
+          if (map contains b)
+            (map, None)
+          else
+            (map + (b -> a), Some(a))
+      }
+      .collect{
+        case (_, Some(a)) =>
+          a
+      }
+
   }
 
   implicit class IteratorLog[A, M[A] <: TraversableOnce[A]](a: M[A]) {

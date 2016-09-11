@@ -6,16 +6,21 @@ import com.github.dronegator.nlp.main
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.RandomUtils._
 import com.github.dronegator.nlp.utils.IteratorStage
+import com.github.dronegator.nlp.utils.IteratorLog
 /**
  * Created by cray on 8/28/16.
  */
 object VocabularyTools {
 
-  case class Advice(token: Option[Token], tokens: List[(Token, Probability)], removal: Option[Probability])
+//  case class Advice(token: Option[Token], tokens: List[(Token, Probability)], removal: Option[Probability])
+//
+//  type Advices = List[Advice]
 
-  type Advices = List[Advice]
+  type Advices = List[(Statement, Probability)]
 
-  implicit class VocabularyTools(vocabulary: VocabularyImpl/*TODO: Use Vocabulary instead*/) extends main.Combinators {
+  implicit class VocabularyTools(val vocabulary: VocabularyImpl/*TODO: Use Vocabulary instead*/)
+    extends main.Combinators
+    with ToolAdviceTrait {
     val cfg = CFG()
 
     lazy val vocabularyHint: VocabularyHint = vocabulary
@@ -70,8 +75,6 @@ object VocabularyTools {
     }
 
     def prependPhrase(statement: Statement): List[(Token, Probability)] = ???
-
-    def advice(statement: Statement): Advices = ???
 
     @deprecated("Use advice instead", "v.0.2")
     def advicePlain(statement: Statement): Iterator[(List[(Statement, Double)], Int)] =
@@ -136,6 +139,7 @@ object VocabularyTools {
           case tokens =>
             vocabulary.pNGram3.get(tokens.take(3)).getOrElse(0.0)
         }.
+        //trace("probability => ").
         reduceOption(_ * _).
         getOrElse(1.0)
 

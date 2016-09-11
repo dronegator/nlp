@@ -11,7 +11,7 @@ object VocabularyRawImpl {
     VocabularyRawImpl(
       vocabulary.tokenMap,
       vocabulary.meaningMap,
-      vocabulary.phrases,
+      vocabulary.statements,
       vocabulary.nGram1,
       vocabulary.nGram2,
       vocabulary.nGram3,
@@ -23,7 +23,7 @@ object VocabularyRawImpl {
 
 case class VocabularyRawImpl(tokenMap: Map[Word, List[Token]],
                              meaningMap: Map[(Token, Token), (Probability, Probability)] ,
-                             phrases: List[Statement],
+                             statements: List[Statement],
                              nGram1: Map[List[Token], Int],
                              nGram2: Map[List[Token], Int],
                              nGram3: Map[List[Token], Int],
