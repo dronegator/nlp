@@ -109,12 +109,16 @@ To collect statistic,  issue:
     `sbt "run-main com.github.dronegator.nlp.main.NLPTMain <FILE WITH A TEXT CORPUS> <FILE OF STORAGE>`
   
 The applications do the same, except the first one uses AKKA-STREAMS that helps to require less RAM.
-   
-To use collect statistic, issue:   
+
+You might have to index text twice, using the previous result as an innitial hint. It provides a possibility to take into consideration meaningful words building the correlation matrix for suggestions:
+
+    `sbt "run-main com.github.dronegator.nlp.main.NLPTMain <FILE WITH A TEXT CORPUS> <FILE OF STORAGE> <FILE OF STORAGE WITH HINTS>`
+
+To use collected statistic, issue:   
 
     `sbt "run-main com.github.dronegator.nlp.main.NLPTReplMain <FILE OF STORAGE>`
     
-  * probability [Word]
+  * probability [Word]+ 
   
     Evaluates a probability of a phrase:
 
@@ -128,35 +132,41 @@ To use collect statistic, issue:
     Suggest a few words to continue the phrase:
     
         > He was reading a
-        - magazine (18153), p = 0.1038961038961039
-        - book (670), p = 0.16883116883116883
-        - paperback (22287), p = 0.16883116883116883
+        Possible continuation of the phrase: 
+         - copy, p = 0.028846153846153848
+         - magazine, p = 0.057692307692307696
+         - newspaper, p = 0.1346153846153846
+         - book, p = 0.36538461538461536
 
   * [Word]+ .
-  
+    
     Suggest a few words for the next phrase:
     
         > He was reading a book .
-        - pretending, p = 0.08330280953101102
-        - judgment, p = 0.08330766559047138
-        - Turkish, p = 0.0833250086599727
-     
-  * advice [Word] .
-     
-    Suggest possible substitution of the words in a phrase (the intentional error has provided for the illustration puprpose):
-     
-        > advice He were reading a book .
-        0.3902 They were reading a book .
-        0.3532 There were reading a book .
-        0.6429 He was reading a book .
-        0.0714 He remembered reading a book .
-        0.1667 He were in a book .
-        0.0549 He were on a book .
-        0.0363 He were reading a little .
-        0.0140 He were reading a moment .
-        0.0102 He were reading a while .
-        0.0101 He were reading a lot .
+        We suggest a few words for the next phrase:
+        - author, p = 0.047337278106508875
+        - house, p = 0.047379948229278435
+        - spot, p = 0.048306960043421984
+        - hands, p = 0.051535244106211735
+        - time, p = 0.056087109390086945
+        - room, p = 0.061708620783714446
+        - way, p = 0.09326267301371145
 
+  * expand [Word]+
+    
+    Suggest a few words to use with the given ones:
+    
+        > expand death cause
+        We suggest to expande the phrase with a few words:
+         - manner, p = 0.16666666666666666
+         - mistake, p = 0.16666666666666666
+         - box, p = 0.16666666666666666
+         - sense, p = 0.16666666666666666
+         - children, p = 0.2
+         - son, p = 0.2
+         - place, p = 0.2
+         - wife, p = 0.2
+     
   * generate [Word]+
     Generates a phrase containing the sequence of words:
     
@@ -164,8 +174,7 @@ To use collect statistic, issue:
       She was reading a book of famous people .
       
   * keywords [Word]+
-    Select substantial words from a phrase:
-      
+    Select meaninful words from a phrase:
     > keywords My cat was drinking a milk.
         a                    -1.000 (0.000-1.000)
         drinking             -0.275 (0.000-0.276)
@@ -173,7 +182,36 @@ To use collect statistic, issue:
         milk                 0.088 (0.097-0.008)
         cat                  0.114 (0.117-0.003)
 
+   * advice [Word]+ [<Switches>]
+   
+      where possible switches are:
+      
+        * --keywords=[Word:]+ - obligatory keywords for the phrase variations;
+        
+        * --use-best - show only phrases those seem to be better than provided one;
+         
+        * --limit=<NUMBER> - maximum amout of changes in a phrase;
+         
+        * --use-auxiliary - allow variations for auxiliary words only. 
+       
+      Suggest possible substitution of the words in a phrase (the intentional error has provided for the illustration puprpose):
+       
+          > advice He were reading a book . 
+          0.3902 They were reading a book .
+          0.3532 There were reading a book .
+          0.6429 He was reading a book .
+          0.0714 He remembered reading a book .
+          0.1667 He were in a book .
+          0.0549 He were on a book .
+          0.0363 He were reading a little .
+          0.0140 He were reading a moment .
+          0.0102 He were reading a while .
+          0.0101 He were reading a lot .
+
+      A few [advanced examples of advices](doc/example/Advices03.md)        
+
   The storage has to be converted to the dictionary for an android application (but the feature has not implemented yet).
+
 
 The outcome
 -----------
@@ -181,24 +219,18 @@ The outcome
 
 [Script for V0.3 200MB corpora](doc/example/Script03.md)
 
-It can suggest different words for a phrase (the phrase contains an intentional error for the sake of illustration):
+It can suggest the right grammar structure even for a completely distorted phrase:
 
-    > advice The man were trying to make sure .
-      0.0559 The walls were trying to make sure .
-      0.0194 The others were trying to make sure .
-      0.0178 The windows were trying to make sure .
-      0.0138 The men were trying to make sure .
-      0.9000 The man was trying to make sure .
-      0.1000 The man either trying to make sure .
-      0.2004 The man were going to make sure .
-      0.0621 The man were supposed to make sure .
-      0.2315 The man were trying to make it .
-      0.1034 The man were trying to make sense .
-      0.0887 The man were trying to make out .
+    > advice I home left see  sky . --use-auxiliary
+    0.00000000000000 0.00000084746385 I left my home to see the sky .
+    0.00000000000000 0.00000273394864 I left home to see the sky above .
+    0.00000000000000 0.00000347182913 I left her home to see the sky .
+    0.00000000000000 0.00000373906493 I left his home to see the sky .
+    0.00000000000009 0.00002584272971 I left home to see the sky .
 
 Statistic:
 
- For 100MB of a text corpora I get:
+ For a text corpora of different size I get the vocabulary with following statistic:
  
      size    ngram1  ngram2   ngram3    phrases tokens
      25MB    43579   562136  1418363     304008  57561
@@ -210,7 +242,7 @@ Statistic:
     500MB   157112  4443462 16063365    5901462 230416
     
     
-![alt tag](doc/statistic.png)    
+ ![alt tag](doc/statistic.png)    
 
 Links
 --------
@@ -224,7 +256,22 @@ History
 
 [Version 0.2](https://github.com/dronegator/nlp/tree/v.0.2), 20160831, Improve inner architecture and packaging.
 
+[Version 0.3](https://github.com/dronegator/nlp/tree/v.0.3), 20160911, Improve toolkit for advices
+
+  * Discriminate auxiliary and meaningful words in a phrase;
+  
+  * Suggest words for the next phrase focusing on meaningful words only;
+   
+  * Suggest words for the same phrase focusing on meaningful words only;
+  
+  * Make advices how to improve a phrase looking for the best path, closest to a phrase;
+    
+  * Make advices only for auxiliary words, or except keywords;
+
 The current achievments
 ---------------------------
 Separate meaningful words in phrase on the base of context
-Implement itterative learning
+
+Implement iterative learning
+
+Check the grammar structure of a phrase

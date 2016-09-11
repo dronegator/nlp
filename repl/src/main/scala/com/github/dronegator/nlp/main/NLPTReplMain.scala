@@ -50,12 +50,15 @@ object NLPTReplMain
 
   import SubCommand._
 
-  sealed abstract class Command(val help: String, val subcommands: Set[SubCommand]) extends EnumEntry with Lowercase with Command.EnumApply
+  sealed abstract class Command(val help: String, val subcommands: Set[SubCommand]) 
+    extends EnumEntry 
+    with Lowercase 
+    with Command.Extractor
 
   object Command extends Enum[Command] {
     override def values: Seq[Command] = findValues
 
-    trait EnumApply {
+    trait Extractor {
       def unapply(name: String) = withNameOption(name) filter (x => x == this) isDefined
     }
 
@@ -81,7 +84,7 @@ object NLPTReplMain
 
     case object ContinuePhrase extends Command("Show possible continuation of a statement", Set())
 
-    case object ExpandPhrase extends Command("Suggest additional words for the same phrase", Set())
+    case object Expand extends Command("Suggest additional words for the same phrase", Set())
 
     case object Everything extends Command("Statistic for all items of a vocabulary", Set(Dump, Stat))
 
@@ -275,7 +278,6 @@ object NLPTReplMain
             history.add(phrase)
         }
 
-
     case Advice() :: Switches(switches, words) =>
       (1 to 20).foreach { n =>
         println(vocabulary.statementDenominator((1 to 20).take(n).toList))
@@ -324,8 +326,6 @@ object NLPTReplMain
       else
         Set[Token]()
 
-
-
       val advice = vocabulary.adviceOptimal(
         statement,
         variability = variability,
@@ -369,7 +369,7 @@ object NLPTReplMain
         println(s"Vary only auxiliary words")
       }
 
-    case Meaning() :: File1(sense) :: File1(nonSense) :: OptFile(weighted) =>
+    case Meaning() :: File1(keywords) :: File1(auxiliary) :: OptFile(weighted) =>
       def load(file: File) =
         io.Source.fromFile(file).
           getLines().
@@ -377,8 +377,9 @@ object NLPTReplMain
           flatten.
           toSet
 
-      val hasSense = load(sense)
-      val hasNoSense = load(nonSense)
+      val hasSense = load(keywords)
+
+      val hasNoSense = load(auxiliary)
 
       val meaningMap =
         vocabulary.meaningContextMap(hasSense, hasNoSense)
@@ -413,26 +414,7 @@ object NLPTReplMain
           }
       }
 
-    case Continue() :: words =>
-      (for {
-        token <- vocabulary.tokenizeShort(words)
-        (token, p) <- vocabulary.map1ToNextPhrase.get(token).getOrElse(Nil)
-      } yield {
-          (token, p)
-        }).
-        groupBy(_._1).
-        map {
-          case (token, values) =>
-            token -> values.map(_._2).reduceOption(_ + _).getOrElse(0.0)
-        }.
-        toList.
-        sortBy(_._2).
-        foreach {
-          case (token, probability) =>
-            println(f"${vocabulary.wordMap(token)}%-20s $probability%5.3f")
-        }
-
-    case words@(_) :+ ExpandPhrase() =>
+    case  Expand() :: words =>
       println("We suggest to expande the phrase with a few words:")
       vocabulary.suggestForTheSame(vocabulary.tokenize(words)).
         flatMap {
@@ -457,6 +439,7 @@ object NLPTReplMain
         }
 
     case words@(_ :: _) =>
+      println("Possible continuation of the phrase: ")
       vocabulary.continueStatement(vocabulary.tokenizeShort(words)) foreach {
         case (token, probability) =>
           println(s" - ${RepresenterToken.represent(token)}, p = $probability")
