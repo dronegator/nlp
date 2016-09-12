@@ -37,3 +37,5 @@ libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.2.3" % "provi
 libraryDependencies += "com.softwaremill.macwire" %% "util" % "2.2.3"
 
 libraryDependencies += "com.softwaremill.macwire" %% "proxy" % "2.2.3"
+
+libraryDependencies += "io.spray" %%  "spray-json" % "1.3.2"
