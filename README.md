@@ -208,7 +208,7 @@ To use collected statistic, issue:
           0.0102 He were reading a while .
           0.0101 He were reading a lot .
 
-      A few [advanced examples of advices](doc/example/Advices03.md)        
+      A few [advanced examples of advices](doc/HowToCheckTheGrammarStructure.md)        
 
   The storage has to be converted to the dictionary for an android application (but the feature has not implemented yet).
 
@@ -244,10 +244,6 @@ Statistic:
     
  ![alt tag](doc/statistic.png)    
 
-Links
---------
-[Dolch word list](https://en.wikipedia.org/wiki/Dolch_word_list) 
-
 History
 ---------
 [Version 0.0](https://github.com/dronegator/nlp/tree/v.0.0), 20160814, Initial release of nothing.
@@ -270,8 +266,3 @@ History
 
 The current achievments
 ---------------------------
-Separate meaningful words in phrase on the base of context
-
-Implement iterative learning
-
-Check the grammar structure of a phrase
