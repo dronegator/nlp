@@ -41,7 +41,17 @@ object NLPTWebServiceMain
     pathPrefix("phrase") {
       continue.route ~ suggestForNext.route ~ suggestForTheSame.route ~ suggest.route
     } ~
-      routeHTML
+      //routeHTML ~
+      path("ui") {
+        println("ui")
+        getFromResource("ui/index.html")
+      } ~
+      pathPrefix("ui/js") {
+        getFromResourceDirectory("ui/js")
+      } ~
+      pathPrefix("ui") {
+        getFromResourceDirectory("ui")
+      }
 
   val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
 

@@ -9,7 +9,7 @@ import scala.util.Try
 object WordmetrixBuild extends Build {
   val Name = "nlp"
 
-  override lazy val settings = super.settings ++ Seq(version:= "0.2")
+  override lazy val settings = super.settings ++ Seq(version:= "0.3")
   import  settings._
   val buildTime = System.currentTimeMillis()
 
@@ -51,8 +51,29 @@ object WordmetrixBuild extends Build {
   val repl =
     Project(id="repl", base=file("repl")).dependsOn(wordmetrix, akkaUtils, utils)
 
+  val urls =
+    "https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js" ::
+      "https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.0/jquery-ui.min.js" ::
+      "https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.0/themes/smoothness/jquery-ui.css"  :: Nil
+
   val www =
-    Project(id="web", base=file("web")).dependsOn(wordmetrix, akkaUtils, utils)
+    Project(id="web", base=file("web"))
+      .settings(
+        resourceGenerators in Compile <+=
+          (resourceManaged in Compile, name, version) map { (dir, n, v) =>
+            for {
+              url <- urls.map(new URL(_))
+              fileName <- url.getPath.split("/").lastOption
+              fileExt <- fileName.split("\\.").lastOption
+            } yield {
+              val file = dir / "ui" / fileExt / fileName
+              println(s"Download $url into $file")
+              IO.download(url, file)
+              file
+            }
+          }
+      )
+      .dependsOn(wordmetrix, akkaUtils, utils)
 
   lazy val root = Project(Name,
     base = file("."),
