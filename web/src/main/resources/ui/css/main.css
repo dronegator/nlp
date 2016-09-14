@@ -3,7 +3,7 @@
 }
 
 #editor {
-    width: 100%; height: 150px; padding: 0em;
+    width: 100%; height: 50%; padding: 0em;
 }
 
 #editor textarea {
@@ -11,13 +11,13 @@
 }
 
 #promptTheSame {
-    width: 100%; height: 150px; padding: 0em;
+    width: 100%; padding: 0em;
 }
 
 #promptNext {
-    width: 100%; height: 150px; padding: 0em;
+    width: 100%; padding: 0em;
 }
 
-body {
+sssbody {
     width: 1500px; height: 1500px; padding: 0.5em;
 }
