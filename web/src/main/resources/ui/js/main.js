@@ -3,37 +3,50 @@ $(
         $("#menu").menu();
         $(".ndraggable").draggable();
         $(".resizable").resizable();
-            $( "#sortable" ).sortable();
-            $( "#sortable" ).disableSelection();
+        $("#sortable").sortable();
+        $("#sortable").disableSelection();
 
-        $(".ui-widget-content").each(function(a, content) {
-            $(".ui-widget-header", content).each(function (a,header) {
+        $(".ui-widget-content").each(function (a, content) {
+            $(".ui-widget-header", content).each(function (a, header) {
                 console.log(header);
-                $(header).on("click", function() {
+                $(header).on("click", function () {
 
-                                            $(".data", content).toggle("fold", {}, 500);
-                                    })
+                    $(".data", content).toggle("fold", {}, 500);
+                })
 
-               })
-              })    ;
+            })
+        });
 
-        $(window).resize(function(q) {
+        function resize(q) {
             var w = $(this).width();
-            $(".wide").width(w-80);
+            $(".wide").width(w - 80);
+            $(".wide textarea").width(w - 180);
             $(".half-wide").width(w / 2 - 40);
-         }
-        )               ;
+        };
 
-        $("#editor textarea").on("keyup", function (q) {
-            console.log(q);
+        $(window).resize(resize);
 
-            var value = $(this).val()
+        resize();
+
+        function add(qq) {
+            console.log(qq);
+            console.log($(this).text());
+
+            $("#editor textarea").val(
+                $("#editor textarea").val() + " " + $(this).text() + " "
+            );
+
+            onTextAreaUpdate(qq);
+        };
+
+
+        function onTextAreaUpdate() {
+
+            var value = $("#editor textarea").val()
             console.log(value);
             var value1 = value.trim().split(/\s+/).join("/")
 
             console.log(value1);
-
-
 
             if (value.endsWith(" ")) {
                 $.getJSON("/phrase/" + value1 + "?data={}", "", function (data) {
@@ -45,7 +58,7 @@ $(
                             console.log(key);
                             console.log(val);
                             console.log(val.word);
-                            items.push("<span>" + val.word + "</span>");
+                            items.push("<span class=\"word\">" + val.word + "</span>");
                         });
 
                         $("#prompt").html(
@@ -53,7 +66,9 @@ $(
                                 "class": "my-new-list",
                                 html: items.join("<span> </span>")
                             })
-                        )
+                        );
+
+                        $("#prompt .word").on("click", add);
 
                     }
 
@@ -61,7 +76,7 @@ $(
                         var items = [];
 
                         $.each($(data.theSame).slice(0, 10), function (key, val) {
-                            items.push("<tr><td>" + val.word + "</td><td>" + val.weight + "</td></tr>");
+                            items.push("<tr><td class=\"word\">" + val.word + "</td><td>" + val.weight + "</td></tr>");
                         });
 
                         $("#promptTheSame .data").html(
@@ -69,7 +84,9 @@ $(
                                 "class": "",
                                 html: items.join("")
                             })
-                        )
+                        );
+
+                        $("#promptTheSame .word").on("click", add);
                     }
                 })
             } else if (value.endsWith(".")) {
@@ -84,7 +101,7 @@ $(
                         var items = [];
 
                         $.each($(data.next).slice(0, 4), function (key, val) {
-                            items.push("<tr><td>" + val.word + "</td><td>" + val.weight + "</td></tr>");
+                            items.push("<tr><td  class=\"word\">" + val.word + "</td><td>" + val.weight + "</td></tr>");
                         });
 
                         $("#promptNext .data").append(
@@ -92,13 +109,17 @@ $(
                                 "class": "",
                                 html: items.join("")
                             })
-                        )
+                        );
+
+                        $("#promptNext .word").on("click", add);
                     }
 
                 })
 
             }
 
-        });
+        }
+
+        $("#editor textarea").on("keyup", onTextAreaUpdate);
     }
 );
