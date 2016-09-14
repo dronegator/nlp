@@ -1,6 +1,7 @@
 $(
     function() {
         $( "#menu" ).menu();
-        $( "#draggable" ).draggable();
+        $( ".draggable" ).draggable();
+        $( ".resizable" ).resizable();
     }
  );

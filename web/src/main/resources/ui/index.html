@@ -10,53 +10,44 @@
         .ui-menu { width: 150px; }
     </style>
     <link rel="stylesheet" href="/ui/css/jquery-ui.css"/>
-    <style>
-        #draggable { width: 150px; height: 150px; padding: 0.5em; }
-        body { width: 1500px; height: 1500px; padding: 0.5em; }
-    </style>
+    <link rel="stylesheet" href="/ui/css/main.css"/>
 </head>
 <body>
-This is a prototype of comming service of collaborative writing. The only thing available now is this page and a couple
-of methods such as
 
-<a href="/phrase/I/want/to/show/you?data={}">this one</a>
+<div id="description" class="ui-widget-content draggable resizable">
+    <h3 class="ui-widget-header"> :) </h3>
+    This is a prototype of comming service of collaborative writing. The only thing available now is this page and a couple
+    of methods such as
 
-<div id="draggable" class="ui-widget-content">
-    <p>Drag me around</p>
+    <a href="/phrase/I/want/to/show/you?data={}">this one</a>
+
 </div>
 
-<ul id="menu">
-    <li class="ui-state-disabled"><div>Toys (n/a)</div></li>
-    <li><div>Books</div></li>
-    <li><div>Clothing</div></li>
-    <li><div>Electronics</div>
-        <ul>
-            <li class="ui-state-disabled"><div>Home Entertainment</div></li>
-            <li><div>Car Hifi</div></li>
-            <li><div>Utilities</div></li>
-        </ul>
-    </li>
-    <li><div>Movies</div></li>
-    <li><div>Music</div>
-        <ul>
-            <li><div>Rock</div>
-                <ul>
-                    <li><div>Alternative</div></li>
-                    <li><div>Classic</div></li>
-                </ul>
-            </li>
-            <li><div>Jazz</div>
-                <ul>
-                    <li><div>Freejazz</div></li>
-                    <li><div>Big Band</div></li>
-                    <li><div>Modern</div></li>
-                </ul>
-            </li>
-            <li><div>Pop</div></li>
-        </ul>
-    </li>
-    <li class="ui-state-disabled"><div>Specials (n/a)</div></li>
-</ul>
+<div id="editor" class="ui-widget-content draggable resizable">
+    <h3 class="ui-widget-header">Enter the phrase:</h3>
+    <div>
+        <span>Possible continuation:</span><span>asd asd adas sd</span>
+    </div>
+    <form>
+        <textarea></textarea>
+        <button>Ok</button>
+    </form>
+</div>
+
+<div id="promptTheSame" class="ui-widget-content draggable resizable">
+    <h3 class="ui-widget-header">Try this words:</h3>
+    <table>
+        <tr><td>qq</td><td>0.01</td></tr>
+    </table>
+</div>
+
+
+<div id="promptNext" class="ui-widget-content draggable resizable" >
+    <h3 class="ui-widget-header">Words for the next phrase:</h3>
+    <table>
+        <tr><td>qq</td><td>0.01</td></tr>
+    </table>
+</div>
 
 
 </body>
