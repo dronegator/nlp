@@ -14,46 +14,61 @@
 </head>
 <body>
 
-<div id="description" class="ui-widget-content draggable resizable">
-    <h3 class="ui-widget-header"> :) </h3>
-    This is a prototype of comming service of collaborative writing. The only thing available now is this page and a couple
-    of methods such as
 
-    <a href="/phrase/I/want/to/show/you?data={}">this one</a>
+<ul id="sortable">
+    <li class="ui-state-default">
+        <div id="description" class="ui-widget-content draggable resizable wide">
+            <h3 class="ui-widget-header">Short description of this very tool</h3>
 
-</div>
+            <div class="data">
+                This is a prototype of upcomming service of collaborative writing. The only thing available now is this
+                page, that presents an editor with prompts for next word, for the word to use at the same, or next phrases.
+            </div>
+        </div>
+    </li>
+    <li class="ui-state-default">
+        <div id="editor" class="ui-widget-content draggable resizable wide">
+            <h3 class="ui-widget-header">Enter the phrase:</h3>
 
-<div id="editor" class="ui-widget-content draggable resizable">
-    <h3 class="ui-widget-header">Enter the phrase:</h3>
-    <div>
-        <span>Possible continuation:</span>
-        <div id="prompt">asd asd adas sd</div>
-    </div>
-    <form>
-        <textarea></textarea>
-        <button>Ok</button>
-    </form>
-    <div id="text"></div>
-</div>
+            <div class="data">
+                <span>Possible continuation:</span>
 
-<div id="promptTheSame" class="ui-widget-content draggable resizable">
-    <h3 class="ui-widget-header">Try this words:</h3>
-    <div class="data">
-        <table>
-            <tr><td>qq</td><td>0.01</td></tr>
-        </table>
-    </div>
-</div>
+                <div id="prompt"></div>
+            </div>
+            <form>
+                <textarea></textarea>
+                <button>Ok</button>
+            </form>
+            <div id="text"></div>
+        </div>
+    </li>
+    <li class="ui-state-default">
+        <div id="promptTheSame" class="ui-widget-content draggable resizable half-wide">
+            <h3 class="ui-widget-header">Try this words:</h3>
 
-<div id="promptNext" class="ui-widget-content draggable resizable" >
-    <h3 class="ui-widget-header">Words for the next phrase:</h3>
-    <div class="data">
-        <table>
+            <div class="data">
+                <table>
+                    <tr>
+                        <td>qq</td>
+                        <td>0.01</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
 
-        </table>
-    </div>
-</div>
+    </li>
+    <li class="ui-state-default">
+        <div id="promptNext" class="ui-widget-content draggable resizable half-wide">
+            <h3 class="ui-widget-header">Words for the next phrase:</h3>
 
+            <div class="data">
+                <table>
 
+                </table>
+            </div>
+        </div>
+
+    </li>
+</ul>
 </body>
 </html>

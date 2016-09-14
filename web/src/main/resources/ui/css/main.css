@@ -1,23 +1,24 @@
 #description {
-    width: 100%; height: 150px; padding: 0em;
+    width: 600px; padding: 0em;
 }
 
 #editor {
-    width: 100%; height: 50%; padding: 0em;
+    width: 600px; padding: 0em;
 }
 
 #editor textarea {
-    width: 100%; height: 100%;
+    width: 100%x; height: 4em;
 }
 
 #promptTheSame {
-    width: 100%; padding: 0em;
+    width: 300px; padding: 0em;
 }
 
 #promptNext {
-    width: 100%; padding: 0em;
+    width: 300px; padding: 0em;
 }
 
-sssbody {
-    width: 1500px; height: 1500px; padding: 0.5em;
-}
+#sortable { list-style-type: none; margin: 0; padding: 0; }
+
+#sortable li { margin: 3px 3px 3px 0; padding: 1px; float: left; text-align: left; }
+

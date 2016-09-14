@@ -1,8 +1,29 @@
 $(
     function () {
         $("#menu").menu();
-        $(".draggable").draggable();
+        $(".ndraggable").draggable();
         $(".resizable").resizable();
+            $( "#sortable" ).sortable();
+            $( "#sortable" ).disableSelection();
+
+        $(".ui-widget-content").each(function(a, content) {
+            $(".ui-widget-header", content).each(function (a,header) {
+                console.log(header);
+                $(header).on("click", function() {
+
+                                            $(".data", content).toggle("fold", {}, 500);
+                                    })
+
+               })
+              })    ;
+
+        $(window).resize(function(q) {
+            var w = $(this).width();
+            $(".wide").width(w-80);
+            $(".half-wide").width(w / 2 - 40);
+         }
+        )               ;
+
         $("#editor textarea").on("keyup", function (q) {
             console.log(q);
 
@@ -11,6 +32,8 @@ $(
             var value1 = value.trim().split(/\s+/).join("/")
 
             console.log(value1);
+
+
 
             if (value.endsWith(" ")) {
                 $.getJSON("/phrase/" + value1 + "?data={}", "", function (data) {
