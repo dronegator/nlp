@@ -5,6 +5,10 @@ $(
         $(".resizable").resizable();
         $("#sortable").sortable();
         $("#sortable").disableSelection();
+        $( ".widget input[type=submit], .widget a, .widget button" ).button();
+        $( "button, input, a" ).click( function( event ) {
+          event.preventDefault();
+        } );
 
         $(".ui-widget-content").each(function (a, content) {
             $(".ui-widget-header", content).each(function (a, header) {
@@ -24,6 +28,7 @@ $(
             $(".half-wide").width(w / 2 - 40);
         };
 
+
         $(window).resize(resize);
 
         resize();
@@ -39,6 +44,37 @@ $(
             onTextAreaUpdate(qq);
         };
 
+        function onPhraseEnd() {
+            var value = $("#editor textarea").val()
+            console.log(value);
+            var value1 = value.trim().split(/\s+/).join("/")
+
+            $("<p/>", {
+                text: value
+            }).appendTo("#text")
+
+            $("#editor textarea").val("")
+
+            $.getJSON("/phrase/" + value1 + "?data={}", "", function (data) {
+                console.log(data); {
+                    var items = [];
+
+                    $.each($(data.next).slice(0, 4), function (key, val) {
+                        items.push("<tr><td  class=\"word\">" + val.word + "</td><td>" + val.weight + "</td></tr>");
+                    });
+
+                    $("#promptNext .data").append(
+                        $("<table/>", {
+                            "class": "",
+                            html: items.join("")
+                        })
+                    );
+
+                    $("#promptNext .word").on("click", add);
+                }
+
+            })
+        }
 
         function onTextAreaUpdate() {
 
@@ -90,35 +126,12 @@ $(
                     }
                 })
             } else if (value.endsWith(".")) {
-                $("<p/>", {
-                    text: value
-                }).appendTo("#text")
-
-                $(this).val("")
-
-                $.getJSON("/phrase/" + value1 + "?data={}", "", function (data) {
-                    console.log(data); {
-                        var items = [];
-
-                        $.each($(data.next).slice(0, 4), function (key, val) {
-                            items.push("<tr><td  class=\"word\">" + val.word + "</td><td>" + val.weight + "</td></tr>");
-                        });
-
-                        $("#promptNext .data").append(
-                            $("<table/>", {
-                                "class": "",
-                                html: items.join("")
-                            })
-                        );
-
-                        $("#promptNext .word").on("click", add);
-                    }
-
-                })
-
+                onPhraseEnd();
             }
 
         }
+
+        $("#submit").on("click", onPhraseEnd);
 
         $("#editor textarea").on("keyup", onTextAreaUpdate);
     }
