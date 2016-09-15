@@ -21,6 +21,10 @@ trait NLPTWebServicePhraseTrait {
   lazy val suggestForTheSame = wire[SuggestForTheSameHandler]
 
   lazy val suggest = wire[SuggestHandler]
+
+  lazy val generate = wire[GenerateHandler]
+
+  lazy val advice = wire[AdviceHandler]
 }
 
 

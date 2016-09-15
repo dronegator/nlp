@@ -1,22 +1,23 @@
 package com.github.dronegator.nlp.main.phrase
 
-
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{PathMatchers, Route}
 import com.github.dronegator.nlp.common.{Weight, Probability}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Word
+import com.github.dronegator.nlp.main.phrase._
 import com.github.dronegator.nlp.vocabulary.VocabularyTools._
 import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, Vocabulary}
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import spray.json._
-import com.github.dronegator.nlp.main.phrase.WordResponse._
-import scala.concurrent.{Future, ExecutionContext}
+import com.github.dronegator.nlp.main.phrase.PhraseResponse._
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
- * Created by cray on 9/12/16.
+ * Created by cray on 9/15/16.
  */
-object SuggestForTheSameHandler extends DefaultJsonProtocol {
+
+object GenerateHandler extends DefaultJsonProtocol {
 
   case class Data()
 
@@ -25,21 +26,21 @@ object SuggestForTheSameHandler extends DefaultJsonProtocol {
   implicit val requestFormat = jsonFormat2(Request[Data])
 }
 
-class SuggestForTheSameHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionContext)
-  extends Handler[Request[SuggestForTheSameHandler.Data], Response[Word]] {
+class GenerateHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionContext)
+  extends Handler[Request[GenerateHandler.Data], Response[String]] {
 
-  import SuggestForTheSameHandler._
+  import GenerateHandler._
   import PathMatchers._
 
   def route: Route =
-    pathSuffix("thesame") {
+    pathSuffix("generate") {
       pathPrefix(Segments(0, 100)) { words =>
         get {
           parameter('data.as[String]) {
             data =>
               complete {
-                handle(Request[Data](
-                  phrase = words :+ ".",
+                handle(Request(
+                  phrase = words,
                   data = data.parseJson.convertTo[Data]))
               }
           }
@@ -47,21 +48,17 @@ class SuggestForTheSameHandler(vocabulary: VocabularyImpl)(implicit context: Exe
       }
     }
 
-
-  def handle(request: Request[Data]): Future[Response[Word]] = Future {
-    val statement = vocabulary.tokenize(request.phrase.mkString(" "))
-
-    println(statement)
+  override def handle(request: Request[Data]): Future[Response[String]] = Future {
+    val tokens = vocabulary.toTokens(request.phrase)
 
     val suggest = vocabulary
-      .suggestForTheSame(statement)
-      .flatMap {
-        case (token, probability) =>
-          vocabulary.wordMap.get(token).map { word =>
-            Suggest(word, probability)
-          }
+      .generatePhrase(tokens)
+      .map{
+        case statement =>
+          Suggest(vocabulary.untokenize(statement), vocabulary.probability(statement))
       }
 
-    Response(suggest = suggest)
+
+    Response(suggest = suggest.toList)
   }
 }

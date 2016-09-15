@@ -10,7 +10,7 @@ import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, Vocabulary}
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import spray.json._
-
+import com.github.dronegator.nlp.main.phrase.WordResponse._
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -27,7 +27,7 @@ object SuggestNextHandler extends DefaultJsonProtocol {
 
 
 class SuggestNextHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionContext)
-  extends Handler[Request[SuggestNextHandler.Data], Response] {
+  extends Handler[Request[SuggestNextHandler.Data], Response[Word]] {
 
   import SuggestNextHandler._
   import PathMatchers._
@@ -49,7 +49,7 @@ class SuggestNextHandler(vocabulary: VocabularyImpl)(implicit context: Execution
     }
 
 
-  def handle(request: Request[Data]): Future[Response] = Future {
+  def handle(request: Request[Data]): Future[Response[Word]] = Future {
     val statement = vocabulary.tokenize(request.phrase.mkString(" "))
 
     val suggest = vocabulary
@@ -57,7 +57,7 @@ class SuggestNextHandler(vocabulary: VocabularyImpl)(implicit context: Execution
       .flatMap {
         case (token, probability) =>
           vocabulary.wordMap.get(token).map { word =>
-            SuggestedWord(word, probability)
+            Suggest(word, probability)
           }
       }
 

@@ -54,7 +54,7 @@ object NLPTWebServiceMain
         s"${request.request.protocol.value} ${request.request.method.value} " +
           s"${request.request.uri.path}?${request.request.uri.queryString().getOrElse("")}")
 
-      (continue.route ~ suggestForNext.route ~ suggestForTheSame.route ~ suggest.route)(request)
+      (continue.route ~ suggestForNext.route ~ suggestForTheSame.route  ~ advice.route ~ generate.route ~ suggest.route)(request)
         .map {
           case result: Complete =>
             // logger.debug(s"${result.response._3}")

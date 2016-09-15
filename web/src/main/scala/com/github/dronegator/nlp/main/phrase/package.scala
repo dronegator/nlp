@@ -15,13 +15,24 @@ import scala.concurrent.Future
 package object phrase {
   case class Request[D](phrase: List[Word], data: D)
 
-  case class SuggestedWord(word: Word, weight: Weight)
+  case class Suggest[A](value: A, weight: Weight)
 
-  case class Response(suggest: List[SuggestedWord])
+  case class Response[A](suggest: List[Suggest[A]])
 
-  implicit val suggestedWordFormat = jsonFormat2(SuggestedWord)
+  object PhraseResponse {
+    implicit val suggestPhraseFormat = jsonFormat2(Suggest[String])
 
-  implicit val responseFormat = jsonFormat1(Response)
+    implicit val responsePhraseFormat = jsonFormat1(Response[String])
+  }
+
+  object WordResponse {
+    implicit val suggestWordFormat = jsonFormat2(Suggest[Word])
+
+    implicit val responseWordFormat = jsonFormat1(Response[Word])
+
+  }
+ 
+
 
   trait Handler[I, O] {
     def route: Route

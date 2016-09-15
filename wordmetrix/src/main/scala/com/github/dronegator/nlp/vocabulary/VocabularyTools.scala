@@ -177,6 +177,9 @@ object VocabularyTools {
 
     def untokenize(tokens: List[Token]) =
       tokens.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
+
+    def toTokens(words: List[Word]) =
+      words.flatMap(vocabulary.tokenMap.get(_)).flatten
   }
 
   implicit class VocabularyHintTools(val vocabularyHint: VocabularyHint)

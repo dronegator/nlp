@@ -21,6 +21,10 @@ $(
             })
         });
 
+        function extractPath() {
+            return $("#editor textarea").val().trim().split(/\s+/).join("/");
+        }
+
         function resize(q) {
             var w = $(this).width();
             $(".wide").width(w - 80);
@@ -60,7 +64,7 @@ $(
                     var items = [];
 
                     $.each($(data.next).slice(0, 4), function (key, val) {
-                        items.push("<tr><td  class=\"word\">" + val.word + "</td><td>" + val.weight + "</td></tr>");
+                        items.push("<tr><td  class=\"word\">" + val.value + "</td><td>" + val.weight + "</td></tr>");
                     });
 
                     $("#promptNext .data").append(
@@ -93,8 +97,8 @@ $(
                         $.each($(data.continue).slice(0, 100), function (key, val) {
                             console.log(key);
                             console.log(val);
-                            console.log(val.word);
-                            items.push("<span class=\"word\">" + val.word + "</span>");
+                            console.log(val.value);
+                            items.push("<span class=\"word\">" + val.value + "</span>");
                         });
 
                         $("#prompt").html(
@@ -112,7 +116,7 @@ $(
                         var items = [];
 
                         $.each($(data.theSame).slice(0, 10), function (key, val) {
-                            items.push("<tr><td class=\"word\">" + val.word + "</td><td>" + val.weight + "</td></tr>");
+                            items.push("<tr><td class=\"word\">" + val.value + "</td><td>" + val.weight + "</td></tr>");
                         });
 
                         $("#promptTheSame .data").html(
@@ -152,6 +156,19 @@ $(
             "icon": "ui-icon-arrowreturnthick-1-w",
             "showLabel": false
         });
+
+        $("#generate").button({
+            "icon": "ui-icon-arrowreturnthick-1-w",
+            "showLabel": false
+        }).on("click change selectmenuchange",
+            function() {
+              console.log(extractPath())
+              $.getJSON("/phrase/" + extractPath() + "/generate?data={}", "", function (data) {
+                              console.log(data); {
+                                  $("#editor textarea").val(data.suggest[0].value);
+                              }
+                          })
+            });
 
         $(".toolbar").controlgroup();
 
