@@ -19,9 +19,11 @@ object VocabularyTools {
   type Advices = List[(Statement, Probability)]
 
   implicit class VocabularyTools(val vocabulary: VocabularyImpl/*TODO: Use Vocabulary instead*/)
-    extends main.Combinators
+    extends main.NLPTAppPartial
+    with main.Combinators
     with ToolAdviceTrait {
-    val cfg = CFG()
+
+    lazy val cfg = CFG()
 
     lazy val vocabularyHint: VocabularyHint = vocabulary
 
@@ -177,7 +179,9 @@ object VocabularyTools {
       tokens.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
   }
 
-  implicit class VocabularyHintTools(val vocabularyHint: VocabularyHint) extends main.Combinators {
+  implicit class VocabularyHintTools(val vocabularyHint: VocabularyHint)
+    extends main.NLPTAppPartial
+    with main.Combinators {
     override def cfg: CFG = CFG()
 
     def keywords(statement: Statement) =
@@ -194,7 +198,10 @@ object VocabularyTools {
 
   }
 
-  implicit class VocabularyRawTools(vocabulary: VocabularyRaw) extends main.Combinators {
+  implicit class VocabularyRawTools(vocabulary: VocabularyRaw)
+    extends main.NLPTAppPartial
+    with main.Combinators {
+
     val cfg = CFG()
 
     lazy val vocabularyHint: VocabularyHint = vocabulary
@@ -241,7 +248,9 @@ object VocabularyTools {
     }
   }
 
-  implicit class VocabularyToolsOutdated(vocabulary: VocabularyImpl with VocabularyImplOutdated) extends main.Combinators {
+  implicit class VocabularyToolsOutdated(vocabulary: VocabularyImpl with VocabularyImplOutdated)
+    extends main.NLPTAppPartial
+    with main.Combinators {
     val cfg = CFG()
 
     lazy val vocabularyHint: VocabularyHint = vocabulary

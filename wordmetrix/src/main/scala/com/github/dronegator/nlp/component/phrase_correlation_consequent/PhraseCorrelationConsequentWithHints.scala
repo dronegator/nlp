@@ -7,9 +7,11 @@ package com.github.dronegator.nlp.component.phrase_correlation_consequent
 import com.github.dronegator.nlp.component.{ComponentFold, ComponentState}
 import com.github.dronegator.nlp.component.phrase_correlation_consequent.PhraseCorrelationConsequentWithHints.Init
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
+import com.github.dronegator.nlp.main.TagHints
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.vocabulary.{VocabularyHint }
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyHintTools
+import com.softwaremill.tagging.@@
 
 
 object PhraseCorrelationConsequentWithHints {

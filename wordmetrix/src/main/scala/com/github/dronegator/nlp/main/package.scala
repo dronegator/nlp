@@ -14,8 +14,10 @@ import com.github.dronegator.nlp.component.tokenizer.{TokenizerWithHints, Tokeni
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.concurrent.Zukunft
-import com.github.dronegator.nlp.vocabulary.{VocabularyHint, Vocabulary, VocabularyRaw}
+import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, VocabularyHint, Vocabulary, VocabularyRaw}
 import com.softwaremill.macwire._
+import com.softwaremill.tagging.@@
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.Future
 
@@ -24,8 +26,23 @@ import scala.concurrent.Future
  */
 package object main {
 
-  trait Combinators {
+  trait TagHints
+
+  trait NLPTAppPartial
+    extends LazyLogging {
+
     def cfg: CFG
+
+    def vocabularyHint: VocabularyHint
+  }
+
+  trait NLPTApp
+    extends NLPTAppPartial {
+    def vocabulary: VocabularyImpl
+  }
+
+  trait Combinators {
+    this: NLPTAppPartial =>
 
     lazy val splitterTool = wire[Splitter]
 
@@ -46,11 +63,9 @@ package object main {
     lazy val phraseCorrelationConsequentTool = wire[PhraseCorrelationConsequentWithHints]
 
     lazy val phraseCorrelationInnerTool = wire[PhraseCorrelationInnerWithHints]
-
-    def vocabularyHint: VocabularyHint
   }
 
-  trait MainTools extends Combinators {
+  trait MainTools {
     private implicit val ordering = Ordering.
       fromLessThan((x: List[Int], y: List[Int]) => (x zip y).find(x => x._1 != x._2).map(x => x._1 < x._2).getOrElse(false))
 
@@ -108,6 +123,4 @@ package object main {
         }
     }
   }
-
-
 }

@@ -2,7 +2,7 @@ package com.github.dronegator.nlp.main.html
 
 import akka.http.scaladsl.server.Directives._
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{PEnd, DEOP}
-import com.github.dronegator.nlp.main.Concurent
+import com.github.dronegator.nlp.main.{NLPTApp, Concurent}
 import com.github.dronegator.nlp.vocabulary.VocabularyImpl
 import com.github.dronegator.nlp.vocabulary.VocabularyTools._
 import com.softwaremill.macwire._
@@ -27,9 +27,7 @@ object NLPTWebServiceHTMLTrait {
 }
 
 trait NLPTWebServiceHTMLTrait {
-  this: Concurent =>
-
-  def vocabulary: VocabularyImpl
+  this: NLPTApp with Concurent  =>
 
   def routeHTML = path("generate") {
     get {

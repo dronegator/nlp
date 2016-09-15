@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp.main.phrase
 
-import com.github.dronegator.nlp.main.Concurent
+import com.github.dronegator.nlp.main.{NLPTApp, Concurent}
 import com.github.dronegator.nlp.vocabulary.VocabularyImpl
 import com.softwaremill.macwire._
 
@@ -12,9 +12,7 @@ object NLPTWebServicePhraseTrait {
 }
 
 trait NLPTWebServicePhraseTrait {
-  this: Concurent =>
-
-  def vocabulary: VocabularyImpl
+  this: NLPTApp with Concurent  =>
 
   lazy val continue = wire[ContinueHandler]
 
