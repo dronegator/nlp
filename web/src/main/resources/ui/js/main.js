@@ -5,10 +5,10 @@ $(
         $(".resizable").resizable();
         $("#sortable").sortable();
         $("#sortable").disableSelection();
-        $( ".widget input[type=submit], .widget a, .widget button" ).button();
-        $( "button, input, a" ).click( function( event ) {
-          event.preventDefault();
-        } );
+        $(".widget input[type=submit], .widget a, .widget button").button();
+        $("button, input, a").click(function (event) {
+            event.preventDefault();
+        });
 
         $(".ui-widget-content").each(function (a, content) {
             $(".ui-widget-header", content).each(function (a, header) {
@@ -128,11 +128,50 @@ $(
             } else if (value.endsWith(".")) {
                 onPhraseEnd();
             }
-
         }
 
         $("#submit").on("click", onPhraseEnd);
 
         $("#editor textarea").on("keyup", onTextAreaUpdate);
+
+        var page = $("textarea");
+        var basicControls = ["#print", "#check", "#generate", "#keywords", "#probability"];
+        var valueControls = ["#advice", "#zoom"];
+
+        $("#print").button({
+            "icon": "ui-icon-print",
+            "showLabel": false
+        });
+
+        $("#redo").button({
+            "icon": "ui-icon-arrowreturnthick-1-e",
+            "showLabel": false
+        });
+
+        $("#undo").button({
+            "icon": "ui-icon-arrowreturnthick-1-w",
+            "showLabel": false
+        });
+
+        $(".toolbar").controlgroup();
+
+        $("#zoom").on("selectmenuchange", function () {
+            page.css({
+                "zoom": $(this).val()
+            });
+        });
+
+        $(basicControls.concat(valueControls).join(", ")).on("click change selectmenuchange",
+            function () {
+                document.execCommand(
+                    this.id,
+                    false,
+                    $(this).val()
+                );
+            });
+
+        $("#editor textarea").val(" ");
+
+        onTextAreaUpdate();
     }
 );
