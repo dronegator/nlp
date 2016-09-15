@@ -14,6 +14,13 @@
     width: 300px; padding: 0em;
 }
 
+#advice {
+    width: 300px; padding: 0em;
+}
+
+#generate {
+    width: 300px; padding: 0em;
+}
 #promptNext {
     width: 300px; padding: 0em;
 }

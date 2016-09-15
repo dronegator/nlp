@@ -157,17 +157,67 @@ $(
             "showLabel": false
         });
 
-        $("#generate").button({
+        $("#doGenerate").button({
             "icon": "ui-icon-arrowreturnthick-1-w",
             "showLabel": false
         }).on("click change selectmenuchange",
-            function() {
-              console.log(extractPath())
-              $.getJSON("/phrase/" + extractPath() + "/generate?data={}", "", function (data) {
-                              console.log(data); {
-                                  $("#editor textarea").val(data.suggest[0].value);
-                              }
-                          })
+            function () {
+                console.log(extractPath())
+                $.getJSON("/phrase/" + extractPath() + "/generate?data={}", "", function (data) {
+                    console.log(data);
+                    $.each(data.suggest, function (key, val) {
+                        $("#generate .data table").append(
+                            "<tr><td class=\"phrase\">" + val.value + "</td><td>" + val.weight + "</td></tr>"
+                        );
+
+                        $("#generate .phrase").last().on("click", function () {
+                            $("#editor textarea").val($(this).text())
+                            $(this).parent("tr").remove();
+                        })
+                    })
+                })
+            });
+
+        $("#doGenerate").button({
+            "icon": "ui-icon-arrowreturnthick-1-w",
+            "showLabel": true
+        }).on("click change selectmenuchange",
+            function () {
+                console.log(extractPath())
+                $.getJSON("/phrase/" + extractPath() + "/generate?data={}", "", function (data) {
+                    console.log(data);
+                    $.each(data.suggest, function (key, val) {
+                        $("#generate .data table").append(
+                            "<tr><td class=\"phrase\">" + val.value + "</td><td>" + val.weight + "</td></tr>"
+                        );
+
+                        $("#generate .phrase").last().on("click", function () {
+                            $("#editor textarea").val($(this).text())
+                            $(this).parent("tr").remove();
+                        })
+                    })
+                })
+            });
+
+        $("#doAdvice").button({
+            "icon": "ui-icon-arrowreturnthick-1-w",
+            "showLabel": true
+        }).on("click change selectmenuchange",
+            function () {
+                console.log(extractPath())
+                $.getJSON("/phrase/" + extractPath() + "/advice?data={}", "", function (data) {
+                    console.log(data);
+                    $.each(data.suggest, function (key, val) {
+                        $("#advice .data table").append(
+                            "<tr><td class=\"phrase\">" + val.value + "</td><td>" + val.weight + "</td></tr>"
+                        );
+
+                        $("#advice .phrase").last().on("click", function () {
+                            $("#editor textarea").val($(this).text())
+                            $(this).parent("tr").remove();
+                        })
+                    })
+                })
             });
 
         $(".toolbar").controlgroup();

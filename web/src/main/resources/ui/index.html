@@ -39,11 +39,11 @@
                 <div class="wrap">
                     <div class="toolbar">
                         <button id="print">Print</button>
-                        <button id="check">Check</button>
-                        <button id="generate">Generate</button>
+                        <button id="doGenerate">Generate</button>
+                        <button id="doAdvice">Advice</button>
                         <button id="keywords">Keywords</button>
                         <button id="probability">Keywords</button>
-                        <select id="advice">
+                        <select id="qq">
                             <option selected disabled>Auxiliary</option>
                             <option>Keywords</option>
                             <option>Everything</option>
@@ -75,6 +75,28 @@
                         <td>qq</td>
                         <td>0.01</td>
                     </tr>
+                </table>
+            </div>
+        </div>
+
+    </li>
+    <li class="ui-state-default">
+        <div id="advice" class="ui-widget-content draggable resizable half-wide">
+            <h3 class="ui-widget-header">Advices:</h3>
+
+            <div class="data">
+                <table>
+                </table>
+            </div>
+        </div>
+
+    </li>
+    <li class="ui-state-default">
+        <div id="generate" class="ui-widget-content draggable resizable half-wide">
+            <h3 class="ui-widget-header">Generated phrases:</h3>
+
+            <div class="data">
+                <table>
                 </table>
             </div>
         </div>
