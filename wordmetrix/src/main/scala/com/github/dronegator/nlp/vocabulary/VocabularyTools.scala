@@ -180,6 +180,9 @@ object VocabularyTools {
 
     def toTokens(words: List[Word]) =
       words.flatMap(vocabulary.tokenMap.get(_)).flatten
+
+    def toWords(tokens: List[Token]) =
+      tokens.flatMap(vocabulary.wordMap.get(_))
   }
 
   implicit class VocabularyHintTools(val vocabularyHint: VocabularyHint)

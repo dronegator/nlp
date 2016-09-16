@@ -83,7 +83,8 @@ $(
                     var highlight = $(data.theSame)
                         .map(function (n, item) {
                             return item.value;
-                        });
+                        })
+                        .slice(0, 20);
 
                     {
                         var items = [];
@@ -123,6 +124,12 @@ $(
                         );
 
                         $("#promptTheSame .word").on("click", add);
+                    }
+
+                    {
+                        $("#statistic .placeholder-probability").text(data.probability);
+                        $("#statistic .placeholder-equalizedProbability").text(data.equalizedProbability);
+                        $("#statistic .placeholder-keywords").text(data.keywords.join());
                     }
                 })
             }

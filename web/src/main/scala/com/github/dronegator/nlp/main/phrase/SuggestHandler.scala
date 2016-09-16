@@ -23,10 +23,12 @@ object SuggestHandler extends DefaultJsonProtocol {
 
   case class Response(continue: List[Suggest[Word]],
                       next: List[Suggest[Word]],
-                      theSame: List[Suggest[Word]])
+                      theSame: List[Suggest[Word]],
+                      probability: Double,
+                      equalizedProbability: Double,
+                      keywords: List[Word])
 
-  implicit val responseFormat = jsonFormat3(Response)
-
+  implicit val responseFormat = jsonFormat6(Response)
 
   implicit val dataFormat = jsonFormat0(Data)
 
@@ -40,7 +42,6 @@ class SuggestHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionCont
   import PathMatchers._
 
   def route: Route =
-  //pathSuffix("suggest") {
     pathPrefix(Segments(0, 100)) { words =>
       get {
         parameter('data.as[String]) {
@@ -52,13 +53,12 @@ class SuggestHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionCont
             }
         }
       }
-      //}
     }
 
   def handle(request: Request[Data]): Future[SuggestHandler.Response] = Future {
     val statement = vocabulary.tokenize(request.phrase.mkString(" ") + ".")
 
-    val statementPrefix = vocabulary.tokenize(request.phrase.mkString(" "))
+    val statementPrefix = vocabulary.tokenize(request.phrase.mkString(" ")).dropRight(1)
 
     val continue = vocabulary
       .continueStatement(statementPrefix)
@@ -90,10 +90,26 @@ class SuggestHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionCont
           }
       }
 
-    Response(
+    val probability = vocabulary.probability(statementPrefix);
+
+    val equalizedProbability = probability / vocabulary.statementDenominator(statementPrefix)
+
+    println(statementPrefix, probability)
+
+    val keywords = vocabulary.keywords(statementPrefix)
+        .collect{
+          case (word, (p, _, _)) if p > 0 =>
+            word
+        }
+        .toList
+
+    SuggestHandler.Response(
       continue = continue,
       next = next,
-      theSame = theSame
+      theSame = theSame,
+      probability = probability,
+      equalizedProbability = equalizedProbability,
+      keywords = vocabulary.toWords(keywords)
     )
   }
 }
