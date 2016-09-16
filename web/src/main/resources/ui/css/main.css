@@ -21,8 +21,21 @@
 #generate {
     width: 300px; padding: 0em;
 }
+
 #promptNext {
     width: 300px; padding: 0em;
+}
+
+.phrase:hover {
+    background-color: silver;
+}
+
+.highlight {
+   font-weight: bold;
+}
+
+.word:hover {
+    background-color: silver;
 }
 
 #sortable { list-style-type: none; margin: 0; padding: 0; }

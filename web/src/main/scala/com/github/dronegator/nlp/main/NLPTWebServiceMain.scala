@@ -49,7 +49,7 @@ object NLPTWebServiceMain
 
   val route =
     pathPrefix("phrase") { request =>
-
+      val tStart = System.currentTimeMillis()
       logger.info(
         s"${request.request.protocol.value} ${request.request.method.value} " +
           s"${request.request.uri.path}?${request.request.uri.queryString().getOrElse("")}")
@@ -58,6 +58,8 @@ object NLPTWebServiceMain
         .map {
           case result: Complete =>
             // logger.debug(s"${result.response._3}")
+            val tEnd = System.currentTimeMillis()
+            logger.debug(s"${request.request.uri.path} ${tEnd-tStart} Completed")
             result
           case result => result
         }

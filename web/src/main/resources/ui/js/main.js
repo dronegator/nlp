@@ -49,18 +49,15 @@ $(
         };
 
         function onPhraseEnd() {
-            var value = $("#editor textarea").val()
-            console.log(value);
-            var value1 = value.trim().split(/\s+/).join("/")
-
             $("<p/>", {
-                text: value
+                text: $("#editor textarea").val()
             }).appendTo("#text")
 
+            var path = extractPath();
             $("#editor textarea").val("")
 
-            $.getJSON("/phrase/" + value1 + "?data={}", "", function (data) {
-                console.log(data); {
+            $.getJSON("/phrase/" + path + "?data={}", "", function (data) {
+                {
                     var items = [];
 
                     $.each($(data.next).slice(0, 4), function (key, val) {
@@ -81,24 +78,23 @@ $(
         }
 
         function onTextAreaUpdate() {
-
-            var value = $("#editor textarea").val()
-            console.log(value);
-            var value1 = value.trim().split(/\s+/).join("/")
-
-            console.log(value1);
-
-            if (value.endsWith(" ")) {
-                $.getJSON("/phrase/" + value1 + "?data={}", "", function (data) {
-                    console.log(data);
+            if ($("#editor textarea").val().endsWith(" ")) {
+                $.getJSON("/phrase/" + extractPath() + "?data={}", "", function (data) {
+                    var highlight = $(data.theSame)
+                        .map(function (n, item) {
+                            return item.value;
+                        });
 
                     {
                         var items = [];
-                        $.each($(data.continue).slice(0, 100), function (key, val) {
-                            console.log(key);
-                            console.log(val);
-                            console.log(val.value);
-                            items.push("<span class=\"word\">" + val.value + "</span>");
+                        $.each($(data.continue).slice(0, 100), function (key, item) {
+                            if ($.inArray(item.value, highlight) >= 0) {
+                                console.log("highlight " + item.value);
+                                items.push("<span class=\"word highlight\">" + item.value + "</span>");
+                            } else {
+                                items.push("<span class=\"word\">" + item.value + "</span>");
+                            }
+
                         });
 
                         $("#prompt").html(
@@ -129,14 +125,21 @@ $(
                         $("#promptTheSame .word").on("click", add);
                     }
                 })
-            } else if (value.endsWith(".")) {
-                onPhraseEnd();
             }
         }
 
         $("#submit").on("click", onPhraseEnd);
 
-        $("#editor textarea").on("keyup", onTextAreaUpdate);
+        $("#editor textarea").on("keyup", function (event) {
+            if (event.which == 32) onTextAreaUpdate()
+        });
+
+        $("#editor textarea").on("keydown", function (event) {
+         //   console.log(event);
+            if (event.key == "Enter") {
+                onPhraseEnd();
+            }
+        });
 
         var page = $("textarea");
         var basicControls = ["#print", "#check", "#generate", "#keywords", "#probability"];
@@ -159,27 +162,6 @@ $(
 
         $("#doGenerate").button({
             "icon": "ui-icon-arrowreturnthick-1-w",
-            "showLabel": false
-        }).on("click change selectmenuchange",
-            function () {
-                console.log(extractPath())
-                $.getJSON("/phrase/" + extractPath() + "/generate?data={}", "", function (data) {
-                    console.log(data);
-                    $.each(data.suggest, function (key, val) {
-                        $("#generate .data table").append(
-                            "<tr><td class=\"phrase\">" + val.value + "</td><td>" + val.weight + "</td></tr>"
-                        );
-
-                        $("#generate .phrase").last().on("click", function () {
-                            $("#editor textarea").val($(this).text())
-                            $(this).parent("tr").remove();
-                        })
-                    })
-                })
-            });
-
-        $("#doGenerate").button({
-            "icon": "ui-icon-arrowreturnthick-1-w",
             "showLabel": true
         }).on("click change selectmenuchange",
             function () {
@@ -187,14 +169,20 @@ $(
                 $.getJSON("/phrase/" + extractPath() + "/generate?data={}", "", function (data) {
                     console.log(data);
                     $.each(data.suggest, function (key, val) {
-                        $("#generate .data table").append(
-                            "<tr><td class=\"phrase\">" + val.value + "</td><td>" + val.weight + "</td></tr>"
-                        );
+                        $("<tr><td class=\"phrase\">" + val.value + "</td><td>" + val.weight + "</td></tr>")
+                            .prependTo("#generate .data table")
+                            .find(".phrase")
+                            .on("click", function () {
+                                $("#editor textarea").val($(this).text());
+                                onTextAreaUpdate();
+                                $(this).parent("tr").remove();
+                            });
 
-                        $("#generate .phrase").last().on("click", function () {
-                            $("#editor textarea").val($(this).text())
-                            $(this).parent("tr").remove();
+                        $("#generate .data table tr").slice(10).each(function () {
+                            $(this).remove()
                         })
+
+                        //$("#generate .phrase").last()
                     })
                 })
             });
@@ -207,13 +195,15 @@ $(
                 console.log(extractPath())
                 $.getJSON("/phrase/" + extractPath() + "/advice?data={}", "", function (data) {
                     console.log(data);
-                    $.each(data.suggest, function (key, val) {
+                    $("#advice .data table tr").remove();
+                    $.each(data.suggest.slice(0, 20), function (key, val) {
                         $("#advice .data table").append(
                             "<tr><td class=\"phrase\">" + val.value + "</td><td>" + val.weight + "</td></tr>"
                         );
 
                         $("#advice .phrase").last().on("click", function () {
                             $("#editor textarea").val($(this).text())
+                            onTextAreaUpdate();
                             $(this).parent("tr").remove();
                         })
                     })
@@ -226,6 +216,11 @@ $(
             page.css({
                 "zoom": $(this).val()
             });
+        });
+
+        $("#clear").on("click", function () {
+            $("#editor textarea").val("");
+            onTextAreaUpdate();
         });
 
         $(basicControls.concat(valueControls).join(", ")).on("click change selectmenuchange",
