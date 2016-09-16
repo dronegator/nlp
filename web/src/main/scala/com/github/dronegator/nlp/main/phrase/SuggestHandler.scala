@@ -94,8 +94,6 @@ class SuggestHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionCont
 
     val equalizedProbability = probability / vocabulary.statementDenominator(statementPrefix)
 
-    println(statementPrefix, probability)
-
     val keywords = vocabulary.keywords(statementPrefix)
         .collect{
           case (word, (p, _, _)) if p > 0 =>

@@ -3,10 +3,12 @@ package com.github.dronegator.nlp.vocabulary
 import com.github.dronegator.nlp.common.Probability
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyRawTools
+import com.github.dronegator.nlp.trace._
+import com.typesafe.scalalogging.LazyLogging
 
 /**
- * Created by cray on 8/17/16.
- */
+  * Created by cray on 8/17/16.
+  */
 
 object VocabularyImpl {
   implicit def apply(vocabulary: VocabularyRaw) =
@@ -31,133 +33,177 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
                           phraseCorrelationConsequent: Map[List[Token], Int],
                           phraseCorrelationInner: Map[List[Token], Int])
   extends VocabularyRaw
-  with Vocabulary
-  with VocabularyHintWords {
+    with LazyLogging
+    with Vocabulary
+    with VocabularyHintWords {
   override lazy val wordMap: Map[Token, Word] =
-    tokenMap.
-      toIterator.
-      flatMap {
+    tokenMap
+      .toIterator
+      .flatMap {
         case (word, tokens) =>
           tokens.
             map(_ -> word).
             toIterator
-      }.toMap.
-      withDefaultValue("***")
+      }
+      .toMap
+      .withDefaultValue("***")
+      .time { time =>
+        logger.info(s"wordMap has initialized in time=$time")
+      }
+
 
   private lazy val count1 = nGram1.values.sum.toDouble
 
   override lazy val pToken: Map[List[Token], Double] = {
-    nGram1.
-      mapValues(_ / count1)
-  }
+    nGram1
+      .mapValues(_ / count1)
+      .time { time =>
+        logger.info(s"pToken has initialized in time=$time")
+      }
 
+  }
   override lazy val pNGram2: Map[List[Token], Double] = {
-    nGram2 flatMap {
-      case (key@(x :: y :: _), n) =>
-        nGram1.
-          get(x :: Nil).
-          map { m => key -> (n / m.toDouble) }
-    }
+    nGram2
+      .flatMap {
+        case (key@(x :: y :: _), n) =>
+          nGram1
+            .get(x :: Nil)
+            .map { m => key -> (n / m.toDouble) }
+      }
+      .asInstanceOf[Map[List[Token], Double]]
+      .time { time =>
+        logger.info(s"pNGram2 has initialized in time=$time")
+      }
   }
 
   override lazy val pNGram3: Map[List[Token], Double] = {
-    nGram3 flatMap {
-      case (key@(x :: y :: z :: _), n) =>
-        nGram2.
-          get(x :: y :: Nil).
-          map { m => key -> (n / m.toDouble) }
-    }
+    nGram3
+      .flatMap {
+        case (key@(x :: y :: z :: _), n) =>
+          nGram2
+            .get(x :: y :: Nil)
+            .map { m => key -> (n / m.toDouble) }
+      }
+      .asInstanceOf[Map[List[Token], Double]]
+      .time { time =>
+        logger.info(s"pToken has initialized in time=$time")
+      }
   }
 
   override lazy val map1ToNext: Map[List[Token], List[(Double, Token)]] = {
-    pNGram2.
-      toList.
-      map {
+    pNGram2
+      .toList
+      .map {
         case (w1 :: w2 :: _, p) =>
           w1 -> (p -> w2)
-      }.
-      groupBy(_._1).
-      map {
+      }
+      .groupBy(_._1)
+      .map {
         case (key, value) =>
-          List(key) -> value.
-            map(_._2).
-            sortBy(_._1)
+          List(key) -> value
+            .map(_._2)
+            .sortBy(_._1)
+      }
+      .time { time =>
+        logger.info(s"map1ToToken has initialized in time=$time")
       }
   }
 
   override lazy val map2ToNext: Map[List[Token], List[(Double, Token)]] = {
-    pNGram3.
-      toList.
-      map {
+    pNGram3
+      .toList
+      .map {
         case (w1 :: w2 :: w3 :: _, p) =>
           (w1 :: w2 :: Nil) -> (p -> w3)
-      }.
-      groupBy(_._1).
-      map {
+      }
+      .groupBy(_._1)
+      .map {
         case (key, value) =>
           key -> value.
             map(_._2).
             sortBy(_._1)
       }
+      .time { time =>
+        logger.info(s"map2ToNext has initialized in time=$time")
+      }
   }
 
   override lazy val pNGram2Prev: Map[List[Token], Double] = {
-    nGram2 flatMap {
-      case (key@(x :: y :: _), n) =>
-        nGram1.
-          get(y :: Nil).
-          map { m => key -> (n / m.toDouble) }
-    }
+    nGram2
+      .flatMap {
+        case (key@(x :: y :: _), n) =>
+          nGram1
+            .get(y :: Nil)
+            .map { m => key -> (n / m.toDouble) }
+      }
+      .asInstanceOf[Map[List[Token], Double]]
+      .time { time =>
+        logger.info(s"pNgram2Prev has initialized in time=$time")
+      }
+
   }
 
   override lazy val pNGram3Prev: Map[List[Token], Double] = {
-    nGram3 flatMap {
-      case (key@(x :: y :: z :: _), n) =>
-        nGram2.
-          get(y :: z :: Nil).
-          map { m => key -> (n / m.toDouble) }
-    }
+    nGram3
+      .flatMap {
+        case (key@(x :: y :: z :: _), n) =>
+          nGram2.
+            get(y :: z :: Nil).
+            map { m => key -> (n / m.toDouble) }
+      }
+      .asInstanceOf[Map[List[Token], Double]]
+      .time { time =>
+        logger.info(s"pNgram3Prev has initialized in time=$time")
+      }
   }
 
   override lazy val map1ToPrev: Map[List[Token], List[(Double, Token)]] = {
-    pNGram2Prev.
-      toList.
-      map {
+    pNGram2Prev
+      .toList
+      .map {
         case (w1 :: w2 :: _, p) =>
           w2 -> (p -> w1)
-      }.
-      groupBy(_._1).
-      map {
+      }
+      .groupBy(_._1)
+      .map {
         case (key, value) =>
           List(key) -> value.
             map(_._2).
             sortBy(_._1)
       }
+      .time { time =>
+        logger.info(s"map2ToPrev has initialized in time=$time")
+      }
+
   }
 
   override lazy val map2ToPrev: Map[List[Token], List[(Double, Token)]] = {
-    pNGram3Prev.
-      toList.
-      map {
+    pNGram3Prev
+      .toList
+      .map {
         case (w1 :: w2 :: w3 :: _, p) =>
           (w2 :: w3 :: Nil) -> (p -> w1)
-      }.
-      groupBy(_._1).
-      map {
-        case (key, value) =>
-          key -> value.
-            map(_._2).
-            sortBy(_._1)
       }
+      .groupBy(_._1)
+      .map {
+        case (key, value) =>
+          key -> value
+            .map(_._2)
+            .sortBy(_._1)
+      }
+      .time { time =>
+        logger.info(s"map2ToPrev has initialized in time=$time")
+      }
+
   }
 
   override lazy val map2ToMiddle: Map[List[Token], List[(Double, Token)]] = {
-    nGram3.
-      groupBy {
+    nGram3
+      .groupBy {
         case (x :: _ :: z :: _, n) =>
           x :: z :: Nil
-      }.
-      map {
+      }
+      .map {
         case (key, values) =>
           val delimiter = values.map(_._2).sum.toDouble
 
@@ -170,47 +216,65 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
             sortBy(_._1).
             reverse
       }
+      .time { time =>
+        logger.info(s"map2ToMiddle has initialized in time=$time")
+      }
+
   }
 
   override lazy val map1ToNextPhrase: Map[Token, List[(Token, Probability)]] =
-    phraseCorrelationConsequent.groupBy {
-      case (token :: _, _) =>
-        token
-    }.map {
-      case (token, tokens) =>
-        val cumulative = tokens.
-          map {
-            case (_, value) =>
-              value
-          }.
-          sum.toDouble
+    phraseCorrelationConsequent
+      .groupBy {
+        case (token :: _, _) =>
+          token
+      }
+      .map {
+        case (token, tokens) =>
+          val cumulative = tokens
+            .map {
+              case (_, value) =>
+                value
+            }
+            .sum.toDouble
 
-        token -> tokens.map {
-          case ((_ :: token :: Nil), count) =>
-            token -> (count / cumulative)
-        }.toList.
-          sortBy(_._2)
-    }
+          token -> tokens.map {
+            case ((_ :: token :: Nil), count) =>
+              token -> (count / cumulative)
+          }
+            .toList
+            .sortBy(_._2)
+      }
+      .time { time =>
+        logger.info(s"map1ToNextPhrase has initialized in time=$time")
+      }
+
 
   override lazy val map1ToTheSamePhrase: Map[Token, List[(Token, Probability)]] =
-    phraseCorrelationInner.groupBy {
-      case (token :: _, _) =>
-        token
-    }.map {
-      case (token, tokens) =>
-        val cumulative = tokens.
-          map {
-            case (_, value) =>
-              value
-          }.
-          sum.toDouble
+    phraseCorrelationInner
+      .groupBy {
+        case (token :: _, _) =>
+          token
+      }
+      .map {
+        case (token, tokens) =>
+          val cumulative = tokens
+            .map {
+              case (_, value) =>
+                value
+            }
+            .sum.toDouble
 
-        token -> tokens.map {
-          case ((_ :: token :: Nil), count) =>
-            token -> (count / cumulative)
-        }.toList.
-          sortBy(_._2)
-    }
+          token -> tokens
+            .map {
+              case ((_ :: token :: Nil), count) =>
+                token -> (count / cumulative)
+            }
+            .toList
+            .sortBy(_._2)
+      }
+      .time { time =>
+        logger.info(s"map1ToTheSamePhrase has initialized in time=$time")
+      }
 
   private def restorePhrase(statement: List[Token]) =
     statement.
@@ -237,12 +301,16 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
           val length = statement.length
           val (p, n) = map.getOrElse(length, (0.0, 0))
           val probability = VocabularyTools.VocabularyTools(this).probability(statement) + p
-          map + (length ->(probability, n + 1))
+          map + (length -> (probability, n + 1))
       }
-      .map{
+      .map {
         case (key, (p, n)) =>
           key -> (p / n)
       }
+      .time { time =>
+        logger.info(s"posToProbability has initialized in time=$time")
+      }
+
 
   override def statementDenominator(statement: Statement): Probability =
     posToProbability.getOrElse(statement.length, 1.0)
