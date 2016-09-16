@@ -2,13 +2,17 @@ import java.io.File
 
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenMap}
-import com.github.dronegator.nlp.main.MainTools
-import com.github.dronegator.nlp.utils._, Match._
-import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, VocabularyHintImpl, VocabularyRawImpl}
+import com.github.dronegator.nlp.main.{Combinators, MainTools, NLPTApp, NLPTAppPartial}
+import com.github.dronegator.nlp.utils._
+import Match._
+import com.github.dronegator.nlp.vocabulary.{VocabularyHintImpl, VocabularyImpl, VocabularyRawImpl}
+import com.sun.javafx.css.Combinator
 
 object NLPTMain
   extends App
-  with MainTools {
+  with NLPTAppPartial
+  with MainTools
+  with Combinators {
   val fileIn :: fileOut ::  OptFile(hints) = args.toList
   lazy val cfg = CFG()
 

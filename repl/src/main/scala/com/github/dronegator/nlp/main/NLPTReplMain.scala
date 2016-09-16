@@ -20,6 +20,7 @@ import scala.collection.JavaConverters._
 
 object NLPTReplMain
   extends App
+  with NLPTAppPartial
   with MainTools
   with Concurent
   with DumpTools {

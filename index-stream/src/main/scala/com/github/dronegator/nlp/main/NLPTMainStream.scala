@@ -21,6 +21,8 @@ import com.github.dronegator.nlp.utils.Match._
  */
 object NLPTMainStream
   extends App
+  with NLPTAppPartial
+  with Combinators
   with MainTools {
 
   val fileIn :: fileOut ::  OptFile(hints) = args.toList
