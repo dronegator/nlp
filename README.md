@@ -62,29 +62,24 @@ Gathering statistic from a text corpora includes tokenizing a text stream, gathe
 
 Below I provide a simplified description for the algorithms that I suppose to use developing this components.
 
-Tokenizer
-~~~~~~~~~~~
-
+### Tokenizer
 Tokenizer splits text to tokens, actually, in some places it can provide a few variants of a token (for example, the dot can be an end of phrase or the end of a shortcut). Thats why tokenizer provides stream of the sets of the tokens for each position in the text.
 
-Phrase buffer
-~~~~~~~~~~~~~~
+### Phrase buffer
+
 Phrase buffer accumulates stream of the tokens and applies a phrase detector for the current content. Each time the detector assures the buffer contains the whole sentense, the sentece is raised into the output stream wiping of the buffer. 
 
-Phrase detector
-~~~~~~~~~~~~~~~
+### Phrase detector
 Phrase detector checks for a sequence of token variants if the begining of the sequence contains a whole phrase. The main approach is to use 2- 3- gramms statistic to build the most probable way thru the bufer of tokens looking for more probable one. If it passes thru the dot-as-end-of-phrase (DAEP) it suggests it has found a whole sentence. The main problem there is that actually tokenizer never knows which dot it has, and if the word is a begining of a phrase (escpecially for German language). Also, the text can contain some mistyping. 
 
-Phrase evaluator
-~~~~~~~~~~~~~~~~
+### Phrase evaluator
 Phrase evaluator counts the probability of a phrase from the set of tokens it contains.
 
-2 Gramm and 3 gramm counter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-2-gramm and 3-gramm counter is just a map of n-gramms to the probabilities. Just because of tremendous amount of n-grams, it works in a memory but can incrementally save statistic in a storage.
+### 2 Gramm and 3 gramm counter
+2-gramm and 3-gramm counter is just 
+a map of n-gramms to the probabilities. Just because of tremendous amount of n-grams, it works in a memory but can incrementally save statistic in a storage.
 
-Storage
-~~~~~~~
+### Storage
 Storage contains:
   
   1. All of the tokens (as id) and words they reperesent;
@@ -97,7 +92,7 @@ Storage contains:
 
 
 Usage
--------
+-----
 The initial release only contains a few console applications those can gather statistic from a text corpora, save it into the storage and provide simple services from a command prompt. 
 
 To collect statistic,  issue:
@@ -170,12 +165,13 @@ To use collected statistic, issue:
   * generate [Word]+
     Generates a phrase containing the sequence of words:
     
-      > generate reading a book
-      She was reading a book of famous people .
+        > generate reading a book
+        She was reading a book of famous people .
       
   * keywords [Word]+
     Select meaninful words from a phrase:
-    > keywords My cat was drinking a milk.
+    
+        > keywords My cat was drinking a milk.
         a                    -1.000 (0.000-1.000)
         drinking             -0.275 (0.000-0.276)
         was                  0.000 (0.000-0.000)
@@ -186,13 +182,13 @@ To use collected statistic, issue:
    
       where possible switches are:
       
-        * --keywords=[Word:]+ - obligatory keywords for the phrase variations;
+      * --keywords=[Word:]+ - obligatory keywords for the phrase variations;
         
-        * --use-best - show only phrases those seem to be better than provided one;
+      * --use-best - show only phrases those seem to be better than provided one;
          
-        * --limit=<NUMBER> - maximum amout of changes in a phrase;
-         
-        * --use-auxiliary - allow variations for auxiliary words only. 
+      * --limit=<NUMBER> - maximum amout of changes in a phrase;
+        
+      * --use-auxiliary - allow variations for auxiliary words only. 
        
       Suggest possible substitution of the words in a phrase (the intentional error has provided for the illustration puprpose):
        
