@@ -8,20 +8,56 @@
     <script src="/ui/js/main.js"></script>
     <style>
         .ui-menu { width: 150px; }
+
     </style>
     <link rel="stylesheet" href="/ui/css/jquery-ui.css"/>
     <link rel="stylesheet" href="/ui/css/main.css"/>
 </head>
 <body>
+<div id="titlebar" class="ui-widget ">
+    <div class="ui-widget-header wide systray">
+        Service of collaborative writing
+        <button id="promptNextOpen" class="open ui-button ui-widget ui-corner-all"
+                title="Open prompt of words for the next phrase" data-companion="#promptNext">
+            <span class="ui-icon ui-icon-gear"></span> Next
+        </button>
+        <button id="promptTheSameOpen" class="open ui-button ui-widget ui-corner-all"
+                title="Open prompt of words to use at the same phrase" data-companion="#promptTheSame">
+            <span class="ui-icon ui-icon-gear"></span> The Same
+        </button>
+        <button id="descriptionOpen" class="open ui-button ui-widget ui-corner-all"
+                title="Open the description" data-companion="#description">
+            <span class="ui-icon ui-icon-gear"></span> About
+        </button>
+        <button id="adviceOpen" class="open ui-button ui-widget ui-corner-all"
+                title="Open advices for the phrase structure" data-companion="#advice">
+            <span class="ui-icon ui-icon-gear"></span> Advice
+        </button>
+        <button id="generateOpen" class="open ui-button ui-widget ui-corner-all"
+                title="Open the list of generated phrases" data-companion="#generate">
+            <span class="ui-icon ui-icon-gear"></span> Generate
+        </button>
+        <button id="statisticOpen" class="open ui-button ui-widget ui-corner-all"
+                title="Open statistics" data-companion="#statistic">
+            <span class="ui-icon ui-icon-gear"></span> Statistic
+        </button>
+    </div>
+</div>
 
 <ul id="sortable" class="ui-helper-clearfix">
     <li class="ui-state-default ui-widget">
         <div id="description" class="ui-widget-content draggable resizable wide">
-            <h3 class="ui-widget-header">Short description of this very tool</h3>
+            <h3 class="ui-widget-header">
+                <button class="close ui-button ui-widget ui-corner-all ui-button-icon-only" title="Close button">
+                    <span class="ui-icon ui-icon-gear"></span> Close
+                </button>
+                Short description of this very tool
+            </h3>
 
-            <div class="data">
+            <div class="data uw-widget-context">
                 This is a prototype of upcomming service of collaborative writing. The only thing available now is this
-                page, that presents an editor with prompts for next word, for the word to use at the same, or next phrases.
+                page, that presents an editor with prompts for next word, for the word to use at the same, or next
+                phrases.
             </div>
         </div>
     </li>
@@ -32,7 +68,7 @@
             <div class="data">
                 <span>Possible continuation:</span>
 
-                <div id="prompt"></div>
+                <div id="prompt" class="ui-widget-content"></div>
             </div>
             <form>
                 <div class="wrap">
@@ -59,30 +95,54 @@
                             <option>200%</option>
                         </select>
                     </div>
-                <textarea></textarea>
-                <br/><button id="submit" class="ui-button ui-widget ui-corner-all">Ok</button>
+                    <textarea></textarea>
+                    <br/>
+                    <button id="submit" class="ui-button ui-widget ui-corner-all">Ok</button>
             </form>
-            <div id="text"></div>
+            <div id="text" class="ui-widget-content"></div>
         </div>
     </li>
-    <li class="ui-state-default ui-widget">
-        <div id="promptTheSame" class="ui-widget-content draggable resizable half-wide">
-            <h3 class="ui-widget-header">Try this words:</h3>
+    <li class="ui-state-default ui-widget" data-companion="#promptTheSameOpen">
+        <div id="promptTheSame" class="ui-widget-content draggable resizable quart-wide">
+            <h3 class="ui-widget-header">
+                <button class="close ui-button ui-widget ui-corner-all ui-button-icon-only" title="Close button">
+                    <span class="ui-icon ui-icon-gear"></span> Close
+                </button>
+                Try this words:
+            </h3>
 
             <div class="data">
                 <table>
-                    <tr>
-                        <td>qq</td>
-                        <td>0.01</td>
-                    </tr>
+                </table>
+            </div>
+        </div>
+    </li>
+    <li class="ui-state-default ui-widget" data-companion="#promptNextOpen">
+        <div id="promptNext" class="ui-widget-content draggable resizable quart-wide">
+            <h3 class="ui-widget-header">
+                <button class="close ui-button ui-widget ui-corner-all ui-button-icon-only" title="Close button">
+                    <span class="ui-icon ui-icon-gear"></span> Close
+                </button>
+                Words for the next phrase:
+            </h3>
+
+            <div class="data">
+                <table>
+
                 </table>
             </div>
         </div>
 
     </li>
-    <li class="ui-state-default ui-widget">
+
+    <li class="ui-state-default ui-widget" data-companion="#adviceOpen">
         <div id="advice" class="ui-widget-content draggable resizable half-wide">
-            <h3 class="ui-widget-header">Advices:</h3>
+            <h3 class="ui-widget-header">
+                <button class="close ui-button ui-widget ui-corner-all ui-button-icon-only" title="Close button">
+                    <span class="ui-icon ui-icon-gear"></span> Close
+                </button>
+                Advices:
+            </h3>
 
             <div class="data">
                 <table>
@@ -91,9 +151,14 @@
         </div>
 
     </li>
-    <li class="ui-state-default ui-widget">
+    <li class="ui-state-default ui-widget" data-companion="#generateOpen">
         <div id="generate" class="ui-widget-content draggable resizable half-wide">
-            <h3 class="ui-widget-header">Generated phrases:</h3>
+            <h3 class="ui-widget-header">
+                <button class="close ui-button ui-widget ui-corner-all ui-button-icon-only" title="Close button">
+                    <span class="ui-icon ui-icon-gear"></span> Close
+                </button>
+                Generated phrases:
+            </h3>
 
             <div class="data">
                 <table>
@@ -102,21 +167,14 @@
         </div>
 
     </li>
-    <li class="ui-state-default ui-widget">
-        <div id="promptNext" class="ui-widget-content draggable resizable half-wide">
-            <h3 class="ui-widget-header">Words for the next phrase:</h3>
-
-            <div class="data">
-                <table>
-
-                </table>
-            </div>
-        </div>
-
-    </li>
-    <li class="ui-state-default ui-widget">
+    <li class="ui-state-default ui-widget" data-companion="#statisticOpen">
         <div id="statistic" class="ui-widget-content draggable resizable half-wide">
-            <h3 class="ui-widget-header">Current statistic:</h3>
+            <h3 class="ui-widget-header">
+                <button class="close ui-button ui-widget ui-corner-all ui-button-icon-only" title="Close button">
+                    <span class="ui-icon ui-icon-gear"></span> Close
+                </button>
+                Current statistic:
+            </h3>
             <dl>
                 <dt>Probability</dt>
                 <dd class="placeholder-probability"></dd>
@@ -128,9 +186,12 @@
         </div>
     </li>
 </ul>
-<div id="sysinfo" class="ui-widget ui-widget-content wide">
-    <span>version:<span class="version"></span></span>
-    <span>vocabulary size:<span class="vocabulary"></span></span>
+
+<div id="sysinfo" class="ui-widget ">
+    <div class="ui-widget-content wide">
+        <span>version:<span class="version"></span></span>
+        <span>vocabulary size:<span class="vocabulary"></span></span>
+    </div>
 </div>
 </body>
 </html>

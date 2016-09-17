@@ -13,10 +13,10 @@ $(
         $(".ui-widget-content").each(function (a, content) {
             $(".ui-widget-header", content).each(function (a, header) {
                 console.log(header);
-                $(header).on("click", function () {
-
-                    $(".data", content).toggle("fold", {}, 500);
-                })
+//                $(header).on("click", function () {
+//
+//                    $(".data", content).toggle("fold", {}, 500);
+//                })
 
             })
         });
@@ -55,7 +55,8 @@ $(
             var w = $(this).width();
             $(".wide").width(w - 80);
             $(".wide textarea").width(w - 180);
-            $(".half-wide").width(w / 2 - 40);
+            $(".half-wide").width(w / 2 - 40 - 4 );
+            $(".quart-wide").width(w / 4 - 20 - 6 );
         };
 
 
@@ -160,6 +161,14 @@ $(
                 })
             }
         }
+
+        $(".ui-widget .close").on("click", function () {
+            $($(this).parents(".ui-widget").hide("puff").data("companion")).show("fold");
+        });
+
+        $(".ui-widget .open").on("click", function () {
+            $($(this).hide("fold").data("companion")).parents(".ui-widget").show("puff");
+        }).hide();
 
         $("#submit").on("click", onPhraseEnd);
 
