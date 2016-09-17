@@ -15,7 +15,7 @@ $(
                 console.log(header);
 //                $(header).on("click", function () {
 //
-//                    $(".data", content).toggle("fold", {}, 500);
+//                    $(".data", content).toggle("slide", {}, 500);
 //                })
 
             })
@@ -75,6 +75,13 @@ $(
             onTextAreaUpdate(qq);
         };
 
+        function ensureVisibility(selector) {
+            if (!$(selector).is(":visible")) {
+              $($(selector).parents(".ui-widget").show("puff").data("companion")).hide("slide");
+            }
+        }
+
+
         function onPhraseEnd() {
             $("<p/>", {
                 text: $("#editor textarea").val()
@@ -91,14 +98,20 @@ $(
                         items.push("<tr><td  class=\"word\">" + val.value + "</td><td>" + val.weight + "</td></tr>");
                     });
 
-                    $("#promptNext .data").append(
-                        $("<table/>", {
-                            "class": "",
-                            html: items.join("")
-                        })
-                    );
+                    if (items.length > 0) {
+                        ensureVisibility("#promptNext");
 
-                    $("#promptNext .word").on("click", add);
+                                        $("#promptNext .data").append(
+                                            $("<table/>", {
+                                                "class": "",
+                                                html: items.join("")
+                                            })
+                                        );
+                                        $("#promptNext .word").on("click", add);
+                    }
+
+
+
                 }
 
             });
@@ -143,14 +156,18 @@ $(
                             items.push("<tr><td class=\"word\">" + val.value + "</td><td>" + val.weight + "</td></tr>");
                         });
 
+                        if (items.length > 0) {
+                         ensureVisibility("#promptTheSame");
                         $("#promptTheSame .data").html(
-                            $("<table/>", {
-                                "class": "",
-                                html: items.join("")
-                            })
-                        );
+                                                    $("<table/>", {
+                                                        "class": "",
+                                                        html: items.join("")
+                                                    })
+                                                );
 
                         $("#promptTheSame .word").on("click", add);
+                        }
+
                     }
 
                     {
@@ -163,12 +180,20 @@ $(
         }
 
         $(".ui-widget .close").on("click", function () {
-            $($(this).parents(".ui-widget").hide("puff").data("companion")).show("fold");
+            $($(this).parents(".ui-widget").hide("puff").data("companion")).show("slide");
         });
 
         $(".ui-widget .open").on("click", function () {
-            $($(this).hide("fold").data("companion")).parents(".ui-widget").show("puff");
-        }).hide();
+            $($(this).hide("slide").data("companion")).parents(".ui-widget").show("puff");
+        }).map(function () {
+            if ($($(this).data("companion")).is(":visible")) {
+              $(this).hide(0);
+            }
+        });
+
+        $("#reload").on("click", function () {
+            location.reload();
+        });
 
         $("#submit").on("click", onPhraseEnd);
 
@@ -210,6 +235,8 @@ $(
                 console.log(extractPath())
                 $.getJSON("/phrase/" + extractPath() + "/generate?data={}", "", function (data) {
                     console.log(data);
+                    ensureVisibility("#generate");
+
                     $.each(data.suggest, function (key, val) {
                         $("<tr><td class=\"phrase\">" + val.value + "</td><td>" + val.weight + "</td></tr>")
                             .prependTo("#generate .data table")
@@ -237,7 +264,8 @@ $(
                 console.log(extractPath())
                 $.getJSON("/phrase/" + extractPath() + "/advice?data={}", "", function (data) {
                     console.log(data);
-                    $("#advice .data table tr").remove();
+                    ensureVisibility("#advice");
+                     $("#advice .data table tr").remove();
                     $.each(data.suggest.slice(0, 20), function (key, val) {
                         $("#advice .data table").append(
                             "<tr><td class=\"phrase\">" + val.value + "</td><td>" + val.weight + "</td></tr>"

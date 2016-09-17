@@ -38,6 +38,14 @@
     background-color: silver;
 }
 
+.open {
+    display: block;
+    float: right;
+}
+
+#resizable {
+  overflow: hidden;
+}
 #sortable { list-style-type: none; margin: 0; padding: 0; }
 
 #sortable li { margin: 3px 3px 3px 0; padding: 1px; float: left; text-align: left; }

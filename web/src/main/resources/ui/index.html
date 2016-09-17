@@ -6,10 +6,6 @@
     <script src="/ui/js/jquery.min.js"></script>
     <script src="/ui/js/jquery-ui.min.js"></script>
     <script src="/ui/js/main.js"></script>
-    <style>
-        .ui-menu { width: 150px; }
-
-    </style>
     <link rel="stylesheet" href="/ui/css/jquery-ui.css"/>
     <link rel="stylesheet" href="/ui/css/main.css"/>
 </head>
@@ -17,6 +13,10 @@
 <div id="titlebar" class="ui-widget ">
     <div class="ui-widget-header wide systray">
         Service of collaborative writing
+        <button id="reload" class="ui-button ui-widget ui-corner-all"
+                title="Reload">
+            <span class="ui-icon ui-icon-gear"></span> reload
+        </button>
         <button id="promptNextOpen" class="open ui-button ui-widget ui-corner-all"
                 title="Open prompt of words for the next phrase" data-companion="#promptNext">
             <span class="ui-icon ui-icon-gear"></span> Next
@@ -45,7 +45,7 @@
 </div>
 
 <ul id="sortable" class="ui-helper-clearfix">
-    <li class="ui-state-default ui-widget">
+    <li class="ui-state-default ui-widget ui-helper-hidden">
         <div id="description" class="ui-widget-content draggable resizable wide">
             <h3 class="ui-widget-header">
                 <button class="close ui-button ui-widget ui-corner-all ui-button-icon-only" title="Close button">
@@ -102,7 +102,7 @@
             <div id="text" class="ui-widget-content"></div>
         </div>
     </li>
-    <li class="ui-state-default ui-widget" data-companion="#promptTheSameOpen">
+    <li class="ui-state-default ui-widget ui-helper-hidden" data-companion="#promptTheSameOpen">
         <div id="promptTheSame" class="ui-widget-content draggable resizable quart-wide">
             <h3 class="ui-widget-header">
                 <button class="close ui-button ui-widget ui-corner-all ui-button-icon-only" title="Close button">
@@ -117,7 +117,7 @@
             </div>
         </div>
     </li>
-    <li class="ui-state-default ui-widget" data-companion="#promptNextOpen">
+    <li class="ui-state-default ui-widget ui-helper-hidden" data-companion="#promptNextOpen">
         <div id="promptNext" class="ui-widget-content draggable resizable quart-wide">
             <h3 class="ui-widget-header">
                 <button class="close ui-button ui-widget ui-corner-all ui-button-icon-only" title="Close button">
@@ -135,7 +135,7 @@
 
     </li>
 
-    <li class="ui-state-default ui-widget" data-companion="#adviceOpen">
+    <li class="ui-state-default ui-widget ui-helper-hidden" data-companion="#adviceOpen">
         <div id="advice" class="ui-widget-content draggable resizable half-wide">
             <h3 class="ui-widget-header">
                 <button class="close ui-button ui-widget ui-corner-all ui-button-icon-only" title="Close button">
@@ -151,8 +151,8 @@
         </div>
 
     </li>
-    <li class="ui-state-default ui-widget" data-companion="#generateOpen">
-        <div id="generate" class="ui-widget-content draggable resizable half-wide">
+    <li class="ui-state-default ui-widget ui-helper-hidden" data-companion="#generateOpen">
+        <div id="generate" class="ui-widget-content draggable resizable half-wide ui-helper-clearfix">
             <h3 class="ui-widget-header">
                 <button class="close ui-button ui-widget ui-corner-all ui-button-icon-only" title="Close button">
                     <span class="ui-icon ui-icon-gear"></span> Close
