@@ -3,16 +3,18 @@ package com.github.dronegator.nlp.main.phrase
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{PathMatchers, Route}
-import com.github.dronegator.nlp.common.{Weight, Probability}
+import com.github.dronegator.nlp.common.{Probability, Weight}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Word
 import com.github.dronegator.nlp.main.phrase.SuggestForTheSameHandler._
 import com.github.dronegator.nlp.vocabulary.VocabularyTools._
-import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, Vocabulary}
+import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyImpl}
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import spray.json._
 import PhraseResponse._
-import scala.concurrent.{Future, ExecutionContext}
+import com.github.dronegator.nlp.main.Handler
+
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Created by cray on 9/12/16.

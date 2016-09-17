@@ -21,6 +21,32 @@ $(
             })
         });
 
+        $.getJSON("/system/version", "", function (data) {
+                    $("#sysinfo .version").html(
+                        $("<span/>", {
+                            "class": "",
+                            text: data.name + "-" + data.version + "-" + data.branch + "-" + data.buildTime
+                        })
+                    );
+            });
+
+            $.getJSON("/system/vocabulary", "", function (data) {
+                    $("#sysinfo .vocabulary").html(
+                        $("<span/>", {
+                            "class": "",
+                            text:
+
+                            data.meaningSize + ", " +
+                             data.nGram1Size + ", " +
+                             data.nGram2Size + ", " +
+                             data.nGram3Size + ", " +
+                             data.phraseCorrelationInnerSize + ", " +
+                             data.phraseCorrelationOuterSize
+                        })
+                    );
+            });
+
+
         function extractPath() {
             return $("#editor textarea").val().trim().split(/\s+/).join("/");
         }
@@ -74,7 +100,7 @@ $(
                     $("#promptNext .word").on("click", add);
                 }
 
-            })
+            });
         }
 
         function onTextAreaUpdate() {

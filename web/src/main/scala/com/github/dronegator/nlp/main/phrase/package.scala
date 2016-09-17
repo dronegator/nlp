@@ -31,12 +31,4 @@ package object phrase {
     implicit val responseWordFormat = jsonFormat1(Response[Word])
 
   }
- 
-
-
-  trait Handler[I, O] {
-    def route: Route
-
-    def handle(request: I): Future[O]
-  }
 }

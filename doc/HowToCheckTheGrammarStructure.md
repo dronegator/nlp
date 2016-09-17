@@ -74,7 +74,7 @@ Actually, one can just query a possible phrase for keywords:
     
 The suggested algorithm can help sometimes, but actually, it is more about a generation of a phrase from keywords, that is going to be provided by a similar but separate approach.
 
-Another point is about rare usage of not so intuitive cases, as the usage "I were" in a subjunctive, so if one is interested in possible usage "I were" they can issue:
+Another point is about rare usage of not so intuitive expressions, as the usage "I were" in a subjunctive, so if one is interested in possible usage "I were" they can issue:
  
     > advice I were at office . --keywords=office:were:I
         0.00000000000122 0.00034895504626 But I were standing at the office .

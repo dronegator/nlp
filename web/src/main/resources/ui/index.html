@@ -14,9 +14,8 @@
 </head>
 <body>
 
-
-<ul id="sortable">
-    <li class="ui-state-default">
+<ul id="sortable" class="ui-helper-clearfix">
+    <li class="ui-state-default ui-widget">
         <div id="description" class="ui-widget-content draggable resizable wide">
             <h3 class="ui-widget-header">Short description of this very tool</h3>
 
@@ -26,7 +25,7 @@
             </div>
         </div>
     </li>
-    <li class="ui-state-default">
+    <li class="ui-state-default ui-widget">
         <div id="editor" class="ui-widget-content draggable resizable wide">
             <h3 class="ui-widget-header">Enter the phrase:</h3>
 
@@ -66,7 +65,7 @@
             <div id="text"></div>
         </div>
     </li>
-    <li class="ui-state-default">
+    <li class="ui-state-default ui-widget">
         <div id="promptTheSame" class="ui-widget-content draggable resizable half-wide">
             <h3 class="ui-widget-header">Try this words:</h3>
 
@@ -81,7 +80,7 @@
         </div>
 
     </li>
-    <li class="ui-state-default">
+    <li class="ui-state-default ui-widget">
         <div id="advice" class="ui-widget-content draggable resizable half-wide">
             <h3 class="ui-widget-header">Advices:</h3>
 
@@ -92,7 +91,7 @@
         </div>
 
     </li>
-    <li class="ui-state-default">
+    <li class="ui-state-default ui-widget">
         <div id="generate" class="ui-widget-content draggable resizable half-wide">
             <h3 class="ui-widget-header">Generated phrases:</h3>
 
@@ -103,7 +102,7 @@
         </div>
 
     </li>
-    <li class="ui-state-default">
+    <li class="ui-state-default ui-widget">
         <div id="promptNext" class="ui-widget-content draggable resizable half-wide">
             <h3 class="ui-widget-header">Words for the next phrase:</h3>
 
@@ -115,7 +114,7 @@
         </div>
 
     </li>
-    <li class="ui-state-default">
+    <li class="ui-state-default ui-widget">
         <div id="statistic" class="ui-widget-content draggable resizable half-wide">
             <h3 class="ui-widget-header">Current statistic:</h3>
             <dl>
@@ -129,5 +128,9 @@
         </div>
     </li>
 </ul>
+<div id="sysinfo" class="ui-widget ui-widget-content wide">
+    <span>version:<span class="version"></span></span>
+    <span>vocabulary size:<span class="vocabulary"></span></span>
+</div>
 </body>
 </html>
