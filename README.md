@@ -90,25 +90,31 @@ Storage contains:
   
   4. The histogramms of the words (or phrases) for each of the samples (to avoid possible duplication of samples);
 
-
 Usage
 -----
 The initial release only contains a few console applications those can gather statistic from a text corpora, save it into the storage and provide simple services from a command prompt. 
 
 To collect statistic,  issue:
 
-    `sbt "run-main com.github.dronegator.nlp.main.NLPTMainStream <FILE WITH A TEXT CORPUS> <FILE OF STORAGE>`
+    `sbt "index-stream/run <FILE WITH A TEXT CORPUS> <FILE OF STORAGE>`
   
   or 
 
-    `sbt "run-main com.github.dronegator.nlp.main.NLPTMain <FILE WITH A TEXT CORPUS> <FILE OF STORAGE>`
+    `sbt "index/run  <FILE WITH A TEXT CORPUS> <FILE OF STORAGE>`
   
 The applications do the same, except the first one uses AKKA-STREAMS that helps to require less RAM.
 
 You might have to index text twice, using the previous result as an innitial hint. It provides a possibility to take into consideration meaningful words building the correlation matrix for suggestions:
 
-    `sbt "run-main com.github.dronegator.nlp.main.NLPTMain <FILE WITH A TEXT CORPUS> <FILE OF STORAGE> <FILE OF STORAGE WITH HINTS>`
+    `sbt "index/run <FILE WITH A TEXT CORPUS> <FILE OF STORAGE> <FILE OF STORAGE WITH HINTS>`
 
+The simplest way to use the vocabulary is a web interface, which is far away from completed "The Game" interface, though provides the simple editor with prompts. To start webservice issue:
+
+    `sbt "web/run <FILE WITH A TEXT CORPUS> <FILE OF STORAGE> <FILE OF STORAGE WITH HINTS>`
+    
+then open http://localhost:8080 in your lovely browser.
+    
+    
 To use collected statistic, issue:   
 
     `sbt "run-main com.github.dronegator.nlp.main.NLPTReplMain <FILE OF STORAGE>`
@@ -260,5 +266,11 @@ History
     
   * Make advices only for auxiliary words, or except keywords;
 
-The current achievments
----------------------------
+[Version 0.4](https://github.com/dronegator/nlp/tree/v.0.4), 20160918, Implement simple web API and UI supporting creation of phrases with prompts.
+
+  * Provide UI with continuation, generation, advices, sugestion of words for the same as well as the next phrase;
+  
+  * Store the completely computed vocabulary;
+   
+  * Make some logging, including logging of computation time.
+

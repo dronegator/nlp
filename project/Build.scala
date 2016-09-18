@@ -9,7 +9,7 @@ import scala.util.Try
 object WordmetrixBuild extends Build {
   val Name = "nlp"
 
-  override lazy val settings = super.settings ++ Seq(version := "0.3")
+  override lazy val settings = super.settings ++ Seq(version := "0.4")
 
   import settings._
 
