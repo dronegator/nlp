@@ -51,13 +51,23 @@ class AdviceHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionConte
                   data = data.parseJson.convertTo[Data]))
               }
           }
+        } ~ post {
+          entity(as[Data]) {
+            data =>
+              println(data)
+              complete {
+                handle(Request(
+                  phrase = words,
+                  data = data/*data.parseJson.convertTo[Data]*/))
+              }
+          }
         }
       }
     }
 
   override def handle(request: Request[Data]): Future[Response[String]] = Future {
     val statement = vocabulary.tokenize(request.phrase :+ ".")
-
+    println(request);
     val suggest = vocabulary
       .adviceOptimal(
         statement,

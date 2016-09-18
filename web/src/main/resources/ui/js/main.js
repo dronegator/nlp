@@ -10,41 +10,43 @@ $(
             event.preventDefault();
         });
 
+        $(document).tooltip();
+
         $(".ui-widget-content").each(function (a, content) {
             $(".ui-widget-header", content).each(function (a, header) {
                 console.log(header);
-//                $(header).on("click", function () {
-//
-//                    $(".data", content).toggle("slide", {}, 500);
-//                })
+                //                $(header).on("click", function () {
+                //
+                //                    $(".data", content).toggle("slide", {}, 500);
+                //                })
 
             })
         });
 
         $.getJSON("/system/version", "", function (data) {
-                    $("#sysinfo .version").html(
-                        $("<span/>", {
-                            "class": "",
-                            text: data.name + "-" + data.version + "-" + data.branch + "-" + data.buildTime
-                        })
-                    );
-            });
+            $("#sysinfo .version").html(
+                $("<span/>", {
+                    "class": "",
+                    text: data.name + "-" + data.version + "-" + data.branch + "-" + data.buildTime
+                })
+            );
+        });
 
-            $.getJSON("/system/vocabulary", "", function (data) {
-                    $("#sysinfo .vocabulary").html(
-                        $("<span/>", {
-                            "class": "",
-                            text:
+        $.getJSON("/system/vocabulary", "", function (data) {
+            $("#sysinfo .vocabulary").html(
+                $("<span/>", {
+                    "class": "",
+                    text:
 
-                            data.meaningSize + ", " +
-                             data.nGram1Size + ", " +
-                             data.nGram2Size + ", " +
-                             data.nGram3Size + ", " +
-                             data.phraseCorrelationInnerSize + ", " +
-                             data.phraseCorrelationOuterSize
-                        })
-                    );
-            });
+                        data.meaningSize + ", " +
+                        data.nGram1Size + ", " +
+                        data.nGram2Size + ", " +
+                        data.nGram3Size + ", " +
+                        data.phraseCorrelationInnerSize + ", " +
+                        data.phraseCorrelationOuterSize
+                })
+            );
+        });
 
 
         function extractPath() {
@@ -55,8 +57,8 @@ $(
             var w = $(this).width();
             $(".wide").width(w - 80);
             $(".wide textarea").width(w - 180);
-            $(".half-wide").width(w / 2 - 40 - 4 );
-            $(".quart-wide").width(w / 4 - 20 - 6 );
+            $(".half-wide").width(w / 2 - 40 - 4);
+            $(".quart-wide").width(w / 4 - 20 - 6);
         };
 
 
@@ -77,7 +79,7 @@ $(
 
         function ensureVisibility(selector) {
             if (!$(selector).is(":visible")) {
-              $($(selector).parents(".ui-widget").show("puff").data("companion")).hide("slide");
+                $($(selector).parents(".ui-widget").show("puff").data("companion")).hide("slide");
             }
         }
 
@@ -101,13 +103,13 @@ $(
                     if (items.length > 0) {
                         ensureVisibility("#promptNext");
 
-                                        $("#promptNext .data").append(
-                                            $("<table/>", {
-                                                "class": "",
-                                                html: items.join("")
-                                            })
-                                        );
-                                        $("#promptNext .word").on("click", add);
+                        $("#promptNext .data").append(
+                            $("<table/>", {
+                                "class": "",
+                                html: items.join("")
+                            })
+                        );
+                        $("#promptNext .word").on("click", add);
                     }
 
 
@@ -157,15 +159,15 @@ $(
                         });
 
                         if (items.length > 0) {
-                         ensureVisibility("#promptTheSame");
-                        $("#promptTheSame .data").html(
-                                                    $("<table/>", {
-                                                        "class": "",
-                                                        html: items.join("")
-                                                    })
-                                                );
+                            ensureVisibility("#promptTheSame");
+                            $("#promptTheSame .data").html(
+                                $("<table/>", {
+                                    "class": "",
+                                    html: items.join("")
+                                })
+                            );
 
-                        $("#promptTheSame .word").on("click", add);
+                            $("#promptTheSame .word").on("click", add);
                         }
 
                     }
@@ -187,7 +189,7 @@ $(
             $($(this).hide("slide").data("companion")).parents(".ui-widget").show("puff");
         }).map(function () {
             if ($($(this).data("companion")).is(":visible")) {
-              $(this).hide(0);
+                $(this).hide(0);
             }
         });
 
@@ -202,7 +204,7 @@ $(
         });
 
         $("#editor textarea").on("keydown", function (event) {
-         //   console.log(event);
+            //   console.log(event);
             if (event.key == "Enter") {
                 onPhraseEnd();
             }
@@ -214,16 +216,6 @@ $(
 
         $("#print").button({
             "icon": "ui-icon-print",
-            "showLabel": false
-        });
-
-        $("#redo").button({
-            "icon": "ui-icon-arrowreturnthick-1-e",
-            "showLabel": false
-        });
-
-        $("#undo").button({
-            "icon": "ui-icon-arrowreturnthick-1-w",
             "showLabel": false
         });
 
@@ -262,22 +254,70 @@ $(
         }).on("click change selectmenuchange",
             function () {
                 console.log(extractPath())
-                $.getJSON("/phrase/" + extractPath() + "/advice?data={}", "", function (data) {
-                    console.log(data);
-                    ensureVisibility("#advice");
-                     $("#advice .data table tr").remove();
-                    $.each(data.suggest.slice(0, 20), function (key, val) {
-                        $("#advice .data table").append(
-                            "<tr><td class=\"phrase\">" + val.value + "</td><td>" + val.weight + "</td></tr>"
-                        );
 
-                        $("#advice .phrase").last().on("click", function () {
-                            $("#editor textarea").val($(this).text())
-                            onTextAreaUpdate();
-                            $(this).parent("tr").remove();
-                        })
-                    })
-                })
+                var adviceOption = $("#adviceOption").val()
+                var changeLimit = Math.max(extractPath().split("/").length / 3, 3);
+                var data = {}
+
+                if (adviceOption == "auxiliary") {
+                    data = {
+                        "varyAuxiliary": true,
+                        "stickKeywords": false,
+                        "changeLimit": changeLimit
+                    }
+                } else if (adviceOption == "keywords") {
+                    data = {
+                        "varyAuxiliary": false,
+                        "stickKeywords": true,
+                        "changeLimit": changeLimit
+                    }
+                } else if (adviceOption == "everything") {
+                    data = {
+                        "varyAuxiliary": false,
+                        "stickKeywords": false,
+                        "changeLimit": changeLimit
+                    }
+                } else if (adviceOption == "strong") {
+                    data = {
+                        "varyAuxiliary": false,
+                        "stickKeywords": false,
+                        "changeLimit": extractPath().split("/").length
+                    }
+                } else if (adviceOption == "impossible") {
+                    data = {
+                        "varyAuxiliary": false,
+                        "stickKeywords": false,
+                        "changeLimit": changeLimit,
+                        "variability": 4,
+                        "uncertainty": -1
+
+                    }
+                };
+
+                $.post({
+                    "url": "/phrase/" + extractPath() + "/advice",
+                    "data": JSON.stringify(data),
+                    "success": function (data) {
+                        console.log(data);
+                        ensureVisibility("#advice");
+                        $("#advice .data table tr").remove();
+
+                        $.each(data.suggest.slice(0, 20), function (key, val) {
+                            $("#advice .data table").append(
+                                "<tr><td class=\"phrase\">" + val.value + "</td><td>" + val.weight + "</td></tr>"
+                            );
+
+                            $("#advice .phrase").last().on("click", function () {
+                                $("#editor textarea").val($(this).text())
+                                onTextAreaUpdate();
+                                $(this).parent("tr").remove();
+                            })
+                        });
+                    },
+
+                    "contentType": "application/json",
+                    "content": "json"
+                });
             });
 
         $(".toolbar").controlgroup();

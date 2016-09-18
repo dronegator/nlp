@@ -74,17 +74,19 @@
                 <div class="wrap">
                     <div class="toolbar">
                         <button id="print">Print</button>
+                        <button id="clear">Clear</button>
+                        <!-- button id="keywords">Keywords</button -->
+                        <!-- button id="probability">Probability</button -->
                         <button id="doGenerate">Generate</button>
                         <button id="doAdvice">Advice</button>
-                        <button id="keywords">Keywords</button>
-                        <button id="probability">Probability</button>
-                        <button id="clear">Clear</button>
-                        <select id="qq">
-                            <option selected disabled>Auxiliary</option>
-                            <option>Keywords</option>
-                            <option>Everything</option>
+                        <select id="adviceOption">
+                            <option selected value="auxiliary">Vary auxiliary words</option>
+                            <option value="keywords">Stick on keywords</option>
+                            <option value="everything">Try to change everything</option>
+                            <option value="impossible">Allow impossible combinations</option>
+                            <option value="strong">A lot of changes</option>
                         </select>
-                        <select id="zoom">
+                        <!-- select id="zoom">
                             <option selected disabled>Zoom</option>
                             <option>50%</option>
                             <option>75%</option>
@@ -93,9 +95,9 @@
                             <option>125%</option>
                             <option>150%</option>
                             <option>200%</option>
-                        </select>
+                        </select -->
                     </div>
-                    <textarea></textarea>
+                    <textarea><b>asdasd</b></textarea>
                     <br/>
                     <button id="submit" class="ui-button ui-widget ui-corner-all">Ok</button>
             </form>
