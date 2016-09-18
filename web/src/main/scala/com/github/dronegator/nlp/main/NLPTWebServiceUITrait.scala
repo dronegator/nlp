@@ -1,14 +1,16 @@
 package com.github.dronegator.nlp.main
 
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 
 /**
   * Created by cray on 9/18/16.
   */
-trait NLPTWebServiceUITrait {
-  this: NLPTApp with Concurent  =>
+trait NLPTWebServiceUITrait
+  extends NLPTAppForWeb {
+  this: Concurent  =>
 
-  lazy val routeUI = path("ui") {
+  abstract override def route: Route = path("ui") {
     getFromResource("ui/index.html")
   } ~
     pathPrefix("ui/js") {
@@ -16,5 +18,5 @@ trait NLPTWebServiceUITrait {
     } ~
     pathPrefix("ui") {
       getFromResourceDirectory("ui")
-    }
+    } ~ super.route
 }

@@ -1,10 +1,9 @@
 package com.github.dronegator.nlp.main.phrase
 
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.RouteResult.Complete
-import com.github.dronegator.nlp.main.NLPTWebServiceMain._
-import com.github.dronegator.nlp.main.{Concurent, NLPTApp}
-import com.github.dronegator.nlp.vocabulary.VocabularyImpl
+import com.github.dronegator.nlp.main.{Concurent, NLPTApp, NLPTAppForWeb}
 import com.softwaremill.macwire._
 
 /**
@@ -14,8 +13,9 @@ object NLPTWebServicePhraseTrait {
 
 }
 
-trait NLPTWebServicePhraseTrait {
-  this: NLPTApp with Concurent  =>
+trait NLPTWebServicePhraseTrait
+  extends NLPTAppForWeb {
+  this: Concurent  =>
 
   lazy val continue: ContinueHandler = wire[ContinueHandler]
 
@@ -29,7 +29,7 @@ trait NLPTWebServicePhraseTrait {
 
   lazy val advice: AdviceHandler = wire[AdviceHandler]
 
-  lazy val routePhrase = pathPrefix("phrase") { request =>
+  abstract override def route: Route  = pathPrefix("phrase") { request =>
     val tStart = System.currentTimeMillis()
     logger.info(
       s"${request.request.protocol.value} ${request.request.method.value} " +
@@ -44,7 +44,7 @@ trait NLPTWebServicePhraseTrait {
           result
         case result => result
       }
-  }
+  } ~ super.route
 }
 
 

@@ -3,30 +3,39 @@ package com.github.dronegator.nlp.main
 import java.io.File
 
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.RouteResult.Complete
+import akka.http.scaladsl.server.Route
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.main.html.NLPTWebServiceHTMLTrait
 import com.github.dronegator.nlp.main.phrase._
 import com.github.dronegator.nlp.main.system.NLPTWebServiceSystemTrait
 import com.github.dronegator.nlp.trace._
+import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.Match._
-import com.github.dronegator.nlp.utils.{CFG, Match}
 import com.github.dronegator.nlp.vocabulary.{VocabularyHintImpl, VocabularyImpl}
 
 /**
   * Created by cray on 8/17/16.
   */
 
+trait NLPTAppForWeb
+  extends NLPTApp {
+  def route: Route =
+    complete {
+      HttpResponse(404, entity = "Unknown resource!")
+    }
+}
+
 object NLPTWebServiceMain
   extends App
     with MainTools
     with Concurent
-    with NLPTApp
+    with NLPTAppForWeb
     with NLPTWebServiceSystemTrait
     with NLPTWebServicePhraseTrait
-    with NLPTWebServiceHTMLTrait
-    with NLPTWebServiceUITrait {
+    with NLPTWebServiceUITrait
+    with NLPTWebServiceHTMLTrait {
 
   val fileIn :: OptFile(hints) = args.toList
 
@@ -43,12 +52,6 @@ object NLPTWebServiceMain
   lazy val vocabulary: VocabularyImpl = load(new File(fileIn)).time { t =>
     logger.info(s"Vocabulary has loaded in time=$t")
   }
-
-  lazy val route =
-    routePhrase ~
-      routeSystem ~
-      routeHTML ~
-      routeUI
 
   val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
 
