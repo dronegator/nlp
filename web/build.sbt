@@ -26,8 +26,6 @@ libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json-experimental
 
 libraryDependencies += "com.typesafe.akka" %% "akka-http-xml-experimental" % "2.4.9"
 
-//libraryDependencies += "com.typesafe.akka" %% "akka-http-testkit" % "2.4.10"
-
 libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.4.10"
 
 libraryDependencies += "jline" % "jline" % "2.11"

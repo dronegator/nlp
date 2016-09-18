@@ -1,14 +1,21 @@
 package com.github.dronegator.nlp.main
 
 import java.io.File
+import java.util.UUID
 
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpResponse
+import akka.http.scaladsl.model.headers.HttpCookie
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import akka.pattern.ask
+import akka.util.Timeout
+import scala.concurrent.duration._
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.main.html.NLPTWebServiceHTMLTrait
 import com.github.dronegator.nlp.main.phrase._
+import com.github.dronegator.nlp.main.session.{NLPTWebServiceSessionTrait, SessionManager}
+import com.github.dronegator.nlp.main.session.SessionManager.CreateSession
 import com.github.dronegator.nlp.main.system.NLPTWebServiceSystemTrait
 import com.github.dronegator.nlp.trace._
 import com.github.dronegator.nlp.utils.CFG
@@ -35,6 +42,7 @@ object NLPTWebServiceMain
     with NLPTWebServiceSystemTrait
     with NLPTWebServicePhraseTrait
     with NLPTWebServiceUITrait
+    with NLPTWebServiceSessionTrait
     with NLPTWebServiceHTMLTrait {
 
   val fileIn :: OptFile(hints) = args.toList
@@ -59,7 +67,8 @@ object NLPTWebServiceMain
       vocabulary: VocabularyImpl
   }
 
-  val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
+
+    val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
 
   logger.info(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
 
