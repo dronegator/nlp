@@ -1,35 +1,23 @@
 package com.github.dronegator.nlp.main.html
 
-import akka.http.scaladsl.server.Directives._
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{PEnd, DEOP}
 import com.github.dronegator.nlp.main.{NLPTApp, Concurent}
-import com.github.dronegator.nlp.vocabulary.VocabularyImpl
-import com.github.dronegator.nlp.vocabulary.VocabularyTools._
-import com.softwaremill.macwire._
-import java.io.File
 
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport._
 import akka.http.scaladsl.server.Directives._
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{DEOP, PEnd}
-import com.github.dronegator.nlp.main.phrase._
-import com.github.dronegator.nlp.utils.{CFG, Match}, Match._
-import com.github.dronegator.nlp.vocabulary.{VocabularyHintImpl, VocabularyImpl}
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyTools
 
 /**
- * Created by cray on 9/12/16.
- */
+  * Created by cray on 9/12/16.
+  */
 object NLPTWebServiceHTMLTrait {
 
 }
 
 trait NLPTWebServiceHTMLTrait {
-  this: NLPTApp with Concurent  =>
+  this: NLPTApp with Concurent =>
 
-  def routeHTML = path("generate") {
+  lazy val routeHTML = path("generate") {
     get {
       {
         parameter("words".as[String]) {

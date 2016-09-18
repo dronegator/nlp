@@ -25,7 +25,8 @@ object NLPTWebServiceMain
     with NLPTApp
     with NLPTWebServiceSystemTrait
     with NLPTWebServicePhraseTrait
-    with NLPTWebServiceHTMLTrait {
+    with NLPTWebServiceHTMLTrait
+    with NLPTWebServiceUITrait {
 
   val fileIn :: OptFile(hints) = args.toList
 
@@ -43,36 +44,11 @@ object NLPTWebServiceMain
     logger.info(s"Vocabulary has loaded in time=$t")
   }
 
-  val route =
-    pathPrefix("phrase") { request =>
-      val tStart = System.currentTimeMillis()
-      logger.info(
-        s"${request.request.protocol.value} ${request.request.method.value} " +
-          s"${request.request.uri.path}?${request.request.uri.queryString().getOrElse("")}")
-
-      (continue.route ~ suggestForNext.route ~ suggestForTheSame.route ~ advice.route ~ generate.route ~ suggest.route) (request)
-        .map {
-          case result: Complete =>
-            // logger.debug(s"${result.response._3}")
-            val tEnd = System.currentTimeMillis()
-            logger.debug(s"${request.request.uri.path} ${tEnd - tStart} Completed")
-            result
-          case result => result
-        }
-    } ~
-      pathPrefix("system") { request =>
-        (version.route ~ vocabularyStat.route) (request)
-      } ~
+  lazy val route =
+    routePhrase ~
+      routeSystem ~
       routeHTML ~
-      path("ui") {
-        getFromResource("ui/index.html")
-      } ~
-      pathPrefix("ui/js") {
-        getFromResourceDirectory("ui/js")
-      } ~
-      pathPrefix("ui") {
-        getFromResourceDirectory("ui")
-      }
+      routeUI
 
   val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
 
