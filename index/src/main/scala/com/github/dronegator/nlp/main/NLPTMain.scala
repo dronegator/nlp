@@ -6,7 +6,6 @@ import com.github.dronegator.nlp.main.{Combinators, MainTools, NLPTApp, NLPTAppP
 import com.github.dronegator.nlp.utils._
 import Match._
 import com.github.dronegator.nlp.vocabulary.{VocabularyHintImpl, VocabularyImpl, VocabularyRawImpl}
-import com.sun.javafx.css.Combinator
 
 object NLPTMain
   extends App

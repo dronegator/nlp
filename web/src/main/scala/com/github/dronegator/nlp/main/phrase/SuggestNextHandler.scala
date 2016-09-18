@@ -28,7 +28,7 @@ object SuggestNextHandler extends DefaultJsonProtocol {
 }
 
 
-class SuggestNextHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionContext)
+class SuggestNextHandler(vocabulary: Vocabulary)(implicit context: ExecutionContext)
   extends Handler[Request[SuggestNextHandler.Data], Response[Word]] {
 
   import SuggestNextHandler._

@@ -11,14 +11,9 @@ import com.github.dronegator.nlp.utils.IteratorLog
  * Created by cray on 8/28/16.
  */
 object VocabularyTools {
-
-//  case class Advice(token: Option[Token], tokens: List[(Token, Probability)], removal: Option[Probability])
-//
-//  type Advices = List[Advice]
-
   type Advices = List[(Statement, Probability)]
 
-  implicit class VocabularyTools(val vocabulary: VocabularyImpl/*TODO: Use Vocabulary instead*/)
+  implicit class VocabularyTools(val vocabulary: Vocabulary)
     extends main.NLPTAppPartial
     with main.Combinators
     with ToolAdviceTrait {
@@ -254,7 +249,7 @@ object VocabularyTools {
     }
   }
 
-  implicit class VocabularyToolsOutdated(vocabulary: VocabularyImpl with VocabularyImplOutdated)
+  implicit class VocabularyToolsOutdated(vocabulary: Vocabulary with VocabularyImplOutdated)
     extends main.NLPTAppPartial
     with main.Combinators {
     val cfg = CFG()

@@ -27,7 +27,7 @@ object SuggestForTheSameHandler extends DefaultJsonProtocol {
   implicit val requestFormat = jsonFormat2(Request[Data])
 }
 
-class SuggestForTheSameHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionContext)
+class SuggestForTheSameHandler(vocabulary: Vocabulary)(implicit context: ExecutionContext)
   extends Handler[Request[SuggestForTheSameHandler.Data], Response[Word]] {
 
   import SuggestForTheSameHandler._

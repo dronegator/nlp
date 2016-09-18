@@ -27,7 +27,7 @@ object ContinueHandler extends DefaultJsonProtocol {
   implicit val requestFormat = jsonFormat2(Request[Data])
 }
 
-class ContinueHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionContext)
+class ContinueHandler(vocabulary: Vocabulary)(implicit context: ExecutionContext)
   extends Handler[Request[ContinueHandler.Data], Response[Word]] {
 
   import ContinueHandler._

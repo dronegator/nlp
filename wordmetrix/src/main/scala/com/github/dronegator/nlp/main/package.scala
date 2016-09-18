@@ -38,7 +38,7 @@ package object main {
 
   trait NLPTApp
     extends NLPTAppPartial {
-    def vocabulary: VocabularyImpl
+    def vocabulary: Vocabulary
   }
 
   trait Combinators {

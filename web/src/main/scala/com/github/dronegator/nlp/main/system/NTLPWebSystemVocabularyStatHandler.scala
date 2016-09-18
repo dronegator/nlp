@@ -9,7 +9,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.github.dronegator.nlp.main.Handler
 import com.github.dronegator.nlp.main.Handler.RequestEmpty
-import com.github.dronegator.nlp.vocabulary.VocabularyImpl
+import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyImpl}
 import spray.json._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,7 +29,7 @@ object NTLPWebSystemVocabularyStatHandler extends DefaultJsonProtocol {
   implicit val suggestPhraseFormat = jsonFormat6(ResponseVocabularyStat)
 }
 
-class NTLPWebSystemVocabularyStatHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionContext)
+class NTLPWebSystemVocabularyStatHandler(vocabulary: Vocabulary)(implicit context: ExecutionContext)
   extends Handler[RequestEmpty, NTLPWebSystemVocabularyStatHandler.ResponseVocabularyStat] {
 
 

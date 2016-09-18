@@ -37,7 +37,7 @@ object SuggestHandler extends DefaultJsonProtocol {
   implicit val requestFormat = jsonFormat2(Request[Data])
 }
 
-class SuggestHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionContext)
+class SuggestHandler(vocabulary: Vocabulary)(implicit context: ExecutionContext)
   extends Handler[Request[SuggestHandler.Data], SuggestHandler.Response] {
 
   import SuggestHandler._

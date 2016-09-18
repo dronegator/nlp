@@ -30,7 +30,7 @@ object NTLPWebSystemVersionHandler extends DefaultJsonProtocol {
   implicit val suggestPhraseFormat = jsonFormat5(ResponseVersion)
 }
 
-class NTLPWebSystemVersionHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionContext)
+class NTLPWebSystemVersionHandler()(implicit context: ExecutionContext)
   extends Handler[RequestEmpty, NTLPWebSystemVersionHandler.ResponseVersion] {
 
 

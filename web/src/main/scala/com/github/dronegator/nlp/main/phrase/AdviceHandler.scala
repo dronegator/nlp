@@ -10,7 +10,7 @@ import akka.http.scaladsl.server.{PathMatchers, Route}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.main.Handler
 import com.github.dronegator.nlp.main.phrase.PhraseResponse._
-import com.github.dronegator.nlp.vocabulary.VocabularyImpl
+import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyImpl}
 import com.github.dronegator.nlp.vocabulary.VocabularyTools._
 import spray.json._
 
@@ -33,7 +33,7 @@ object AdviceHandler extends DefaultJsonProtocol {
   implicit val requestFormat = jsonFormat2(Request[Data])
 }
 
-class AdviceHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionContext)
+class AdviceHandler(vocabulary: Vocabulary)(implicit context: ExecutionContext)
   extends Handler[Request[AdviceHandler.Data], Response[String]] {
 
   import AdviceHandler._

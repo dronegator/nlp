@@ -28,7 +28,7 @@ object GenerateHandler extends DefaultJsonProtocol {
   implicit val requestFormat = jsonFormat2(Request[Data])
 }
 
-class GenerateHandler(vocabulary: VocabularyImpl)(implicit context: ExecutionContext)
+class GenerateHandler(vocabulary: Vocabulary)(implicit context: ExecutionContext)
   extends Handler[Request[GenerateHandler.Data], Response[String]] {
 
   import GenerateHandler._
