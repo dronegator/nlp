@@ -13,7 +13,7 @@ import com.github.dronegator.nlp.main.system.NLPTWebServiceSystemTrait
 import com.github.dronegator.nlp.trace._
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.Match._
-import com.github.dronegator.nlp.vocabulary.{VocabularyHintImpl, VocabularyImpl}
+import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyHintImpl, VocabularyImpl}
 
 /**
   * Created by cray on 8/17/16.
@@ -49,8 +49,14 @@ object NLPTWebServiceMain
       logger.info(s"Hints have loaded in time=$t")
     }
 
-  lazy val vocabulary: VocabularyImpl = load(new File(fileIn)).time { t =>
+  lazy val vocabulary: Vocabulary = load(new File(fileIn)).time { t =>
     logger.info(s"Vocabulary has loaded in time=$t")
+  } match {
+    case vocabulary: Vocabulary =>
+      vocabulary
+
+    case vocabulary =>
+      vocabulary: VocabularyImpl
   }
 
   val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)

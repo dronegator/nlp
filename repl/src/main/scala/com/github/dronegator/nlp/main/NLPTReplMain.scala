@@ -3,14 +3,16 @@ package com.github.dronegator.nlp.main
 import java.io.File
 
 import akka.stream.scaladsl.Source
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{TokenPreDef, Token}
-import com.github.dronegator.nlp.utils._, Match._
-import com.github.dronegator.nlp.vocabulary.{VocabularyHint, VocabularyImpl}
-import com.github.dronegator.nlp.vocabulary.VocabularyTools.{VocabularyRawTools, VocabularyTools, VocabularyHintTools}
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenPreDef}
+import com.github.dronegator.nlp.utils._
+import Match._
+import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyHint, VocabularyImpl, VocabularyImplStored}
+import com.github.dronegator.nlp.vocabulary.VocabularyTools.{VocabularyHintTools, VocabularyRawTools, VocabularyTools}
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
 import jline.console.completer.StringsCompleter
 import jline.console.history.FileHistory
+import com.github.dronegator.nlp.trace._
 
 import scala.collection.JavaConverters._
 
@@ -97,6 +99,8 @@ object NLPTReplMain
 
     case object Keywords extends Command("Select keywords from a phrase", Set())
 
+    case object Store extends Command("Store indexes to a file", Set())
+
     def unapply(name: String): Option[(Command, String, Set[SubCommand])] = withNameOption(name) map {
       case Command(x, y, z) => (x, y, z)
     }
@@ -109,7 +113,12 @@ object NLPTReplMain
 
   val fileIn :: _ = args.toList
 
-  lazy val vocabulary: VocabularyImpl = load(new File(fileIn))
+  lazy val vocabulary: Vocabulary = load(new File(fileIn)) match {
+    case vocabulary: Vocabulary =>
+      vocabulary
+    case vocabulary =>
+      vocabulary: VocabularyImpl
+  }
 
   override def vocabularyHint: VocabularyHint = vocabulary
 
@@ -140,6 +149,13 @@ object NLPTReplMain
   }
 
   def exec(args: List[String]) = args match {
+    case Store() :: OptFile(file) =>
+      println("== Indexes are being stored")
+      save(file getOrElse new File(fileIn),  VocabularyImplStored(vocabulary))
+          .time{ t =>
+            logger.info(s"Vocabulary has stored in time = $t ")
+          }
+
     case Command(command, help, subcommands) :: Nil =>
       println(
         s"""

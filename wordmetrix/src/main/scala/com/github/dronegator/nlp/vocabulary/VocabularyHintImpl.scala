@@ -28,7 +28,7 @@ trait VocabularyHintWords {
         getLines().
         map(_.trim).
         filter(_.nonEmpty).
-        trace(s"$name word: ").
+        //trace(s"$name word: ").
         flatMap(tokenMap.get(_)).
         flatten.
         toSet

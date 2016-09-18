@@ -24,6 +24,31 @@ object VocabularyImpl {
     )
 }
 
+trait VocabularyImplTrait
+  extends Vocabulary
+  with LazyLogging   {
+  override def statementDenominator(statement: Statement): Probability =
+    posToProbability.getOrElse(statement.length, 1.0)
+
+  private lazy val posToProbability =
+    statements
+      .toIterator
+      .foldLeft(Map[Int, (Probability, Int)]()) {
+        case (map, statement) =>
+          val length = statement.length
+          val (p, n) = map.getOrElse(length, (0.0, 0))
+          val probability = VocabularyTools.VocabularyTools(this).probability(statement) + p
+          map + (length -> (probability, n + 1))
+      }
+      .map {
+        case (key, (p, n)) =>
+          key -> (p / n)
+      }
+      .time { time =>
+        logger.info(s"posToProbability has initialized in time=$time")
+      }
+}
+
 case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
                           statements: List[Statement],
                           nGram1: Map[List[Token], Int],
@@ -35,6 +60,7 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
   extends VocabularyRaw
     with LazyLogging
     with Vocabulary
+    with VocabularyImplTrait
     with VocabularyHintWords {
   override lazy val wordMap: Map[Token, Word] =
     tokenMap
@@ -128,7 +154,7 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
       }
   }
 
-  override lazy val pNGram2Prev: Map[List[Token], Double] = {
+  lazy val pNGram2Prev: Map[List[Token], Double] = {
     nGram2
       .flatMap {
         case (key@(x :: y :: _), n) =>
@@ -143,7 +169,7 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
 
   }
 
-  override lazy val pNGram3Prev: Map[List[Token], Double] = {
+  lazy val pNGram3Prev: Map[List[Token], Double] = {
     nGram3
       .flatMap {
         case (key@(x :: y :: z :: _), n) =>
@@ -293,27 +319,7 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
     this.meaningContextMap(sense, auxiliary)
   }
 
-  private lazy val posToProbability =
-    statements
-      .toIterator
-      .foldLeft(Map[Int, (Probability, Int)]()) {
-        case (map, statement) =>
-          val length = statement.length
-          val (p, n) = map.getOrElse(length, (0.0, 0))
-          val probability = VocabularyTools.VocabularyTools(this).probability(statement) + p
-          map + (length -> (probability, n + 1))
-      }
-      .map {
-        case (key, (p, n)) =>
-          key -> (p / n)
-      }
-      .time { time =>
-        logger.info(s"posToProbability has initialized in time=$time")
-      }
 
-
-  override def statementDenominator(statement: Statement): Probability =
-    posToProbability.getOrElse(statement.length, 1.0)
 }
 
 trait VocabularyImplOutdated {

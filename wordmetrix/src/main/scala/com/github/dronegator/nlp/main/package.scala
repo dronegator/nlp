@@ -1,29 +1,23 @@
 package com.github.dronegator.nlp
 
 import java.io._
-import java.nio.file.Paths
 
-import com.github.dronegator.nlp.common.{Count, Probability}
 import com.github.dronegator.nlp.component.accumulator.Accumulator
 import com.github.dronegator.nlp.component.ngramscounter.NGramsCounter
-import com.github.dronegator.nlp.component.phrase_correlation_consequent.{PhraseCorrelationConsequentWithHints, PhraseCorrelationConsequent}
-import com.github.dronegator.nlp.component.phrase_correlation_repeated.{PhraseCorrelationInnerWithHints, PhraseCorrelationInner, PhraseCorrelationRepeated}
+import com.github.dronegator.nlp.component.phrase_correlation_consequent.PhraseCorrelationConsequentWithHints
+import com.github.dronegator.nlp.component.phrase_correlation_repeated.{PhraseCorrelationInnerWithHints, PhraseCorrelationRepeated}
 import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
 import com.github.dronegator.nlp.component.splitter.Splitter
-import com.github.dronegator.nlp.component.tokenizer.{TokenizerWithHints, Tokenizer}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
+import com.github.dronegator.nlp.component.tokenizer.TokenizerWithHints
 import com.github.dronegator.nlp.utils.CFG
-import com.github.dronegator.nlp.utils.concurrent.Zukunft
-import com.github.dronegator.nlp.vocabulary.{VocabularyImpl, VocabularyHint, Vocabulary, VocabularyRaw}
+import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyHint, VocabularyImplStored, VocabularyRaw}
 import com.softwaremill.macwire._
-import com.softwaremill.tagging.@@
 import com.typesafe.scalalogging.LazyLogging
 
-import scala.concurrent.Future
-
 /**
- * Created by cray on 8/17/16.
- */
+  * Created by cray on 8/17/16.
+  */
 package object main {
 
   trait TagHints
@@ -70,6 +64,12 @@ package object main {
       fromLessThan((x: List[Int], y: List[Int]) => (x zip y).find(x => x._1 != x._2).map(x => x._1 < x._2).getOrElse(false))
 
     def save(file: File, vocabulary: VocabularyRaw) = {
+      val output = new ObjectOutputStream(new FileOutputStream(file))
+      output.writeObject(vocabulary)
+      output.close()
+    }
+
+    def save(file: File, vocabulary: VocabularyImplStored) = {
       val output = new ObjectOutputStream(new FileOutputStream(file))
       output.writeObject(vocabulary)
       output.close()
@@ -123,4 +123,5 @@ package object main {
         }
     }
   }
+
 }
