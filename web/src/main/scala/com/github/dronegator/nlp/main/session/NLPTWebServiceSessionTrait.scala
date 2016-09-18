@@ -37,8 +37,8 @@ trait NLPTWebServiceSessionTrait
           (sessionManager ask CreateSession(cookie.value))
             .flatMap{
               case SessionManager.SessionName(sessionId) =>
-                (setCookie(HttpCookie("sessionId", sessionId)) {
-                  logger.info(s"session continues $sessionId")
+                (setCookie(HttpCookie("sessionId", sessionId, path=Some("/"))) {
+                  logger.info(s"session continues $sessionId ${request.request.uri.path}")
                   super.route
                 })(request)
             }
@@ -49,8 +49,8 @@ trait NLPTWebServiceSessionTrait
           (sessionManager ask CreateSession(UUID.randomUUID().toString))
             .flatMap{
               case SessionManager.SessionName(sessionId) =>
-                (setCookie(HttpCookie("sessionId", sessionId)) {
-                  logger.info(s"session created $sessionId")
+                (setCookie(HttpCookie("sessionId", sessionId, path=Some("/"))) {
+                  logger.info(s"session created $sessionId ${request.request.uri.path}")
                   request.settings
                   super.route
                 })(request)

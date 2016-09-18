@@ -1,5 +1,44 @@
 $(
     function () {
+        /*var exampleSocket = new WebSocket("ws://localhost:8080/websocket", ["protocolOne", "protocolTwo"]); //var exampleSocket = new WebSocket("ws://www.example.com/socketserver", ["protocolOne", "protocolTwo"]);
+        exampleSocket.onmessage = function (event) {
+          console.log(event.data);
+        }*/
+
+
+    if ("WebSocket" in window)
+            {
+
+               // Let us open a web socket
+               var ws = new WebSocket("ws://localhost:8080/websocket");
+
+               ws.onopen = function()
+               {
+                  // Web Socket is connected, send data using send()
+                  ws.send("Message to send");
+
+               };
+
+               ws.onmessage = function (evt)
+               {
+                  var received_msg = evt.data;
+                        console.log(event.data);
+               };
+
+               ws.onclose = function()
+               {
+                  // websocket is closed.
+                  alert("Connection is closed...");
+               };
+            }
+
+            else
+            {
+               // The browser doesn't support WebSocket
+               alert("WebSocket NOT supported by your Browser!");
+            }
+
+
         $("#menu").menu();
         $(".ndraggable").draggable();
         $(".resizable").resizable();
