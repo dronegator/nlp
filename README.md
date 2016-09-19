@@ -62,29 +62,24 @@ Gathering statistic from a text corpora includes tokenizing a text stream, gathe
 
 Below I provide a simplified description for the algorithms that I suppose to use developing this components.
 
-Tokenizer
-~~~~~~~~~~~
-
+### Tokenizer
 Tokenizer splits text to tokens, actually, in some places it can provide a few variants of a token (for example, the dot can be an end of phrase or the end of a shortcut). Thats why tokenizer provides stream of the sets of the tokens for each position in the text.
 
-Phrase buffer
-~~~~~~~~~~~~~~
+### Phrase buffer
+
 Phrase buffer accumulates stream of the tokens and applies a phrase detector for the current content. Each time the detector assures the buffer contains the whole sentense, the sentece is raised into the output stream wiping of the buffer. 
 
-Phrase detector
-~~~~~~~~~~~~~~~
+### Phrase detector
 Phrase detector checks for a sequence of token variants if the begining of the sequence contains a whole phrase. The main approach is to use 2- 3- gramms statistic to build the most probable way thru the bufer of tokens looking for more probable one. If it passes thru the dot-as-end-of-phrase (DAEP) it suggests it has found a whole sentence. The main problem there is that actually tokenizer never knows which dot it has, and if the word is a begining of a phrase (escpecially for German language). Also, the text can contain some mistyping. 
 
-Phrase evaluator
-~~~~~~~~~~~~~~~~
+### Phrase evaluator
 Phrase evaluator counts the probability of a phrase from the set of tokens it contains.
 
-2 Gramm and 3 gramm counter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-2-gramm and 3-gramm counter is just a map of n-gramms to the probabilities. Just because of tremendous amount of n-grams, it works in a memory but can incrementally save statistic in a storage.
+### 2 Gramm and 3 gramm counter
+2-gramm and 3-gramm counter is just 
+a map of n-gramms to the probabilities. Just because of tremendous amount of n-grams, it works in a memory but can incrementally save statistic in a storage.
 
-Storage
-~~~~~~~
+### Storage
 Storage contains:
   
   1. All of the tokens (as id) and words they reperesent;
@@ -95,25 +90,31 @@ Storage contains:
   
   4. The histogramms of the words (or phrases) for each of the samples (to avoid possible duplication of samples);
 
-
 Usage
--------
+-----
 The initial release only contains a few console applications those can gather statistic from a text corpora, save it into the storage and provide simple services from a command prompt. 
 
 To collect statistic,  issue:
 
-    `sbt "run-main com.github.dronegator.nlp.main.NLPTMainStream <FILE WITH A TEXT CORPUS> <FILE OF STORAGE>`
+    `sbt "index-stream/run <FILE WITH A TEXT CORPUS> <FILE OF STORAGE>`
   
   or 
 
-    `sbt "run-main com.github.dronegator.nlp.main.NLPTMain <FILE WITH A TEXT CORPUS> <FILE OF STORAGE>`
+    `sbt "index/run  <FILE WITH A TEXT CORPUS> <FILE OF STORAGE>`
   
 The applications do the same, except the first one uses AKKA-STREAMS that helps to require less RAM.
 
 You might have to index text twice, using the previous result as an innitial hint. It provides a possibility to take into consideration meaningful words building the correlation matrix for suggestions:
 
-    `sbt "run-main com.github.dronegator.nlp.main.NLPTMain <FILE WITH A TEXT CORPUS> <FILE OF STORAGE> <FILE OF STORAGE WITH HINTS>`
+    `sbt "index/run <FILE WITH A TEXT CORPUS> <FILE OF STORAGE> <FILE OF STORAGE WITH HINTS>`
 
+The simplest way to use the vocabulary is a web interface, which is far away from completed "The Game" interface, though provides the simple editor with prompts. To start webservice issue:
+
+    `sbt "web/run <FILE WITH A TEXT CORPUS> <FILE OF STORAGE> <FILE OF STORAGE WITH HINTS>`
+    
+then open http://localhost:8080 in your lovely browser.
+    
+    
 To use collected statistic, issue:   
 
     `sbt "run-main com.github.dronegator.nlp.main.NLPTReplMain <FILE OF STORAGE>`
@@ -170,12 +171,13 @@ To use collected statistic, issue:
   * generate [Word]+
     Generates a phrase containing the sequence of words:
     
-      > generate reading a book
-      She was reading a book of famous people .
+        > generate reading a book
+        She was reading a book of famous people .
       
   * keywords [Word]+
     Select meaninful words from a phrase:
-    > keywords My cat was drinking a milk.
+    
+        > keywords My cat was drinking a milk.
         a                    -1.000 (0.000-1.000)
         drinking             -0.275 (0.000-0.276)
         was                  0.000 (0.000-0.000)
@@ -186,13 +188,13 @@ To use collected statistic, issue:
    
       where possible switches are:
       
-        * --keywords=[Word:]+ - obligatory keywords for the phrase variations;
+      * --keywords=[Word:]+ - obligatory keywords for the phrase variations;
         
-        * --use-best - show only phrases those seem to be better than provided one;
+      * --use-best - show only phrases those seem to be better than provided one;
          
-        * --limit=<NUMBER> - maximum amout of changes in a phrase;
-         
-        * --use-auxiliary - allow variations for auxiliary words only. 
+      * --limit=<NUMBER> - maximum amout of changes in a phrase;
+        
+      * --use-auxiliary - allow variations for auxiliary words only. 
        
       Suggest possible substitution of the words in a phrase (the intentional error has provided for the illustration puprpose):
        
@@ -264,5 +266,11 @@ History
     
   * Make advices only for auxiliary words, or except keywords;
 
-The current achievments
----------------------------
+[Version 0.4](https://github.com/dronegator/nlp/tree/v.0.4), 20160918, Implement simple web API and UI supporting creation of phrases with prompts.
+
+  * Provide UI with continuation, generation, advices, sugestion of words for the same as well as the next phrase;
+  
+  * Store the completely computed vocabulary;
+   
+  * Make some logging, including logging of computation time.
+

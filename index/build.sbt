@@ -1,6 +1,6 @@
 name := "index"
 
-version := "0.2"
+version := "0.4"
 
 scalaVersion := "2.11.7"
 

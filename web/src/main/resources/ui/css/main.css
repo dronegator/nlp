@@ -1,0 +1,53 @@
+#description {
+    width: 600px; padding: 0px;
+}
+
+#editor {
+    width: 600px; padding: 0px;
+}
+
+#editor textarea {
+    width: 100%; height: 4em;
+}
+
+#promptTheSame {
+    width: 300px; padding: 0px;
+}
+
+#advice {
+    width: 300px; padding: 0px;
+}
+
+#generate {
+    width: 300px; padding: 0px;
+}
+
+#promptNext {
+    width: 300px; padding: 0px;
+}
+
+.phrase:hover {
+    background-color: silver;
+}
+
+.highlight {
+   font-weight: bold;
+}
+
+.word:hover {
+    background-color: silver;
+}
+
+.open {
+    display: block;
+    float: right;
+}
+
+#resizable {
+  overflow: hidden;
+}
+#sortable { list-style-type: none; margin: 0; padding: 0; }
+
+#sortable li { margin: 3px 3px 3px 0; padding: 1px; float: left; text-align: left; }
+
+#sysinfo li { margin: 3px 3px 3px 3px; padding: 1px;  }

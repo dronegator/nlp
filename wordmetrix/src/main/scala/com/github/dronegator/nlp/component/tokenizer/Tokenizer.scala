@@ -3,8 +3,10 @@ package com.github.dronegator.nlp.component.tokenizer
 import com.github.dronegator.nlp.component.{ComponentScan, ComponentState}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{DEOP, DEOW, Reset}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
+import com.github.dronegator.nlp.main.TagHints
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.vocabulary.{VocabularyHint, VocabularyHintImpl}
+import com.softwaremill.tagging.@@
 import enumeratum._
 import enumeratum.values.IntEnumEntry
 

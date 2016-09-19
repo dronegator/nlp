@@ -51,10 +51,6 @@ package object vocabulary {
 
     def map2ToNext: Map[List[Token], List[(Double, Token)]]
 
-    protected def pNGram2Prev: Map[List[Token], Double]
-
-    protected def pNGram3Prev: Map[List[Token], Double]
-
     def map1ToPrev: Map[List[Token], List[(Double, Token)]]
 
     def map2ToPrev: Map[List[Token], List[(Double, Token)]]

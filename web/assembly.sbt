@@ -2,4 +2,4 @@
 
 //assemblySettings
 
-mainClass in assembly := Some("com.github.dronegator.nlp.main.NLPTWebService")
+mainClass in assembly := Some("com.github.dronegator.nlp.main.NLPTWebServiceMain")

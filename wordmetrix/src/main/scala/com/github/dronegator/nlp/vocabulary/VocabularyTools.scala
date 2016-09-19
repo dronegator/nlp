@@ -11,17 +11,14 @@ import com.github.dronegator.nlp.utils.IteratorLog
  * Created by cray on 8/28/16.
  */
 object VocabularyTools {
-
-//  case class Advice(token: Option[Token], tokens: List[(Token, Probability)], removal: Option[Probability])
-//
-//  type Advices = List[Advice]
-
   type Advices = List[(Statement, Probability)]
 
-  implicit class VocabularyTools(val vocabulary: VocabularyImpl/*TODO: Use Vocabulary instead*/)
-    extends main.Combinators
+  implicit class VocabularyTools(val vocabulary: Vocabulary)
+    extends main.NLPTAppPartial
+    with main.Combinators
     with ToolAdviceTrait {
-    val cfg = CFG()
+
+    lazy val cfg = CFG()
 
     lazy val vocabularyHint: VocabularyHint = vocabulary
 
@@ -175,9 +172,17 @@ object VocabularyTools {
 
     def untokenize(tokens: List[Token]) =
       tokens.flatMap(vocabulary.wordMap.get(_)).mkString(" ")
+
+    def toTokens(words: List[Word]) =
+      words.flatMap(vocabulary.tokenMap.get(_)).flatten
+
+    def toWords(tokens: List[Token]) =
+      tokens.flatMap(vocabulary.wordMap.get(_))
   }
 
-  implicit class VocabularyHintTools(val vocabularyHint: VocabularyHint) extends main.Combinators {
+  implicit class VocabularyHintTools(val vocabularyHint: VocabularyHint)
+    extends main.NLPTAppPartial
+    with main.Combinators {
     override def cfg: CFG = CFG()
 
     def keywords(statement: Statement) =
@@ -194,7 +199,10 @@ object VocabularyTools {
 
   }
 
-  implicit class VocabularyRawTools(vocabulary: VocabularyRaw) extends main.Combinators {
+  implicit class VocabularyRawTools(vocabulary: VocabularyRaw)
+    extends main.NLPTAppPartial
+    with main.Combinators {
+
     val cfg = CFG()
 
     lazy val vocabularyHint: VocabularyHint = vocabulary
@@ -241,7 +249,9 @@ object VocabularyTools {
     }
   }
 
-  implicit class VocabularyToolsOutdated(vocabulary: VocabularyImpl with VocabularyImplOutdated) extends main.Combinators {
+  implicit class VocabularyToolsOutdated(vocabulary: Vocabulary with VocabularyImplOutdated)
+    extends main.NLPTAppPartial
+    with main.Combinators {
     val cfg = CFG()
 
     lazy val vocabularyHint: VocabularyHint = vocabulary
