@@ -3,6 +3,7 @@ package com.github.dronegator.nlp.main.phrase
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.RouteResult.Complete
+import com.github.dronegator.nlp.main.websocket.NLPTWebServiceSocketTrait
 import com.github.dronegator.nlp.main.{Concurent, NLPTApp, NLPTAppForWeb}
 import com.softwaremill.macwire._
 
@@ -15,7 +16,7 @@ object NLPTWebServicePhraseTrait {
 
 trait NLPTWebServicePhraseTrait
   extends NLPTAppForWeb {
-  this: Concurent  =>
+  this: Concurent with NLPTWebServiceSocketTrait =>
 
   lazy val continue: ContinueHandler = wire[ContinueHandler]
 

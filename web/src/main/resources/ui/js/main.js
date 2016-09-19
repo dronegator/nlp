@@ -1,42 +1,42 @@
 $(
     function () {
-        /*var exampleSocket = new WebSocket("ws://localhost:8080/websocket", ["protocolOne", "protocolTwo"]); //var exampleSocket = new WebSocket("ws://www.example.com/socketserver", ["protocolOne", "protocolTwo"]);
-        exampleSocket.onmessage = function (event) {
-          console.log(event.data);
-        }*/
+        if ("WebSocket" in window) {
+            var ws = new WebSocket("ws:/" + window.location.hostname + ":" + window.location.port + "/websocket");
+            ws.onopen = function () {
+                ws.send("Message to send");
 
+            };
+            ws.onmessage = function (evt) {
+                try {
+                    var msg = eval(evt.data).slice(0, 20);
+                    console.log(msg);
+                    ensureVisibility("#advice");
+                    $("#advice .data table tr").remove();
 
-    if ("WebSocket" in window)
-            {
+                    $.each(msg, function (key, val) {
+                        $("#advice .data table").append(
+                            "<tr><td class=\"phrase\">" + val.value + "</td><td>" + val.weight + "</td></tr>"
+                        );
 
-               // Let us open a web socket
-               var ws = new WebSocket("ws://localhost:8080/websocket");
+                        $("#advice .phrase").last().on("click", function () {
+                            $("#editor textarea").val($(this).text())
+                            onTextAreaUpdate();
+                            $(this).parent("tr").remove();
+                        })
+                    });
+                } catch (err) {
+                    console.log(err)
 
-               ws.onopen = function()
-               {
-                  // Web Socket is connected, send data using send()
-                  ws.send("Message to send");
+                }
+            };
 
-               };
-
-               ws.onmessage = function (evt)
-               {
-                  var received_msg = evt.data;
-                        console.log(event.data);
-               };
-
-               ws.onclose = function()
-               {
-                  // websocket is closed.
-                  alert("Connection is closed...");
-               };
-            }
-
-            else
-            {
-               // The browser doesn't support WebSocket
-               alert("WebSocket NOT supported by your Browser!");
-            }
+            ws.onclose = function () {
+                console.log("Connection is closed...");
+            };
+        } else {
+            // The browser doesn't support WebSocket
+            alert("WebSocket NOT supported by your Browser!");
+        }
 
 
         $("#menu").menu();

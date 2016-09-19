@@ -4,6 +4,7 @@ package com.github.dronegator.nlp.main.phrase
   * Created by cray on 9/15/16.
   */
 
+import akka.NotUsed
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{PathMatchers, Route}
@@ -13,6 +14,10 @@ import com.github.dronegator.nlp.main.phrase.PhraseResponse._
 import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyImpl}
 import com.github.dronegator.nlp.vocabulary.VocabularyTools._
 import spray.json._
+import spray.json._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.stream.{Materializer, OverflowStrategy}
+import akka.stream.scaladsl.{Keep, Sink, Source}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -30,42 +35,50 @@ object AdviceHandler extends DefaultJsonProtocol {
 
   implicit val dataFormat = jsonFormat5(Data)
 
-  implicit val requestFormat = jsonFormat2(Request[Data])
+  implicit val requestFormat = jsonFormat3(RequestWithSessionId[Data])
 }
 
-class AdviceHandler(vocabulary: Vocabulary)(implicit context: ExecutionContext)
-  extends Handler[Request[AdviceHandler.Data], Response[String]] {
+class AdviceHandler(vocabulary: Vocabulary, sink: Sink[(String, String), NotUsed])(
+  implicit context: ExecutionContext, mat: Materializer)
+  extends Handler[RequestWithSessionId[AdviceHandler.Data], Response[String]] {
 
   import AdviceHandler._
   import PathMatchers._
 
+  val queue = Source.queue(20, OverflowStrategy.backpressure).toMat(sink)(Keep.left).run()
+
   def route: Route =
     pathSuffix("advice") {
       pathPrefix(Segments(0, 100)) { words =>
-        get {
-          parameter('data.as[String]) {
-            data =>
-              complete {
-                handle(Request(
-                  phrase = words,
-                  data = data.parseJson.convertTo[Data]))
-              }
-          }
-        } ~ post {
-          entity(as[Data]) {
-            data =>
-              println(data)
-              complete {
-                handle(Request(
-                  phrase = words,
-                  data = data/*data.parseJson.convertTo[Data]*/))
-              }
+        optionalCookie("sessionId") { sessionId =>
+          get {
+            parameter('data.as[String]) {
+              data =>
+                complete {
+                  handle(RequestWithSessionId(
+                    phrase = words,
+                    data = data.parseJson.convertTo[Data],
+                    sessionId.map(_.value)
+                  ))
+                }
+            }
+          } ~ post {
+            entity(as[Data]) {
+              data =>
+                println(data)
+                complete {
+                  handle(RequestWithSessionId(
+                    phrase = words,
+                    data = data /*data.parseJson.convertTo[Data]*/,
+                    sessionId.map(_.value)))
+                }
+            }
           }
         }
       }
     }
 
-  override def handle(request: Request[Data]): Future[Response[String]] = Future {
+  override def handle(request: RequestWithSessionId[Data]): Future[Response[String]] = Future {
     val statement = vocabulary.tokenize(request.phrase :+ ".")
     println(request);
     val suggest = vocabulary
@@ -82,6 +95,9 @@ class AdviceHandler(vocabulary: Vocabulary)(implicit context: ExecutionContext)
           Suggest(vocabulary.untokenize(statement), probability)
       }
 
+    request.sessionId foreach { sessionId =>
+      queue.offer(sessionId -> suggest.toJson.toString())
+    }
 
     Response(suggest = suggest)
   }

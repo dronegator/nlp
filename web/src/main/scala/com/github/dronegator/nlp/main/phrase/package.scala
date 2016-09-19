@@ -15,6 +15,8 @@ import scala.concurrent.Future
 package object phrase {
   case class Request[D](phrase: List[Word], data: D)
 
+  case class RequestWithSessionId[D](phrase: List[Word], data: D, sessionId: Option[String])
+
   case class Suggest[A](value: A, weight: Weight)
 
   case class Response[A](suggest: List[Suggest[A]])
