@@ -66,7 +66,6 @@ class AdviceHandler(vocabulary: Vocabulary, sink: Sink[EventDestinationSession[A
           } ~ post {
             entity(as[Data]) {
               data =>
-                println(data)
                 complete {
                   handle(RequestWithSessionId(
                     phrase = words,
@@ -81,7 +80,7 @@ class AdviceHandler(vocabulary: Vocabulary, sink: Sink[EventDestinationSession[A
 
   override def handle(request: RequestWithSessionId[Data]): Future[Response[String]] = Future {
     val statement = vocabulary.tokenize(request.phrase :+ ".")
-    println(request);
+
     val suggest = vocabulary
       .adviceOptimal(
         statement,

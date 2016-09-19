@@ -1,8 +1,6 @@
 package com.github.dronegator.nlp.main.session
 
 import akka.actor.{Actor, ActorRefFactory, Props, Terminated}
-import akka.actor.Actor.Receive
-import akka.dispatch.sysmsg.Terminate
 import com.github.dronegator.nlp.main.session.Session.SessionMessage
 import com.github.dronegator.nlp.main.session.SessionManager.{CreateSession, SessionName}
 import com.github.dronegator.nlp.utils.{CFG, TypeActorRef}
@@ -12,6 +10,7 @@ import com.github.dronegator.nlp.utils.{CFG, TypeActorRef}
   */
 
 object SessionManager {
+
   trait SessionManagerMessage
 
   case class CreateSession(name: String) extends SessionManagerMessage
@@ -34,21 +33,17 @@ class SessionManager(cfg: CFG) extends Actor {
 
   def receive(map: Map[String, TypeActorRef[SessionMessage]]): Receive = {
     case CreateSession(name) =>
-        map.get(name) match {
-          case Some(actorRef) =>
-            println(s"session $name exists")
-            sender() ! SessionName(name)
+      map.get(name) match {
+        case Some(actorRef) =>
+          sender() ! SessionName(name)
 
-          case None =>
-            val actorRef = Session.wrap(cfg, name)
+        case None =>
+          val actorRef = Session.wrap(cfg, name)
 
-            context.become(receive(map + (name -> actorRef)))
-
-            context.watch(actorRef.actorRef)
-            println(s"session $name is going to be created")
-
-            sender() ! SessionName(name)
-        }
+          context.become(receive(map + (name -> actorRef)))
+          context.watch(actorRef.actorRef)
+          sender() ! SessionName(name)
+      }
 
     case Terminated(actorRef) =>
       context.become(receive(map - actorRef.path.name))
