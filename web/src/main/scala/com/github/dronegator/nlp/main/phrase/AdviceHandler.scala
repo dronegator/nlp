@@ -18,6 +18,7 @@ import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.stream.scaladsl.{Keep, Sink, Source}
+import com.github.dronegator.nlp.main.websocket.{Advice, EventDestinationSession, EventEnvelope}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -38,7 +39,7 @@ object AdviceHandler extends DefaultJsonProtocol {
   implicit val requestFormat = jsonFormat3(RequestWithSessionId[Data])
 }
 
-class AdviceHandler(vocabulary: Vocabulary, sink: Sink[(String, String), NotUsed])(
+class AdviceHandler(vocabulary: Vocabulary, sink: Sink[EventDestinationSession[Advice], NotUsed])(
   implicit context: ExecutionContext, mat: Materializer)
   extends Handler[RequestWithSessionId[AdviceHandler.Data], Response[String]] {
 
@@ -96,7 +97,7 @@ class AdviceHandler(vocabulary: Vocabulary, sink: Sink[(String, String), NotUsed
       }
 
     request.sessionId foreach { sessionId =>
-      queue.offer(sessionId -> suggest.toJson.toString())
+      queue.offer(EventDestinationSession(sessionId, EventEnvelope(Advice(suggest))))
     }
 
     Response(suggest = suggest)

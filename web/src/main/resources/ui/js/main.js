@@ -7,13 +7,14 @@ $(
 
             };
             ws.onmessage = function (evt) {
-                try {
-                    var msg = eval(evt.data).slice(0, 20);
-                    console.log(msg);
+                var msg = JSON.parse(evt.data);
+                console.log(msg);
+
+                if (msg.kind == "Advice") {
                     ensureVisibility("#advice");
                     $("#advice .data table tr").remove();
 
-                    $.each(msg, function (key, val) {
+                    $.each(msg.event.suggest.slice(0, 20), function (key, val) {
                         $("#advice .data table").append(
                             "<tr><td class=\"phrase\">" + val.value + "</td><td>" + val.weight + "</td></tr>"
                         );
@@ -24,9 +25,8 @@ $(
                             $(this).parent("tr").remove();
                         })
                     });
-                } catch (err) {
-                    console.log(err)
-
+                } else if (msg.kind == "Ping") {
+                    $("#ping").text(msg.event.n)
                 }
             };
 
@@ -37,7 +37,6 @@ $(
             // The browser doesn't support WebSocket
             alert("WebSocket NOT supported by your Browser!");
         }
-
 
         $("#menu").menu();
         $(".ndraggable").draggable();
@@ -50,17 +49,6 @@ $(
         });
 
         $(document).tooltip();
-
-        $(".ui-widget-content").each(function (a, content) {
-            $(".ui-widget-header", content).each(function (a, header) {
-                console.log(header);
-                //                $(header).on("click", function () {
-                //
-                //                    $(".data", content).toggle("slide", {}, 500);
-                //                })
-
-            })
-        });
 
         $.getJSON("/system/version", "", function (data) {
             $("#sysinfo .version").html(
@@ -87,7 +75,6 @@ $(
             );
         });
 
-
         function extractPath() {
             return $("#editor textarea").val().trim().split(/\s+/).join("/");
         }
@@ -99,7 +86,6 @@ $(
             $(".half-wide").width(w / 2 - 40 - 4);
             $(".quart-wide").width(w / 4 - 20 - 6);
         };
-
 
         $(window).resize(resize);
 
@@ -150,11 +136,7 @@ $(
                         );
                         $("#promptNext .word").on("click", add);
                     }
-
-
-
                 }
-
             });
         }
 
@@ -281,8 +263,6 @@ $(
                         $("#generate .data table tr").slice(10).each(function () {
                             $(this).remove()
                         })
-
-                        //$("#generate .phrase").last()
                     })
                 })
             });
