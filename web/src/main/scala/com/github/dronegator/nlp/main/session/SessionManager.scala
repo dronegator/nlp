@@ -1,33 +1,28 @@
 package com.github.dronegator.nlp.main.session
 
-import akka.actor.{Actor, ActorRefFactory, Props, Terminated}
-import com.github.dronegator.nlp.main.session.SessionStorage.SessionMessage
+import akka.actor.{Actor, Props, Terminated}
 import com.github.dronegator.nlp.main.session.SessionManager.{CreateSession, SessionRef}
-import com.github.dronegator.nlp.utils.{CFG, TypeActorRef}
+import com.github.dronegator.nlp.main.session.SessionStorage.SessionMessage
+import com.github.dronegator.nlp.utils.CFG
+import com.github.dronegator.nlp.utils.typeactor._
 
 /**
-  * Created by cray on 9/18/16.
-  */
+ * Created by cray on 9/18/16.
+ */
 
 object SessionManager {
+
+  def props(cfg: CFG, sessionStorage: TypeProps[SessionMessage]): TypeProps[SessionManagerMessage] =
+    Props(new SessionManager(cfg, sessionStorage))
 
   trait SessionManagerMessage
 
   case class CreateSession(name: SessionId) extends SessionManagerMessage
 
   case class SessionRef(name: SessionId, typeActorRef: TypeActorRef[SessionMessage]) extends SessionManagerMessage
-
-  def wrap(cfg: CFG)(implicit system: ActorRefFactory) =
-    TypeActorRef[SessionManagerMessage](system.actorOf(props(cfg)))
-
-  def wrap(cfg: CFG, name: String)(implicit system: ActorRefFactory) =
-    TypeActorRef[SessionManagerMessage](system.actorOf(props(cfg), name))
-
-  def props(cfg: CFG): Props =
-    Props(new SessionManager(cfg))
 }
 
-class SessionManager(cfg: CFG) extends Actor {
+class SessionManager(cfg: CFG, sessionStorage: TypeProps[SessionMessage]) extends Actor {
   override def receive: Receive =
     receive(Map())
 
@@ -38,10 +33,12 @@ class SessionManager(cfg: CFG) extends Actor {
           sender() ! SessionRef(name, actorRef)
 
         case None =>
-          val actorRef = SessionStorage.wrap(cfg, name)
+          val actorRef = context.actorOf(sessionStorage)
 
           context.become(receive(map + (name -> actorRef)))
-          context.watch(actorRef.actorRef)
+
+          context.watch(actorRef)
+
           sender() ! SessionRef(name, actorRef)
       }
 

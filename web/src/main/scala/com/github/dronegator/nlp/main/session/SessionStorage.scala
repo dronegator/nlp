@@ -1,8 +1,10 @@
 package com.github.dronegator.nlp.main.session
 
 import akka.actor.{Actor, ActorLogging, ActorRefFactory, Kill, Props}
+import com.github.dronegator.nlp.main.session.SessionStorage
 import com.github.dronegator.nlp.main.session.SessionStorage._
-import com.github.dronegator.nlp.utils.{CFG, TypeActorRef}
+import com.github.dronegator.nlp.utils.CFG
+import com.github.dronegator.nlp.utils.typeactor._
 
 /**
   * Created by cray on 9/18/16.
@@ -29,13 +31,7 @@ object SessionStorage {
       f(value)
   }
 
-  def wrap(cfg: CFG)(implicit system: ActorRefFactory) =
-    TypeActorRef[SessionMessage](system.actorOf(props(cfg)))
-
-  def wrap(cfg: CFG, name: String)(implicit system: ActorRefFactory) =
-    TypeActorRef[SessionMessage](system.actorOf(props(cfg), name))
-
-  def props(cfg: CFG): Props =
+  def props(cfg: CFG): TypeProps[SessionMessage] =
     Props(new SessionStorage(cfg))
 }
 

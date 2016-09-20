@@ -3,15 +3,17 @@ package com.github.dronegator.nlp.main
 import akka.actor.ActorSystem
 import akka.util.Timeout
 import com.github.dronegator.nlp.main.session.SessionStorage.SessionMessage
-import com.github.dronegator.nlp.utils.TypeActorRef
+import com.github.dronegator.nlp.utils.typeactor._
 import com.softwaremill.tagging._
 
-import scala.concurrent.{ExecutionContext, Future, duration}, duration._
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future, duration}
 
 /**
-  * Created by cray on 9/20/16.
-  */
+ * Created by cray on 9/20/16.
+ */
 package object session {
+
   trait SIdTag
 
   type SessionId = String @@ SIdTag
@@ -23,8 +25,11 @@ package object session {
 
   trait SessionExt {
     protected def typeActorRef: Future[TypeActorRef[SessionMessage]]
+
     implicit def system: ActorSystem
+
     implicit def context: ExecutionContext
+
     implicit def timeout: Timeout = 10 seconds
 
     def /[A](name: String) =

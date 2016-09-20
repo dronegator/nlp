@@ -15,7 +15,7 @@ import com.github.dronegator.nlp.main
 import com.github.dronegator.nlp.main.Concurent
 import com.github.dronegator.nlp.main.session.SessionManager.CreateSession
 import com.github.dronegator.nlp.main.session.SessionStorage.SessionMessage
-import com.github.dronegator.nlp.utils.TypeActorRef
+import com.github.dronegator.nlp.utils.typeactor._
 import com.softwaremill.tagging.{@@, _}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,7 +33,11 @@ trait NLPTWebServiceSessionTrait
 
   import NLPTWebServiceSessionTrait._
 
-  lazy val sessionManager = SessionManager.wrap(cfg)
+  lazy val propsSessionStorage = SessionStorage.props(cfg)
+
+  lazy val propsSessionManager = SessionManager.props(cfg, propsSessionStorage)
+
+  lazy val sessionManager = system.actorOf(propsSessionManager)
 
   def getSession(sessionId: SessionId) =
     system.actorSelection(s"akka://default/user/$sessionId")
@@ -43,7 +47,7 @@ trait NLPTWebServiceSessionTrait
       }
       .recover {
         case th: Throwable =>
-          SessionStorage.wrap(cfg, sessionId)
+          system.actorOf(propsSessionStorage)
       }
       .map { typeActorRef =>
         SessionManager.SessionRef(sessionId, typeActorRef)
