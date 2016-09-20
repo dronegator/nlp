@@ -1,8 +1,8 @@
 package com.github.dronegator.nlp.main.session
 
 import akka.actor.{Actor, ActorRefFactory, Props, Terminated}
-import com.github.dronegator.nlp.main.session.Session.SessionMessage
-import com.github.dronegator.nlp.main.session.SessionManager.{CreateSession, SessionName}
+import com.github.dronegator.nlp.main.session.SessionStorage.SessionMessage
+import com.github.dronegator.nlp.main.session.SessionManager.{CreateSession, SessionRef}
 import com.github.dronegator.nlp.utils.{CFG, TypeActorRef}
 
 /**
@@ -13,9 +13,9 @@ object SessionManager {
 
   trait SessionManagerMessage
 
-  case class CreateSession(name: String) extends SessionManagerMessage
+  case class CreateSession(name: SessionId) extends SessionManagerMessage
 
-  case class SessionName(name: String) extends SessionManagerMessage
+  case class SessionRef(name: SessionId, typeActorRef: TypeActorRef[SessionMessage]) extends SessionManagerMessage
 
   def wrap(cfg: CFG)(implicit system: ActorRefFactory) =
     TypeActorRef[SessionManagerMessage](system.actorOf(props(cfg)))
@@ -31,22 +31,22 @@ class SessionManager(cfg: CFG) extends Actor {
   override def receive: Receive =
     receive(Map())
 
-  def receive(map: Map[String, TypeActorRef[SessionMessage]]): Receive = {
+  def receive(map: Map[SessionId, TypeActorRef[SessionMessage]]): Receive = {
     case CreateSession(name) =>
       map.get(name) match {
         case Some(actorRef) =>
-          sender() ! SessionName(name)
+          sender() ! SessionRef(name, actorRef)
 
         case None =>
-          val actorRef = Session.wrap(cfg, name)
+          val actorRef = SessionStorage.wrap(cfg, name)
 
           context.become(receive(map + (name -> actorRef)))
           context.watch(actorRef.actorRef)
-          sender() ! SessionName(name)
+          sender() ! SessionRef(name, actorRef)
       }
 
     case Terminated(actorRef) =>
-      context.become(receive(map - actorRef.path.name))
+      context.become(receive(map - SessionId(actorRef.path.name)))
 
     case x =>
       println(x)

@@ -1,14 +1,14 @@
 package com.github.dronegator.nlp.main.session
 
-import akka.actor.{Actor, ActorRefFactory, Kill, Props}
-import com.github.dronegator.nlp.main.session.Session._
+import akka.actor.{Actor, ActorLogging, ActorRefFactory, Kill, Props}
+import com.github.dronegator.nlp.main.session.SessionStorage._
 import com.github.dronegator.nlp.utils.{CFG, TypeActorRef}
 
 /**
   * Created by cray on 9/18/16.
   */
 
-object Session {
+object SessionStorage {
 
   sealed trait SessionMessage
 
@@ -36,14 +36,18 @@ object Session {
     TypeActorRef[SessionMessage](system.actorOf(props(cfg), name))
 
   def props(cfg: CFG): Props =
-    Props(new Session(cfg))
+    Props(new SessionStorage(cfg))
 }
 
-class Session(cfg: CFG) extends Actor {
+class SessionStorage(cfg: CFG)
+  extends Actor
+  with ActorLogging {
   override def receive: Receive = receive(Map(), System.currentTimeMillis())
 
   def receive(map: Map[String, Any], time: Long): Receive = {
     case Set(name, value) =>
+      log.info(s"Set name=$name to value=$value in ${self.path.elements.last}")
+      println(s"Set name=$name to value=$value in ${self.path.elements.last}")
       context.become(receive(map + (name -> value), System.currentTimeMillis()))
 
     case Get(name) =>
