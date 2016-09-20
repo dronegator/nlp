@@ -6,7 +6,6 @@ package com.github.dronegator.nlp.main.session
 
 import java.util.UUID
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.HttpCookie
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -16,13 +15,10 @@ import com.github.dronegator.nlp.main.Concurent
 import com.github.dronegator.nlp.main.session.SessionManager.CreateSession
 import com.github.dronegator.nlp.main.session.SessionStorage.SessionMessage
 import com.github.dronegator.nlp.utils.typeactor._
-import com.softwaremill.tagging.{@@, _}
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 object NLPTWebServiceSessionTrait {
-
 
 }
 
@@ -31,34 +27,11 @@ trait NLPTWebServiceSessionTrait
     main.NLPTAppForWeb {
   this: Concurent =>
 
-  import NLPTWebServiceSessionTrait._
-
   lazy val propsSessionStorage = SessionStorage.props(cfg)
 
   lazy val propsSessionManager = SessionManager.props(cfg, propsSessionStorage)
 
   lazy val sessionManager = system.actorOf(propsSessionManager)
-
-  def getSession(sessionId: SessionId) =
-    system.actorSelection(s"akka://default/user/$sessionId")
-      .resolveOne()
-      .map {
-        TypeActorRef[SessionMessage](_)
-      }
-      .recover {
-        case th: Throwable =>
-          system.actorOf(propsSessionStorage)
-      }
-      .map { typeActorRef =>
-        SessionManager.SessionRef(sessionId, typeActorRef)
-      }
-
-
-  def getSessionFromManager(sessionId: String) =
-    sessionManager ask CreateSession(SessionId(sessionId))
-
-  private implicit val timeout: Timeout = 10 seconds
-
   override lazy val route: Route =
     optionalCookie("sessionId") {
       case Some(cookie) =>
@@ -86,6 +59,22 @@ trait NLPTWebServiceSessionTrait
             }
         }
     }
+  private implicit val timeout: Timeout = 10 seconds
+
+  def getSession(sessionId: SessionId) =
+    system.actorSelection(s"akka://default/user/$sessionId")
+      .resolveOne()
+      .map {
+        TypeActorRef[SessionMessage](_)
+      }
+      .recover {
+        case th: Throwable =>
+          system.actorOf(propsSessionStorage)
+      }
+      .map { typeActorRef =>
+        SessionManager.SessionRef(sessionId, typeActorRef)
+      }
+
+  def getSessionFromManager(sessionId: String) =
+    sessionManager ask CreateSession(SessionId(sessionId))
 }
-
-
