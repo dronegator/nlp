@@ -41,8 +41,10 @@ $(
         $("#menu").menu();
         $(".ndraggable").draggable();
         $(".resizable").resizable();
-        $("#sortable").sortable();
-        $("#sortable").disableSelection();
+        $("#sortable").sortable({
+          "handle" : ".ui-widget-header"
+        });
+        //$("#sortable").disableSelection();
         $(".widget input[type=submit], .widget a, .widget button").button();
         $("button, input, a").click(function (event) {
             event.preventDefault();
