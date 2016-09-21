@@ -11,9 +11,11 @@ import akka.stream.scaladsl.{BroadcastHub, Flow, Keep, MergeHub, Source}
 import akka.util.Timeout
 import com.github.dronegator.nlp.main
 import com.github.dronegator.nlp.main.Concurent
+import com.github.dronegator.nlp.main.websocket.Events._
 import spray.json._
+
 import scala.concurrent.duration._
-import Events._
+
 object NLPTWebServiceSocketTrait {
 
 }
@@ -36,7 +38,6 @@ trait NLPTWebServiceSocketTrait
         n + 1
     }
     .map { n =>
-      println(s"send $n")
       EventDestinationSession("ae718cd4-8299-4c74-939f-49094deeed75", EventEnvelope(Ping(n)))
     }.runWith(sink)
 
@@ -47,12 +48,11 @@ trait NLPTWebServiceSocketTrait
           text.getStrictText
       }
       .mapConcat { x =>
-        println(s"received $x")
         List.empty[String]
       }
       .merge(source.collect {
         case EventDestinationSession(destination, event) if destination == sessionId =>
-          println(s"pass $destination $event")
+          logger.info(s"Accept event eventType=${event.kind} for destination=$destination")
           event
       })
       .collect {
@@ -63,22 +63,19 @@ trait NLPTWebServiceSocketTrait
           e.toJson.toString()
       }
       .map {
-        x => TextMessage(x)
+        event =>
+          logger.info(s"Push event=${event} to $sessionId=$sessionId")
+          TextMessage(event)
       }
   }
 
   abstract override def route: Route =
     path("websocket") {
-      println("websocket?")
       cookie("sessionId") { sessionId =>
-        println(s"websocket for session=$sessionId")
+        logger.info(s"Open websocket for session=$sessionId")
         handleWebSocketMessages(flow(sessionId.value))
       }
     } ~ super.route
-
-  //  abstract override def route: Route = pathPrefix("system") { request =>
-  //    (version.route ~ vocabularyStat.route) (request)
-  //  } ~ super.route
 }
 
 

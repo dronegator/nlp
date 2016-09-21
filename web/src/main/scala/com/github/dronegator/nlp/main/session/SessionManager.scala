@@ -1,57 +1,49 @@
 package com.github.dronegator.nlp.main.session
 
-import akka.actor.{Actor, ActorRefFactory, Props, Terminated}
-import akka.actor.Actor.Receive
-import akka.dispatch.sysmsg.Terminate
-import com.github.dronegator.nlp.main.session.Session.SessionMessage
-import com.github.dronegator.nlp.main.session.SessionManager.{CreateSession, SessionName}
-import com.github.dronegator.nlp.utils.{CFG, TypeActorRef}
+import akka.actor.{Actor, Props, Terminated}
+import com.github.dronegator.nlp.main.session.SessionManager.{CreateSession, SessionRef}
+import com.github.dronegator.nlp.main.session.SessionStorage.SessionMessage
+import com.github.dronegator.nlp.utils.CFG
+import com.github.dronegator.nlp.utils.typeactor._
 
 /**
-  * Created by cray on 9/18/16.
-  */
+ * Created by cray on 9/18/16.
+ */
 
 object SessionManager {
+
+  def props(cfg: CFG, sessionStorage: TypeProps[SessionMessage]): TypeProps[SessionManagerMessage] =
+    Props(new SessionManager(cfg, sessionStorage))
+
   trait SessionManagerMessage
 
-  case class CreateSession(name: String) extends SessionManagerMessage
+  case class CreateSession(name: SessionId) extends SessionManagerMessage
 
-  case class SessionName(name: String) extends SessionManagerMessage
-
-  def wrap(cfg: CFG)(implicit system: ActorRefFactory) =
-    TypeActorRef[SessionManagerMessage](system.actorOf(props(cfg)))
-
-  def wrap(cfg: CFG, name: String)(implicit system: ActorRefFactory) =
-    TypeActorRef[SessionManagerMessage](system.actorOf(props(cfg), name))
-
-  def props(cfg: CFG): Props =
-    Props(new SessionManager(cfg))
+  case class SessionRef(name: SessionId, typeActorRef: TypeActorRef[SessionMessage]) extends SessionManagerMessage
 }
 
-class SessionManager(cfg: CFG) extends Actor {
+class SessionManager(cfg: CFG, sessionStorage: TypeProps[SessionMessage]) extends Actor {
   override def receive: Receive =
     receive(Map())
 
-  def receive(map: Map[String, TypeActorRef[SessionMessage]]): Receive = {
+  def receive(map: Map[SessionId, TypeActorRef[SessionMessage]]): Receive = {
     case CreateSession(name) =>
-        map.get(name) match {
-          case Some(actorRef) =>
-            println(s"session $name exists")
-            sender() ! SessionName(name)
+      map.get(name) match {
+        case Some(actorRef) =>
+          sender() ! SessionRef(name, actorRef)
 
-          case None =>
-            val actorRef = Session.wrap(cfg, name)
+        case None =>
+          val actorRef = context.actorOf(sessionStorage)
 
-            context.become(receive(map + (name -> actorRef)))
+          context.become(receive(map + (name -> actorRef)))
 
-            context.watch(actorRef.actorRef)
-            println(s"session $name is going to be created")
+          context.watch(actorRef)
 
-            sender() ! SessionName(name)
-        }
+          sender() ! SessionRef(name, actorRef)
+      }
 
     case Terminated(actorRef) =>
-      context.become(receive(map - actorRef.path.name))
+      context.become(receive(map - SessionId(actorRef.path.name)))
 
     case x =>
       println(x)
