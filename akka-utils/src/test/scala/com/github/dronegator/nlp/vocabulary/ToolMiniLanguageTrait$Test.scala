@@ -8,7 +8,7 @@ import com.github.dronegator.nlp.utils.stream._
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, duration}
+import scala.concurrent.{Await, ExecutionContext}
 
 /**
  * Created by cray on 9/23/16.
@@ -28,7 +28,7 @@ class ToolMiniLanguageTraitTest extends FlatSpec with Matchers {
     val advice = Flow[Token]
       .trace("an advice for")
       .mapConcat { x =>
-        (x to x + 5).filter(_ < 20)
+        (x to x + 2).filter(_ < 20) //.filter(_ % 2 == 0)
       }
 
     val concat = Sink.fold[List[Token], Token](List.empty[Token]){

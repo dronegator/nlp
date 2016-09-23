@@ -20,97 +20,115 @@ object ToolMiniLanguageTrait {
       import GraphDSL.Implicits._
       (advice) =>
 
-      val input = b.add {
-        Flow[Token]
-          .map { x => QueueMessageAdd(x): QueueMessage }
-      }
-
-      val priorityQueue = b.add {
-        Flow[QueueMessage]
-          .scan((Option.empty[Token], SortedSet.empty[(Int, Token)], Map.empty[Token, Int], false)) {
-            case ((_, queue, map, _), QueueMessageAdd(token)) =>
-              println(s"Add $token")
-              map.get(token) match {
-                case Some(priority) =>
-                  val newPriority = priority + 1
-                  (None, queue - ((priority, token)) + ((newPriority, token)), map + (token -> newPriority), false)
-
-                case None =>
-                  (None, queue + ((1, token)), map + (token -> 1), false)
-              }
-
-            case ((_, queue, map, _), QueueMessageGet) if queue.nonEmpty =>
-              println("Get token")
-              val firstKey@(_, token) = queue.firstKey
-              println(s"Give token=$token")
-
-              (Some(token), queue - firstKey, map - token, false)
-
-            case ((_, queue, map, _), QueueMessageGet) =>
-              println("Get token from empty queue")
-              (None, queue, map, true)
-          }
-          .takeWhile(!_._4)
-          .collect {
-            case (Some(token), _, _, _) =>
-              token
-          }
-      }
-
-      val broadcast1 = b.add {
-        Broadcast[Token](2)
-      }
-
-      val broadcast2 = b.add {
-        Broadcast[Token](2)
-      }
-
-      val merge1 = b.add {
-        Merge[Token](2)
-      }
-
-      val merge2 = b.add {
-        Merge[QueueMessage](3)
-      }
-
-      val unique = b.add {
-        Flow[Token]
-          .scan((Option.empty[Token], Set.empty[Token])) {
-            case ((_, set), token) if set.contains(token) =>
-              (Option.empty[Token], set)
-
-            case ((_, set), token) =>
-              (Some(token), set + token)
-
-          }
-          .collect {
-            case (Some(token), _) =>
-              println(s"into buffer = $token")
-              token
-          }
-      }
-
-        val buffer = b.add {
-          Flow[Token].buffer(100, OverflowStrategy.backpressure)
+        val input = b.add {
+          Flow[Token]
+            .map { x => QueueMessageAdd(x): QueueMessage }
         }
 
-        merge1 ~> input ~> merge2 ~> priorityQueue ~> broadcast2 ~> unique ~> broadcast1 ~> advice ~> buffer ~> merge1.in(0)
+        val priorityQueue = b.add {
+          Flow[QueueMessage]
+            .scan((Option.empty[Token], SortedSet.empty[(Int, Token)], Map.empty[Token, Int], false)) {
+              case ((_, queue, map, _), QueueMessageAdd(token)) =>
+                println(s"Add $token")
+                map.get(token) match {
+                  case Some(priority) =>
+                    val newPriority = priority - 1
+                    (None, queue - ((priority, token)) + ((newPriority, token)), map + (token -> newPriority), false)
 
-      broadcast2.out(1)
-        .buffer(100, OverflowStrategy.backpressure)
-        .map { x =>
-          println(s"feedback = $x")
-          QueueMessageGet
-        } ~>
-        merge2
+                  case None =>
+                    (None, queue + ((0, token)), map + (token -> 0), false)
+                }
 
-      Source.tick(1 second, 1 second, QueueMessageGet).map { x =>
-        println(s"get $x")
-        x
-      }
-        .take(1) ~> merge2
+              case ((_, queue, map, _), QueueMessageGet) if queue.nonEmpty =>
+                println("Get token")
+                val firstKey@(_, token) = queue.firstKey
+                println(s"Give token=$token")
 
-      FlowShape(merge1.in(1), broadcast1.out(1))
+                (Some(token), queue - firstKey, map - token, false)
+
+              case ((_, queue, map, _), QueueMessageGet) =>
+                println("Get token from empty queue")
+                (None, queue, map, true)
+            }
+            .map { x =>
+              println(x)
+              x
+            }
+            .takeWhile(!_._4)
+            .collect {
+              case (Some(token), _, _, _) =>
+                token
+            }
+        }
+
+        val branchOut = b.add {
+          Broadcast[Token](2)
+        }
+
+        val feedbackGet = b.add {
+          Broadcast[Token](2)
+        }
+
+        val mergeIn = b.add {
+          Merge[Token](2)
+        }
+
+        val mergeGet = b.add {
+          MergePreferred[QueueMessage](2)
+        }
+
+        val unique = b.add {
+          Flow[Token]
+            .scan((Option.empty[Token], Set.empty[Token])) {
+              case ((_, set), token) if set.contains(token) =>
+                (Option.empty[Token], set)
+
+              case ((_, set), token) =>
+                (Some(token), set + token)
+
+            }
+            .collect {
+              case (Some(token), _) =>
+                println(s"into buffer = $token")
+                token
+            }
+        }
+
+        val buffer = b.add {
+          Flow[Token].buffer(3, OverflowStrategy.backpressure)
+        }
+
+        mergeIn ~> input ~> mergeGet.preferred
+
+        val log1 = Flow[Token].
+          map { x =>
+            println(s"in bufer $x")
+            x
+          }
+
+        val log2 = Flow[Token].
+          map { x =>
+            println(s"out bufer $x")
+            x
+          }
+
+        mergeGet ~> priorityQueue ~> feedbackGet ~> unique ~> branchOut ~> advice ~> log1 ~> buffer ~> log2 ~> mergeIn
+
+        feedbackGet.out(1)
+          .buffer(1, OverflowStrategy.backpressure)
+          .map { x =>
+            println(s"feedback = $x")
+            QueueMessageGet
+          } ~> mergeGet
+
+        Source.tick(1 second, 100 millisecond, QueueMessageGet)
+          .map { x =>
+            println(s"get $x")
+            x
+          }
+          .take(1000) ~> mergeGet
+
+        FlowShape(mergeIn.in(1), branchOut.out(1))
     }
 
   sealed trait QueueMessage
