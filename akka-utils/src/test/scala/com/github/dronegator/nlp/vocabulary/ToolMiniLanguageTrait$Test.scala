@@ -28,7 +28,7 @@ class ToolMiniLanguageTraitTest extends FlatSpec with Matchers {
     val advice = Flow[Token]
       .trace("an advice for")
       .map { x =>
-        (x to x + 200).filter(_ < 150).toIterator //.filter(_ % 2 == 0)
+        (x to x + 200).filter(_ < 150).toIterator.filter(_ % 2 == 0)
       }
 
     val concat = Sink.fold[List[Token], Token](List.empty[Token]){
