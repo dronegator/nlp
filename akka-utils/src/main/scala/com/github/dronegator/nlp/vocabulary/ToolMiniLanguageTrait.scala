@@ -42,7 +42,7 @@ object ToolMiniLanguageTrait {
               case ((_, queue, map, _), QueueMessageGet) if queue.nonEmpty =>
                 println("Get token")
                 val firstKey@(_, token) = queue.firstKey
-                println(s"Give token=$token")
+                println(s"Give token=$token, size=${queue.size}")
 
                 (Some(token), queue - firstKey, map - token, false)
 
@@ -95,10 +95,18 @@ object ToolMiniLanguageTrait {
         }
 
         val buffer = b.add {
-          Flow[Token].buffer(3, OverflowStrategy.backpressure)
+          //Flow[Token].buffer(4, OverflowStrategy.backpressure)
+          Flow[Token]
+            .conflateWithSeed(List(_))(_ :+ _)
+            .map { x =>
+              println(s"buffer size=${x.length}")
+              x
+            }
+            .expand { x =>
+              x.toIterator
+            }
         }
 
-        mergeIn ~> input ~> mergeGet.preferred
 
         val log1 = Flow[Token].
           map { x =>
@@ -112,6 +120,8 @@ object ToolMiniLanguageTrait {
             x
           }
 
+        mergeIn ~> input ~> mergeGet.preferred
+
         mergeGet ~> priorityQueue ~> feedbackGet ~> unique ~> branchOut ~> advice ~> log1 ~> buffer ~> log2 ~> mergeIn
 
         feedbackGet.out(1)
@@ -121,12 +131,12 @@ object ToolMiniLanguageTrait {
             QueueMessageGet
           } ~> mergeGet
 
-        Source.tick(1 second, 100 millisecond, QueueMessageGet)
+        Source.tick(3 second, 100 millisecond, QueueMessageGet)
           .map { x =>
             println(s"get $x")
             x
           }
-          .take(1000) ~> mergeGet
+          .take(1) ~> mergeGet
 
         FlowShape(mergeIn.in(1), branchOut.out(1))
     }

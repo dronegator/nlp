@@ -28,7 +28,7 @@ class ToolMiniLanguageTraitTest extends FlatSpec with Matchers {
     val advice = Flow[Token]
       .trace("an advice for")
       .mapConcat { x =>
-        (x to x + 2).filter(_ < 20) //.filter(_ % 2 == 0)
+        (x to x + 20).filter(_ < 1020) //.filter(_ % 2 == 0)
       }
 
     val concat = Sink.fold[List[Token], Token](List.empty[Token]){
@@ -42,7 +42,7 @@ class ToolMiniLanguageTraitTest extends FlatSpec with Matchers {
   }
 
   "traverseComponent" should "complete with success" in new mocks {
-    val list = Await.result(tokens.via(flow).runWith(concat), 10 seconds)
+    val list = Await.result(tokens.via(flow).runWith(concat), 20 seconds)
     println(list)
   }
 }
