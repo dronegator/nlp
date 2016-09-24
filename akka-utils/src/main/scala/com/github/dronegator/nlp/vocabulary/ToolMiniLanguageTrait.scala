@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 
 object ToolMiniLanguageTrait {
 
-  def traversalComponent[U](advice: Flow[Token, Token, U]) =
+  def traversalComponent[U](advice: Flow[Token, Iterator[Token], U]) =
     GraphDSL.create(advice) { implicit b =>
       import GraphDSL.Implicits._
       (advice) =>
@@ -95,20 +95,23 @@ object ToolMiniLanguageTrait {
         }
 
         val buffer = b.add {
-          //Flow[Token].buffer(4, OverflowStrategy.backpressure)
-          Flow[Token]
-            .conflateWithSeed(List(_))(_ :+ _)
-            .map { x =>
-              println(s"buffer size=${x.length}")
-              x
-            }
+          //          Flow[Token].buffer(4, OverflowStrategy.backpressure)
+          //          Flow[Token]
+          //            .conflateWithSeed(List(_))(_ :+ _)
+          //            .map { x =>
+          //              println(s"buffer size=${x.length}")
+          //              x
+          //            }
+          Flow[Iterator[Token]]
+            .buffer(1, OverflowStrategy.backpressure)
             .expand { x =>
               x.toIterator
             }
+
         }
 
 
-        val log1 = Flow[Token].
+        val log1 = Flow[Iterator[Token]].
           map { x =>
             println(s"in bufer $x")
             x
@@ -119,6 +122,7 @@ object ToolMiniLanguageTrait {
             println(s"out bufer $x")
             x
           }
+
 
         mergeIn ~> input ~> mergeGet.preferred
 

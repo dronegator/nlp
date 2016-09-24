@@ -22,13 +22,13 @@ class ToolMiniLanguageTraitTest extends FlatSpec with Matchers {
 
     lazy implicit val mat = ActorMaterializer()
 
-    val tokens = Source.fromIterator(() => Iterator.range(1, 10))
+    val tokens = Source.fromIterator(() => Iterator.range(1, 200))
       .trace("input tokens:")
 
     val advice = Flow[Token]
       .trace("an advice for")
-      .mapConcat { x =>
-        (x to x + 20).filter(_ < 1020) //.filter(_ % 2 == 0)
+      .map { x =>
+        (x to x + 200).filter(_ < 150).toIterator //.filter(_ % 2 == 0)
       }
 
     val concat = Sink.fold[List[Token], Token](List.empty[Token]){
