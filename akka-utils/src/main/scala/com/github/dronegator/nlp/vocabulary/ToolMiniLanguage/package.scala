@@ -11,6 +11,9 @@ package object ToolMiniLanguage {
 
   case class QueueMessageAdd(token: Token) extends QueueMessage
 
+  implicit class VocabularyToolsAkka(val vocabulary: Vocabulary) extends ToolMiniLanguageTrait
+
   case object QueueMessageGet extends QueueMessage
+
 
 }

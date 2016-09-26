@@ -4,15 +4,16 @@ import java.io.File
 
 import akka.stream.scaladsl.Source
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenPreDef}
+import com.github.dronegator.nlp.trace._
+import com.github.dronegator.nlp.utils.Match._
 import com.github.dronegator.nlp.utils._
-import Match._
-import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyHint, VocabularyImpl, VocabularyImplStored}
+import com.github.dronegator.nlp.vocabulary.ToolMiniLanguage.VocabularyToolsAkka
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.{VocabularyHintTools, VocabularyRawTools, VocabularyTools}
+import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyHint, VocabularyImpl, VocabularyImplStored}
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
 import jline.console.completer.StringsCompleter
 import jline.console.history.FileHistory
-import com.github.dronegator.nlp.trace._
 
 import scala.collection.JavaConverters._
 
@@ -53,9 +54,9 @@ object NLPTReplMain
 
   import SubCommand._
 
-  sealed abstract class Command(val help: String, val subcommands: Set[SubCommand]) 
-    extends EnumEntry 
-    with Lowercase 
+  sealed abstract class Command(val help: String, val subcommands: Set[SubCommand])
+    extends EnumEntry
+    with Lowercase
     with Command.Extractor
 
   object Command extends Enum[Command] {
@@ -100,6 +101,8 @@ object NLPTReplMain
     case object Keywords extends Command("Select keywords from a phrase", Set())
 
     case object Store extends Command("Store indexes to a file", Set())
+
+    case object MiniLanguage extends Command("Try Mini Language tool", Set())
 
     def unapply(name: String): Option[(Command, String, Set[SubCommand])] = withNameOption(name) map {
       case Command(x, y, z) => (x, y, z)
@@ -151,10 +154,10 @@ object NLPTReplMain
   def exec(args: List[String]) = args match {
     case Store() :: OptFile(file) =>
       println("== Indexes are being stored")
-      save(file getOrElse new File(fileIn),  VocabularyImplStored(vocabulary))
-          .time{ t =>
-            logger.info(s"Vocabulary has stored in time = $t ")
-          }
+      save(file getOrElse new File(fileIn), VocabularyImplStored(vocabulary))
+        .time { t =>
+          logger.info(s"Vocabulary has stored in time = $t ")
+        }
 
     case Command(command, help, subcommands) :: Nil =>
       println(
@@ -238,6 +241,15 @@ object NLPTReplMain
            | - consequent correlation size = ${vocabulary.map1ToNextPhrase.size}
            | - inner correlation size = ${vocabulary.map1ToTheSamePhrase.size}
          """.stripMargin)
+
+
+    case MiniLanguage() :: words =>
+      val tokens = vocabulary.auxiliary ++ words.flatMap(vocabulary.tokenMap(_))
+
+      vocabulary.miniLanguageKeywords(tokens).runForeach { x =>
+        println(s"outcome, word = ${vocabulary.wordMap.getOrElse(x, "*UNKNOWN*")}")
+      }
+
 
     case Lookup() :: word1 :: Nil =>
       println(s"1 $word1:")
@@ -431,7 +443,7 @@ object NLPTReplMain
           }
       }
 
-    case  Expand() :: words =>
+    case Expand() :: words =>
       println("We suggest to expande the phrase with a few words:")
       vocabulary.suggestForTheSame(vocabulary.tokenize(words)).
         flatMap {
@@ -484,7 +496,4 @@ object NLPTReplMain
 
   override def tokenToDump(token: Token): String =
     tokenToWordString(token)
-
-  //      tokenToString(token)
-
 }

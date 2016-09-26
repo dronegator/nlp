@@ -8,7 +8,6 @@ package com.github.dronegator.nlp.vocabulary.ToolMiniLanguage
 import akka.stream.scaladsl._
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.vocabulary.Vocabulary
-import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyTools
 import com.typesafe.scalalogging.LazyLogging
 
 object ToolMiniLanguageTrait extends LazyLogging {
@@ -16,13 +15,18 @@ object ToolMiniLanguageTrait extends LazyLogging {
 }
 
 trait ToolMiniLanguageTrait {
-  this: VocabularyTools =>
+  //this: VocabularyTools =>
 
   def vocabulary: Vocabulary
 
   def miniLanguage(keywords: Set[Token]): Vocabulary = ???
 
-  def miniLanguageKeywords(keywords: Set[Token]) =
-    Source.fromIterator(() => keywords.toIterator)
+  def miniLanguageKeywords(tokens: Set[Token]) = {
+    val adviceFlow = AdviceFlow(vocabulary, tokens)
 
+    val traversalComponent = TraversalComponent(adviceFlow)
+
+    Source.fromIterator(() => tokens.toIterator)
+      .via(traversalComponent)
+  }
 }
