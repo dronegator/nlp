@@ -39,10 +39,10 @@ object PriorityQueue extends LazyLogging {
             logger.debug("Get token from empty queue")
             (None, queue, map, true)
         }
-        .map { x =>
-          logger.debug(s"$x")
-          x
-        }
+//        .map { x =>
+//          logger.debug(s"$x")
+//          x
+//        }
         .takeWhile(!_._4)
         .collect {
           case (Some(token), _, _, _) =>

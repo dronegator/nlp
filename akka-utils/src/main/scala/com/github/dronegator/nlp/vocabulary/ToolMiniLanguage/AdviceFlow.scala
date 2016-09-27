@@ -6,96 +6,103 @@ import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.vocabulary.Vocabulary
 import com.typesafe.scalalogging.LazyLogging
 
+import scala.collection.immutable.TreeMap
+
 /**
  * Created by cray on 9/26/16.
  */
 object AdviceFlow extends LazyLogging {
   type StatementId = Int
+  type StatementTokens = Set[Token]
 
-  def apply(vocabulary: Vocabulary, tokens: Set[Token]): Flow[Token, Iterator[Token], NotUsed] = {
-    val statementsIn = vocabulary.statements
+  case class AdviceFlowState(id2Statment: Map[StatementId, StatementTokens],
+                             token2Statement: Map[Token, Set[StatementId]],
+                             size2Statement: TreeMap[Int, Set[StatementId]],
+                             token: Set[Token],
+                             nextStatementId: StatementId)
+
+  def state(vocabulary: Vocabulary) =
+    vocabulary.statements
       .filter { x =>
         x.length > 5 && x.length < 15
       }
+      .foldLeft(AdviceFlowState(Map(), Map(), TreeMap(), Set(), 1)) {
+        case (af, statement) =>
+          val statementId = af.nextStatementId
+          val statementTokens = statement.toSet
+          AdviceFlowState(
+            id2Statment = af.id2Statment + (statementId -> statementTokens),
+            statementTokens
+              .foldLeft(af.token2Statement) {
+                case (map, token) =>
+                  map + {
+                    token -> (map.getOrElse(token, Set()) + statementId)
+                  }
+              },
+            af.size2Statement + (statementTokens.size -> (af.size2Statement.getOrElse(statementTokens.size, Set()) + statementId)),
+            af.token,
+            nextStatementId = af.nextStatementId + 1
+          )
+      }
 
-    val statements = calcRest(statementsIn, tokens)
-
-    println(s"size = ${statements.size} ${statements.values.flatten.size}")
-
-    val token2Statement =
-      statementsIn
-        .flatMap { statement =>
-          statement
-            .map {
-              _ -> statement
-            }
-
-        }
-        .groupBy(_._1)
-        .map {
-          case (x, ys) =>
-            x -> ys.map(_._2)
-        }
-
-    val state =
-      AdviceFlowState(token2Statement, statements, tokens)
+  def apply(vocabulary: Vocabulary, tokens: Set[Token]): Flow[Token, Iterator[Token], NotUsed] = {
 
     Flow[Token]
-      .scan((Option.empty[Iterator[Token]], state)) {
-        case ((_, af@AdviceFlowState(token2Statements, _, _)), token) =>
+      .scan((Option.empty[Iterator[(Token, Int)]], state(vocabulary))) {
+        case ((_, af), token) =>
           try {
+            val changedStatement = af.token2Statement.getOrElse(token, Set())
 
-            val tokens = af.token + token
-
-            af.nToStatement.keys.toList.sorted.headOption match {
-              case Some(n) =>
-                println(s"Try ${vocabulary.wordMap(token)} n=$n")
-                val nToStatement = calcRest(af.nToStatement.values.flatten.toList, tokens)
-
-                //println(s"statement(1) = ${nToStatement(1)}")
-                println(s"size = ${nToStatement.size}")
-                val iterator = nToStatement.keys.toList.sorted.headOption match {
-                  case Some(x) =>
-                    nToStatement(x)
-                      .flatMap { statement =>
-                        statement.filterNot(tokens)
-                      }
-                      .groupBy(identity)
-                      .map {
-                        case (token, tokens) =>
-                          token -> tokens.length
-                      }
-                      .toList
-                      .sortBy {
-                        -_._2
-                      }
-                      .map(_._1)
-                      .map { x =>
-                        println(s"Adviced word == $x -> ${vocabulary.wordMap(x)}")
-                        x
-                      }
-                      .toIterator
-                  case None =>
-                    Iterator.empty
-
+            val id2Statement = af.id2Statment ++
+              changedStatement
+                .toIterator
+                .map { statementId =>
+                  statementId -> (af.id2Statment.getOrElse(statementId, Set()) - token)
                 }
-                (Some(iterator), af.copy(nToStatement = nToStatement, token = tokens))
+                .toMap
 
-              case None =>
-                (None, af.copy(token = tokens))
+            val size2Statement = changedStatement.toIterator
+              .foldLeft(af.size2Statement) {
+                case (size2Statement, statementId) =>
+                  val size = af.id2Statment.getOrElse(statementId, Set()).size
+
+                  size2Statement +
+                    (size -> (size2Statement.getOrElse(size, Set()) - statementId)) +
+                    ((size - 1) -> (size2Statement.getOrElse(size, Set()) + statementId))
+              } - 0
+
+            val nextTokens = size2Statement.headOption.map {
+              case (size, statements) =>
+                statements
+                  .toIterator
+                  .flatMap { statementId =>
+                    id2Statement.getOrElse(statementId, Set())
+                  }
+                  .foldLeft(Map[Token, Int]()) {
+                    case (map, token) =>
+                      map + (token -> (map.getOrElse(token, 0) + 1))
+                  }
+                  .toList
+                  .sortBy(_._2)
+                  .toIterator
             }
+
+            (nextTokens, af.copy(
+              id2Statment = id2Statement,
+              token2Statement = af.token2Statement - token,
+              size2Statement = size2Statement,
+              token = af.token + token
+            ))
           }
           catch {
             case th: Throwable =>
-              println(af.nToStatement.keys)
               th.printStackTrace()
               throw th
           }
-        //          (Some(Iterator.single(token)), af)
       }
       .collect {
         case (Some(x), _) =>
-          x
+          x.map(_._1)
       }
   }
 
@@ -105,10 +112,6 @@ object AdviceFlow extends LazyLogging {
         statement.filterNot(tokens).distinct.length
       }
       .filter(_._1 > 0)
-
-  case class AdviceFlowState(token2Statements: Map[Token, List[Statement]],
-                             nToStatement: Map[Int, List[Statement]],
-                             token: Set[Token])
 
 
 }
