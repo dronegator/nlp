@@ -249,6 +249,14 @@ object NLPTReplMain
       vocabulary.miniLanguageKeywords(tokens).runForeach { x =>
         println(s"outcome, word = ${vocabulary.wordMap.getOrElse(x, "*UNKNOWN*")}")
       }
+        .map { x =>
+          println(s"finished with $x")
+      }
+        .recover {
+          case th: Throwable =>
+            th.printStackTrace()
+        }
+
 
 
     case Lookup() :: word1 :: Nil =>
