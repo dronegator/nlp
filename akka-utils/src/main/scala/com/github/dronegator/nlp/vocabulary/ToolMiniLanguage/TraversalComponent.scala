@@ -1,16 +1,19 @@
 package com.github.dronegator.nlp.vocabulary.ToolMiniLanguage
 
 import akka.stream.scaladsl._
-import akka.stream.{FlowShape, OverflowStrategy}
+import akka.stream.{FlowShape, KillSwitches, OverflowStrategy}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.typesafe.scalalogging.LazyLogging
 
+import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * Created by cray on 9/25/16.
  */
 object TraversalComponent extends LazyLogging {
+  lazy val killSwitch = KillSwitches.shared("qq")
+
   def apply[U](advice: Flow[Token, Iterator[Token], U]) =
-    GraphDSL.create(advice) { implicit b =>
+    Flow.fromGraph(GraphDSL.create(advice) { implicit b =>
       import GraphDSL.Implicits._
       (advice) =>
 
@@ -59,7 +62,7 @@ object TraversalComponent extends LazyLogging {
         }
 
         val priority = b.add {
-          PriorityQueue()
+          PriorityQueue(killSwitch)
         }
 
         val init = b.add {
@@ -75,6 +78,17 @@ object TraversalComponent extends LazyLogging {
         feedbackMerge <~ feedbackLoop <~ advice <~ feedbackBranch
 
         FlowShape(init.in, feedbackBranch.out(1))
+    }).watchTermination() { (left, right) =>
+      right.onComplete { _ =>
+        killSwitch.shutdown()
+      }
+
+      right.onFailure {
+        case th =>
+          killSwitch.abort(th)
+      }
+
+      left
     }
 
 

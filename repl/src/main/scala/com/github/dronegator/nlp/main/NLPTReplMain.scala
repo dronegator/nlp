@@ -245,12 +245,12 @@ object NLPTReplMain
          """.stripMargin)
 
 
-    case MiniLanguage() :: words =>
+    case MiniLanguage() :: size :: words =>
       val tokens = Set(PStart.value, PEnd.value, TokenPreDef.DEOP.value, TokenPreDef.DEOW.value) ++
         /*vocabulary.auxiliary ++ */ words.flatMap(vocabulary.tokenMap(_))
 
       vocabulary.miniLanguageKeywords(tokens)
-        .take(200)
+        .take(size.toInt)
         .map { x =>
           println(s"outcome, word = ${vocabulary.wordMap.getOrElse(x, "*UNKNOWN*")}")
           x
@@ -272,7 +272,14 @@ object NLPTReplMain
             .filterNot(_.exists(!xs(_)))
             .filter(_.size > 7)
             .map { x =>
-              println(s"phrase = ${x.size} ${vocabulary.untokenize(x)}")
+              val keywords = vocabulary.keywords(x)
+                .collect {
+                  case (k, (p, _, _)) if p > 0 =>
+                    k
+                }
+                .flatMap(vocabulary.wordMap.get).mkString(" ")
+
+              println(s"phrase = ${x.size} ($keywords) ${vocabulary.untokenize(x)}")
             }
 
         }

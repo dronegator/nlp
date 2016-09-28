@@ -1,7 +1,7 @@
 package com.github.dronegator.nlp.vocabulary.ToolMiniLanguage
 
 import akka.stream.scaladsl._
-import akka.stream.{FlowShape, OverflowStrategy}
+import akka.stream.{FlowShape, OverflowStrategy, SharedKillSwitch}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.typesafe.scalalogging.LazyLogging
 
@@ -11,7 +11,7 @@ import scala.collection.SortedSet
  * Created by cray on 9/25/16.
  */
 object PriorityQueue extends LazyLogging {
-  lazy val priorityQueue = GraphDSL.create() { implicit b =>
+  def priorityQueue(killSwitch: SharedKillSwitch) = GraphDSL.create() { implicit b =>
     import GraphDSL.Implicits._
 
     val priorityQueue = b.add {
@@ -67,14 +67,14 @@ object PriorityQueue extends LazyLogging {
         }
     }
 
-    feedbackMerge ~> priorityQueue ~> feedbackBranch
+    feedbackMerge ~> killSwitch.flow[QueueMessage] ~> priorityQueue ~> feedbackBranch
 
     feedbackMerge <~ feedbackLoop <~ feedbackBranch
 
     FlowShape(feedbackMerge.preferred, feedbackBranch.out(1))
   }
 
-  def apply() =
-    priorityQueue
+  def apply(killSwitch: SharedKillSwitch) =
+    priorityQueue(killSwitch)
 
 }
