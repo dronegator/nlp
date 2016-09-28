@@ -2,11 +2,13 @@ package com.github.dronegator.nlp.main
 
 import java.io.File
 
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Sink, Source}
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{PEnd, PStart}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenPreDef}
 import com.github.dronegator.nlp.trace._
 import com.github.dronegator.nlp.utils.Match._
 import com.github.dronegator.nlp.utils._
+import com.github.dronegator.nlp.utils.concurrent.Zukunft
 import com.github.dronegator.nlp.vocabulary.ToolMiniLanguage.VocabularyToolsAkka
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.{VocabularyHintTools, VocabularyRawTools, VocabularyTools}
 import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyHint, VocabularyImpl, VocabularyImplStored}
@@ -18,15 +20,15 @@ import jline.console.history.FileHistory
 import scala.collection.JavaConverters._
 
 /**
- * Created by cray on 8/17/16.
- */
+  * Created by cray on 8/17/16.
+  */
 
 object NLPTReplMain
   extends App
-  with NLPTAppPartial
-  with MainTools
-  with Concurent
-  with DumpTools {
+    with NLPTAppPartial
+    with MainTools
+    with Concurent
+    with DumpTools {
   lazy val cfg: CFG = CFG()
 
   sealed trait SubCommand extends EnumEntry with Lowercase with SubCommand.Overall
@@ -56,8 +58,8 @@ object NLPTReplMain
 
   sealed abstract class Command(val help: String, val subcommands: Set[SubCommand])
     extends EnumEntry
-    with Lowercase
-    with Command.Extractor
+      with Lowercase
+      with Command.Extractor
 
   object Command extends Enum[Command] {
     override def values: Seq[Command] = findValues
@@ -244,19 +246,41 @@ object NLPTReplMain
 
 
     case MiniLanguage() :: words =>
-      val tokens = vocabulary.auxiliary ++ words.flatMap(vocabulary.tokenMap(_))
+      val tokens = Set(PStart.value, PEnd.value, TokenPreDef.DEOP.value, TokenPreDef.DEOW.value) ++
+        /*vocabulary.auxiliary ++ */ words.flatMap(vocabulary.tokenMap(_))
 
-      vocabulary.miniLanguageKeywords(tokens).runForeach { x =>
-        println(s"outcome, word = ${vocabulary.wordMap.getOrElse(x, "*UNKNOWN*")}")
-      }
+      vocabulary.miniLanguageKeywords(tokens)
+        .take(200)
         .map { x =>
-          println(s"finished with $x")
-      }
+          println(s"outcome, word = ${vocabulary.wordMap.getOrElse(x, "*UNKNOWN*")}")
+          x
+        }
+        .runWith(Sink.seq)
+        .map(_.toSet)
+        .map { xs =>
+          println(s"vocabulary=${xs.flatMap(vocabulary.wordMap.get(_)).mkString(" ")}")
+          println(s"vocabulary size=${xs.size}")
+          xs
+            .flatMap(vocabulary.wordMap.get(_))
+            .toList
+            .sorted
+            .foreach { x =>
+              println(s"word=${x}")
+            }
+
+          vocabulary.statements
+            .filterNot(_.exists(!xs(_)))
+            .filter(_.size > 7)
+            .map { x =>
+              println(s"phrase = ${x.size} ${vocabulary.untokenize(x)}")
+            }
+
+        }
         .recover {
           case th: Throwable =>
             th.printStackTrace()
         }
-
+        .await
 
 
     case Lookup() :: word1 :: Nil =>
@@ -488,8 +512,8 @@ object NLPTReplMain
         case Command(command, help, subcommands) =>
           println(
             s""" >> ${command} ${subcommands mkString("[", " | ", "]")}
-               |    $help
-               |    """.stripMargin)
+                |    $help
+                |    """.stripMargin)
       }
   }
 
