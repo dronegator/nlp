@@ -279,7 +279,7 @@ object NLPTReplMain
                 }
                 .flatMap(vocabulary.wordMap.get).mkString(" ")
 
-              println(s"phrase = ${x.size} ($keywords) ${vocabulary.untokenize(x)}")
+              println(s"phrase = ${x.size} (${keywords.mkString("-")}) ${vocabulary.untokenize(x)}")
             }
 
         }

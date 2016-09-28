@@ -1,21 +1,20 @@
 package com.github.dronegator.nlp.vocabulary.ToolMiniLanguage
 
 import akka.stream.scaladsl._
-import akka.stream.{FlowShape, KillSwitches, OverflowStrategy}
+import akka.stream.{FlowShape, OverflowStrategy}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.ExecutionContext.Implicits.global
-/**
- * Created by cray on 9/25/16.
- */
-object TraversalComponent extends LazyLogging {
-  lazy val killSwitch = KillSwitches.shared("qq")
 
+/**
+  * Created by cray on 9/25/16.
+  */
+object TraversalComponent extends LazyLogging {
   def apply[U](advice: Flow[Token, Iterator[Token], U]) =
-    Flow.fromGraph(GraphDSL.create(advice) { implicit b =>
+    Flow.fromGraph(GraphDSL.create(advice, PriorityQueue())(Keep.both) { implicit b =>
       import GraphDSL.Implicits._
-      (advice) =>
+      (advice, priority) =>
 
         val feedbackBranch = b.add {
           Broadcast[Token](2)
@@ -61,15 +60,11 @@ object TraversalComponent extends LazyLogging {
             }
         }
 
-        val priority = b.add {
-          PriorityQueue(killSwitch)
-        }
-
         val init = b.add {
           Flow[Token]
-            .map[QueueMessage]{
-              QueueMessageAdd(_)
-            }
+            .map[QueueMessage] {
+            QueueMessageAdd(_)
+          }
             .concat(Source.single[QueueMessage](QueueMessageGet))
         }
 
@@ -78,17 +73,19 @@ object TraversalComponent extends LazyLogging {
         feedbackMerge <~ feedbackLoop <~ advice <~ feedbackBranch
 
         FlowShape(init.in, feedbackBranch.out(1))
-    }).watchTermination() { (left, right) =>
-      right.onComplete { _ =>
-        killSwitch.shutdown()
-      }
+    }).watchTermination() {
+      case ((left, killSwitch), right) =>
 
-      right.onFailure {
-        case th =>
-          killSwitch.abort(th)
-      }
+        right.onComplete { _ =>
+          killSwitch.shutdown()
+        }
 
-      left
+        right.onFailure {
+          case th =>
+            killSwitch.abort(th)
+        }
+
+        left
     }
 
 
