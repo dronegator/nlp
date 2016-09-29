@@ -352,6 +352,7 @@ object NLPTReplMain
       }
 
       val statement = vocabulary.tokenize(words)
+      println(statement)
 
       val keywords: Set[Token] = {
         val keywords: Set[Token] =

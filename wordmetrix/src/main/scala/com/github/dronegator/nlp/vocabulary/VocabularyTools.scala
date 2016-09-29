@@ -3,20 +3,19 @@ package com.github.dronegator.nlp.vocabulary
 import com.github.dronegator.nlp.common._
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.main
-import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.RandomUtils._
-import com.github.dronegator.nlp.utils.IteratorStage
-import com.github.dronegator.nlp.utils.IteratorLog
+import com.github.dronegator.nlp.utils.{CFG, IteratorStage}
+
 /**
- * Created by cray on 8/28/16.
- */
+  * Created by cray on 8/28/16.
+  */
 object VocabularyTools {
   type Advices = List[(Statement, Probability)]
 
   implicit class VocabularyTools(val vocabulary: Vocabulary)
     extends main.NLPTAppPartial
-    with main.Combinators
-    with ToolAdviceTrait {
+      with main.Combinators
+      with ToolAdviceTrait {
 
     lazy val cfg = CFG()
 
@@ -26,11 +25,17 @@ object VocabularyTools {
       Iterator.
         iterate(tokens) {
           case tokens@_ :: Nil =>
-            tokens :+ vocabulary.map1ToNext(tokens).
-              choiceOption.getOrElse(TokenPreDef.PEnd.value)
+            tokens :+
+              vocabulary.map1ToNext(tokens)
+                .filterNot(_._2 == TokenPreDef.OtherWord.value)
+                .choiceOption.getOrElse(TokenPreDef.PEnd.value)
 
           case tokens =>
-            tokens :+ vocabulary.map2ToNext(tokens.takeRight(2)).choiceOption.getOrElse(TokenPreDef.PEnd.value)
+            tokens :+
+              vocabulary
+                .map2ToNext(tokens.takeRight(2))
+                .filterNot(_ == TokenPreDef.OtherWord.value)
+                .choiceOption.getOrElse(TokenPreDef.PEnd.value)
         }.
         takeWhile(x => !(x.lastOption contains TokenPreDef.PEnd.value)).
         take(20).
@@ -40,8 +45,11 @@ object VocabularyTools {
           Iterator.
             iterate(tokens) {
               case tokens@_ :: Nil =>
-                vocabulary.map1ToPrev(tokens).
-                  choiceOption.getOrElse(TokenPreDef.PStart.value) :: tokens
+                vocabulary
+                  .map1ToPrev(tokens)
+                  .filterNot(_._2 == TokenPreDef.OtherWord.value)
+                  .choiceOption
+                  .getOrElse(TokenPreDef.PStart.value) :: tokens
 
               case tokens@x :: y :: _ =>
                 vocabulary.map2ToPrev(x :: y :: Nil).choiceOption.getOrElse(TokenPreDef.PStart.value) :: tokens
@@ -61,12 +69,21 @@ object VocabularyTools {
     def continueStatement(statement: Statement): List[(Token, Probability)] = {
       statement.takeRight(2) match {
         case token1 :: Nil =>
-          vocabulary.map1ToNext.get(token1 :: Nil).getOrElse(List()).map(swap)
+          vocabulary
+            .map1ToNext
+            .get(token1 :: Nil)
+            .getOrElse(List())
+            .filterNot(_._2 == TokenPreDef.OtherWord.value)
+            .map(swap)
+
 
         case token1 :: token2 :: Nil =>
-          vocabulary.map2ToNext.get(token1 :: token2 :: Nil).
-            orElse(vocabulary.map1ToNext.get(token1 :: Nil)).
-            getOrElse(List()).map(swap)
+          vocabulary
+            .map2ToNext.get(token1 :: token2 :: Nil)
+            .orElse(vocabulary.map1ToNext.get(token1 :: Nil))
+            .getOrElse(List())
+            .filterNot(_._2 == TokenPreDef.OtherWord.value)
+            .map(swap)
       }
 
     }
@@ -87,12 +104,13 @@ object VocabularyTools {
 
             val (start, token :: end) = statement.splitAt(n + 1)
 
-            vocabulary.map2ToMiddle.get(x :: z :: Nil).
-              toList.
-              flatten.
-              takeWhile(_._2 != token).
-              take(4).
-              map {
+            vocabulary.map2ToMiddle.get(x :: z :: Nil)
+              .toList
+              .flatten
+              .filterNot(_._2 == TokenPreDef.OtherWord.value)
+              .takeWhile(_._2 != token)
+              .take(4)
+              .map {
                 case (d, advice) =>
                   (start ++ (advice :: end), d)
               } -> n
@@ -110,21 +128,22 @@ object VocabularyTools {
         token <- statement.drop(2).dropRight(1)
         (token, p) <- probabilitities.get(token).getOrElse(Nil)
       } yield {
-          (token, p)
-        }).
-        groupBy(_._1).
-        map{
+        (token, p)
+      })
+        .groupBy(_._1)
+        .map {
           case (token, values) =>
             token -> values.map(_._2).reduceOption(_ + _).getOrElse(0.0)
-        }.
-        toList.
-        sortBy(_._2)
+        }
+        .toList
+        .filterNot(_._1 == TokenPreDef.OtherWord.value)
+        .sortBy(_._2)
     }
 
     def probability(statement: Statement): Probability =
-      statement.
-        sliding(3).
-        map {
+      statement
+        .sliding(3)
+        .map {
           case Nil =>
             1.0
           case tokens@(_ :: Nil) =>
@@ -135,28 +154,26 @@ object VocabularyTools {
 
           case tokens =>
             vocabulary.pNGram3.get(tokens.take(3)).getOrElse(0.0)
-        }.
-        //trace("probability => ").
-        reduceOption(_ * _).
-        getOrElse(1.0)
+        }
+        .reduceOption(_ * _)
+        .getOrElse(1.0)
 
     def tokenize(s: String): Statement = {
-      val tokens = splitterTool(s).
-        component(tokenizerTool).
-        //scanLeft((vocabulary.tokenMap, 100000000, tokenizerTool.init._3))(tokenizerTool).
-        map {
+      val tokens = splitterTool(s)
+        .component(tokenizerTool)
+        .map {
           case (_, _, tokens) => tokens
-        }.
-        toList :+ List(TokenPreDef.TEnd.value)
+        }
+        .toList :+ List(TokenPreDef.TEnd.value)
 
-      val statement = tokens.
-        toIterator.
-        scanLeft(accumulatorTool.init)(accumulatorTool).
-        collectFirst {
+      val statement = tokens
+        .toIterator
+        .scanLeft(accumulatorTool.init)(accumulatorTool)
+        .collectFirst {
           case (_, Some(statement)) => statement
-        }.
-        toList.
-        flatten
+        }
+        .toList
+        .flatten
 
       statement
     }
@@ -182,7 +199,7 @@ object VocabularyTools {
 
   implicit class VocabularyHintTools(val vocabularyHint: VocabularyHint)
     extends main.NLPTAppPartial
-    with main.Combinators {
+      with main.Combinators {
     override def cfg: CFG = CFG()
 
     def keywords(statement: Statement) =
@@ -201,7 +218,7 @@ object VocabularyTools {
 
   implicit class VocabularyRawTools(vocabulary: VocabularyRaw)
     extends main.NLPTAppPartial
-    with main.Combinators {
+      with main.Combinators {
 
     val cfg = CFG()
 
@@ -223,7 +240,7 @@ object VocabularyTools {
           map + (key -> value)
       }.map {
         case (key, (nSense, nNonSense, nCount)) =>
-          key ->(nSense.toDouble / nCount, nNonSense.toDouble / nCount)
+          key -> (nSense.toDouble / nCount, nNonSense.toDouble / nCount)
       }
     }
 
@@ -244,14 +261,14 @@ object VocabularyTools {
         }.
         map {
           case (key, (wSense, wNonSense, wCommon, n)) =>
-            key ->(wSense / n, wNonSense / n, wCommon / n)
+            key -> (wSense / n, wNonSense / n, wCommon / n)
         }
     }
   }
 
   implicit class VocabularyToolsOutdated(vocabulary: Vocabulary with VocabularyImplOutdated)
     extends main.NLPTAppPartial
-    with main.Combinators {
+      with main.Combinators {
     val cfg = CFG()
 
     lazy val vocabularyHint: VocabularyHint = vocabulary
@@ -265,8 +282,8 @@ object VocabularyTools {
           flatMap(_._2)
         (p, nextToken) <- vocabulary.map1ToNextPhraseProjected.get(token1 :: Nil).toList.flatten
       } yield {
-          nextToken -> p
-        }).
+        nextToken -> p
+      }).
         foldLeft(Map[Token, Double]()) {
           case (map, (token, p)) =>
             map + (token -> (p + map.getOrElse(token, 0.0)))
@@ -280,4 +297,5 @@ object VocabularyTools {
         sortBy(_._2)
     }
   }
+
 }

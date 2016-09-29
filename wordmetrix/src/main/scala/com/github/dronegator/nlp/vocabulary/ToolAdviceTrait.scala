@@ -1,15 +1,14 @@
 package com.github.dronegator.nlp.vocabulary
 
 import com.github.dronegator.nlp.common.Probability
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{PEnd, PStart}
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{OtherWord, PEnd}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
-import com.github.dronegator.nlp.utils.Match
-import com.github.dronegator.nlp.vocabulary.VocabularyTools.{VocabularyTools, Advices}
 import com.github.dronegator.nlp.utils._
+import com.github.dronegator.nlp.vocabulary.VocabularyTools.{Advices, VocabularyTools}
 
 /**
- * Created by cray on 9/5/16.
- */
+  * Created by cray on 9/5/16.
+  */
 
 trait ToolAdviceTrait
   extends ToolAdviceOutdatedTrait {
@@ -127,6 +126,9 @@ trait ToolAdviceTrait
         .toIterator
         .filter {
           _._3 > uncertainty
+        }
+        .filterNot {
+          _._4.headOption contains OtherWord.value
         }
         .sortBy(-_._3)
         .distinctBy(_._4)

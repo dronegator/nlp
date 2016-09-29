@@ -1,20 +1,17 @@
 package com.github.dronegator.nlp.component.tokenizer
 
-import com.github.dronegator.nlp.component.{ComponentScan, ComponentState}
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{DEOP, DEOW, Reset}
+import com.github.dronegator.nlp.component.ComponentScan
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{DEOP, DEOW, OtherWord, Reset}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
-import com.github.dronegator.nlp.main.TagHints
 import com.github.dronegator.nlp.utils.CFG
-import com.github.dronegator.nlp.vocabulary.{VocabularyHint, VocabularyHintImpl}
-import com.softwaremill.tagging.@@
+import com.github.dronegator.nlp.vocabulary.VocabularyHint
 import enumeratum._
 import enumeratum.values.IntEnumEntry
 
 /**
- * Created by cray on 8/14/16.
- */
+  * Created by cray on 8/14/16.
+  */
 object Tokenizer {
-  //5  6     7           8
   type Token = Int
 
   type Word = String
@@ -62,13 +59,19 @@ object Tokenizer {
       val value = 6
     }
 
+    case object OtherWord extends TokenPreDef {
+      val value = 7
+    }
+
   }
 
-  val MapOfPredefs = Map("." -> (DEOP.value :: DEOW.value :: Nil))
+  val MapOfPredefs = Map(
+    "." -> (DEOP.value :: DEOW.value :: Nil),
+    "***" -> (OtherWord.value :: Nil))
 
 
   object StopWord {
-    val Punct = Set(".", ",", "'")
+    val Punct = Set(".", ",", "'", "***")
 
     def unapply(word: Word) =
     //word.find(x => !x.isLetterOrDigit).isDefined && word.find(x => !",.'".contains(x)).isDefined
