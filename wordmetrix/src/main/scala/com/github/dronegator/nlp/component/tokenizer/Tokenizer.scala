@@ -5,8 +5,7 @@ import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{DEOP
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.vocabulary.VocabularyHint
-import enumeratum._
-import enumeratum.values.IntEnumEntry
+import enumeratum.values.{IntEnum, IntEnumEntry}
 
 /**
   * Created by cray on 8/14/16.
@@ -28,7 +27,7 @@ object Tokenizer {
 
   sealed abstract class TokenPreDef extends IntEnumEntry
 
-  case object TokenPreDef extends values.IntEnum[TokenPreDef] {
+  case object TokenPreDef extends IntEnum[TokenPreDef] {
     override def values = findValues
 
     case object Empty extends TokenPreDef {

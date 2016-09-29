@@ -244,12 +244,14 @@ object NLPTReplMain
            | - inner correlation size = ${vocabulary.map1ToTheSamePhrase.size}
          """.stripMargin)
 
+    case MiniLanguage() :: Switches(switches, words) =>
+      val size = switches.getOrElse("size", "200").toInt
+      val file = switches.get("save").map(new File(_))
 
-    case MiniLanguage() :: size :: words =>
       val tokens = Set(PStart.value, PEnd.value, TokenPreDef.DEOP.value, TokenPreDef.DEOW.value) ++
         /*vocabulary.auxiliary ++ */ words.flatMap(vocabulary.tokenMap(_))
 
-      vocabulary.miniLanguageKeywords(tokens)
+      val selectedTokens = vocabulary.miniLanguageKeywords(tokens)
         .take(size.toInt)
         .map { x =>
           println(s"outcome, word = ${vocabulary.wordMap.getOrElse(x, "*UNKNOWN*")}")
@@ -260,13 +262,13 @@ object NLPTReplMain
         .map { xs =>
           println(s"vocabulary=${xs.flatMap(vocabulary.wordMap.get(_)).mkString(" ")}")
           println(s"vocabulary size=${xs.size}")
-          xs
-            .flatMap(vocabulary.wordMap.get(_))
-            .toList
-            .sorted
-            .foreach { x =>
-              println(s"word=${x}")
-            }
+          //          xs
+          //            .flatMap(vocabulary.wordMap.get(_))
+          //            .toList
+          //            .sorted
+          //            .foreach { x =>
+          //              println(s"word=${x}")
+          //            }
 
           vocabulary.statements
             .filterNot(_.exists(!xs(_)))
@@ -277,18 +279,29 @@ object NLPTReplMain
                   case (k, (p, _, _)) if p > 0 =>
                     k
                 }
-                .flatMap(vocabulary.wordMap.get).mkString(" ")
-
-              println(s"phrase = ${x.size} (${keywords.mkString("-")}) ${vocabulary.untokenize(x)}")
+                .flatMap(vocabulary.wordMap.get).mkString("-")
+              (keywords, x.size, vocabulary.untokenize(x))
             }
-
+            .sorted
+            .map {
+              case (keywords, size, phrase) =>
+                println(s"phrase = $size ($keywords) $phrase")
+            }
+          xs
         }
         .recover {
           case th: Throwable =>
             th.printStackTrace()
+            throw th
         }
         .await
 
+      file foreach { file =>
+        save(file, vocabulary.miniLanguage(selectedTokens))
+          .time { t =>
+            logger.info(s"Vocabulary has stored in time = $t ")
+          }
+      }
 
     case Lookup() :: word1 :: Nil =>
       println(s"1 $word1:")
