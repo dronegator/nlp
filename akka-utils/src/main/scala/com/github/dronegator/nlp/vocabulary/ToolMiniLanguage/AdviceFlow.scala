@@ -73,7 +73,7 @@ object AdviceFlow extends LazyLogging {
 
             val nextTokens = size2Statement.headOption.map {
               case (size, statements) =>
-                println(s"headOption=$size statements=${statements.size} token=$token word=${vocabulary.wordMap.getOrElse(token, "***")}")
+                logger.debug(s"headOption=$size statements=${statements.size} token=$token word=${vocabulary.wordMap.getOrElse(token, "***")}")
                 statements
                   .toIterator
                   .flatMap { statementId =>
