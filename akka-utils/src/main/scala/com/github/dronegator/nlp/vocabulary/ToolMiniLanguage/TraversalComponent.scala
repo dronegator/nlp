@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
   * Created by cray on 9/25/16.
   */
 object TraversalComponent extends LazyLogging {
-  def apply[U](advice: Flow[Token, Iterator[Token], U]) =
+  def apply[U](advice: Flow[Token, Iterator[(Token, Int)], U]) =
     Flow.fromGraph(GraphDSL.create(advice, PriorityQueue())(Keep.both) { implicit b =>
       import GraphDSL.Implicits._
       (advice, priority) =>
@@ -25,7 +25,7 @@ object TraversalComponent extends LazyLogging {
         }
 
         val feedbackLoop = b.add {
-          Flow[Iterator[Token]]
+          Flow[Iterator[(Token, Int)]]
             .buffer(1, OverflowStrategy.backpressure)
             .map { x =>
               logger.debug(s"Buffer in=$x")
@@ -38,8 +38,8 @@ object TraversalComponent extends LazyLogging {
               logger.debug(s"Buffer out=$x")
               x
             }
-            .map {
-              QueueMessageAdd(_)
+            .map { x =>
+              QueueMessageAdd(x._1, x._2)
             }
         }
 
@@ -62,9 +62,7 @@ object TraversalComponent extends LazyLogging {
 
         val init = b.add {
           Flow[Token]
-            .map[QueueMessage] {
-            QueueMessageAdd(_)
-          }
+            .map[QueueMessage](QueueMessageAdd(_, 10000000))
             .concat(Source.single[QueueMessage](QueueMessageGet))
         }
 

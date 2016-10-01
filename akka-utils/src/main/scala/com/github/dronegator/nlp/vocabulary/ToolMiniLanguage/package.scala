@@ -9,7 +9,7 @@ package object ToolMiniLanguage {
 
   sealed trait QueueMessage
 
-  case class QueueMessageAdd(token: Token) extends QueueMessage
+  case class QueueMessageAdd(token: Token, p: Int) extends QueueMessage
 
   implicit class VocabularyToolsAkka(val vocabulary: Vocabulary) extends ToolMiniLanguageTrait
 

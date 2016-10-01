@@ -17,36 +17,39 @@ object PriorityQueue extends LazyLogging {
 
       val priorityQueue = b.add {
         Flow[QueueMessage]
-          .scan((Option.empty[Token], SortedSet.empty[(Int, Token)], Map.empty[Token, Int], false)) {
-            case ((_, queue, map, _), QueueMessageAdd(token)) =>
+          .scan((Option.empty[Token], SortedSet.empty[(Int, Int, Token)], Map.empty[Token, (Int, Int)], 0, false)) {
+            case ((_, queue, map, nextNumber, _), QueueMessageAdd(token, p)) =>
               logger.debug(s"Add $token")
               map.get(token) match {
-                case Some(priority) =>
-                  val newPriority = priority - 1
-                  (None, queue - ((priority, token)) + ((newPriority, token)), map + (token -> newPriority), false)
+                case Some((priority, number)) =>
+                  val newPriority = priority - p
+                  (None, queue - ((priority, number, token)) + ((newPriority, number, token)), map + (token -> (newPriority, number)), nextNumber, false)
+
+                //                case None if queue.size < 10 =>
+                //                  (None, queue + ((-10, nextNumber, token)), map + (token -> (-10, nextNumber)), nextNumber - 1, false)
 
                 case None =>
-                  (None, queue + ((0, token)), map + (token -> 0), false)
+                  (None, queue + ((-p, nextNumber, token)), map + (token -> (-p, nextNumber)), nextNumber - 1, false)
               }
 
-            case ((_, queue, map, _), QueueMessageGet) if queue.nonEmpty =>
+            case ((_, queue, map, nextNumber, _), QueueMessageGet) if queue.nonEmpty =>
               logger.debug("Get token")
-              val firstKey@(_, token) = queue.firstKey
+              val firstKey@(_, _, token) = queue.firstKey
               logger.debug(s"Give token=$token, size=${queue.size}")
 
-              (Some(token), queue - firstKey, map - token, false)
+              (Some(token), queue - firstKey, map - token, nextNumber, false)
 
-            case ((_, queue, map, _), QueueMessageGet) =>
+            case ((_, queue, map, nextNumber, _), QueueMessageGet) =>
               logger.debug("Get token from empty queue")
-              (None, queue, map, true)
+              (None, queue, map, nextNumber, true)
           }
           //        .map { x =>
           //          logger.debug(s"$x")
           //          x
           //        }
-          .takeWhile(!_._4)
+          .takeWhile(!_._5)
           .collect {
-            case (Some(token), _, _, _) =>
+            case (Some(token), _, _, _, _) =>
               token
           }
       }
