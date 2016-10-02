@@ -66,6 +66,12 @@ package object utils {
     def sorted[B >: A](implicit ord: Ordering[B]) =
       iterator.toStream.sorted[B](ord).toIterator
 
+    def headOption =
+      if (iterator.hasNext)
+        Some(iterator.next())
+      else
+        None
+
     def distinctBy[B](f: A => B) =
       iterator.scanLeft((Map[B, A](), Option.empty[A])){
         case ((map, _), a) =>

@@ -25,8 +25,9 @@ object AdviceFlow extends LazyLogging {
   def state(vocabulary: Vocabulary) =
     vocabulary.statements
       .filter { x =>
-        x.length > 5 && x.length < 15
+        x.length > 4 && x.length < 15
       }
+      .distinct
       .foldLeft(AdviceFlowState(Map(), Map(), TreeMap(), Set(), 1, 0)) {
         case (af, statement) =>
           val statementId = af.nextStatementId
@@ -70,15 +71,17 @@ object AdviceFlow extends LazyLogging {
 
                   size2Statement +
                     (size -> (size2Statement.getOrElse(size, Set()) - statementId)) +
-                    ((size - 1) -> (size2Statement.getOrElse(size, Set()) + statementId))
+                    ((size - 1) -> (size2Statement.getOrElse(size - 1, Set()) + statementId))
               }
 
             val nextTokens = size2Statement.headOption.map {
               case (size, statements) =>
                 logger.debug(s"headOption=$size statements=${statements.size} token=$token word=${vocabulary.wordMap.getOrElse(token, "***")}")
+
                 statements
                   .toIterator
                   .flatMap { statementId =>
+                    //                    println(af.id2Statment(statementId).flatMap(x => vocabulary.wordMap.get(x)))
                     id2Statement.getOrElse(statementId, Set())
                   }
                   .foldLeft(Map[Token, Int]()) {

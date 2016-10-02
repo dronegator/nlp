@@ -9,7 +9,7 @@ import com.github.dronegator.nlp.trace._
 import com.github.dronegator.nlp.utils.Match._
 import com.github.dronegator.nlp.utils._
 import com.github.dronegator.nlp.utils.concurrent.Zukunft
-import com.github.dronegator.nlp.vocabulary.ToolMiniLanguage.VocabularyToolsAkka
+import com.github.dronegator.nlp.vocabulary.ToolMiniLanguage.{ExampleFlow, VocabularyToolsAkka}
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.{VocabularyHintTools, VocabularyRawTools, VocabularyTools}
 import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyHint, VocabularyImpl, VocabularyImplStored}
 import enumeratum.EnumEntry.Lowercase
@@ -249,7 +249,7 @@ object NLPTReplMain
       val file = switches.get("save").map(new File(_))
 
       val tokens = Set(PStart.value, PEnd.value, TokenPreDef.DEOP.value, TokenPreDef.DEOW.value) ++
-        /*vocabulary.auxiliary ++ */ words.flatMap(vocabulary.tokenMap(_))
+        vocabulary.auxiliary ++ vocabulary.sense ++ words.flatMap(vocabulary.tokenMap(_))
 
       val selectedTokens = vocabulary.miniLanguageKeywords(tokens)
         .take(size.toInt)
@@ -258,36 +258,57 @@ object NLPTReplMain
           x
         }
         .runWith(Sink.seq)
-        .map(_.toSet)
+        //.map(_.toSet)
         .map { xs =>
-          println(s"vocabulary=${xs.flatMap(vocabulary.wordMap.get(_)).mkString(" ")}")
-          println(s"vocabulary size=${xs.size}")
-          //          xs
-          //            .flatMap(vocabulary.wordMap.get(_))
-          //            .toList
-          //            .sorted
-          //            .foreach { x =>
-          //              println(s"word=${x}")
-          //            }
+        val xss = xs.toSet
+        println(s"vocabulary=${xss.flatMap(vocabulary.wordMap.get(_)).mkString(" ")}")
+        println(s"vocabulary size=${xss.size}")
+        //          xs
+        //            .flatMap(vocabulary.wordMap.get(_))
+        //            .toList
+        //            .sorted
+        //            .foreach { x =>
+        //              println(s"word=${x}")
+        //            }
 
-          vocabulary.statements
-            .filterNot(_.exists(!xs(_)))
-            .filter(_.size > 7)
-            .map { x =>
-              val keywords = vocabulary.keywords(x)
-                .collect {
-                  case (k, (p, _, _)) if p > 0 =>
-                    k
-                }
-                .flatMap(vocabulary.wordMap.get).mkString("-")
-              (keywords, x.size, vocabulary.untokenize(x))
-            }
-            .sorted
-            .map {
-              case (keywords, size, phrase) =>
-                println(s"phrase = $size ($keywords) $phrase")
-            }
-          xs
+        vocabulary.statements
+          .filterNot(_.exists(!xss(_)))
+          .filter(_.size > 7)
+          .map { x =>
+            val keywords = vocabulary.keywords(x)
+              .collect {
+                case (k, (p, _, _)) if p > 0 =>
+                  k
+              }
+              .flatMap(vocabulary.wordMap.get).mkString("-")
+            (keywords, x.size, vocabulary.untokenize(x))
+          }
+          .sorted
+          .map {
+            case (keywords, size, phrase) =>
+              println(s"phrase = $size ($keywords) $phrase")
+          }
+        xs
+      }
+        .recover {
+          case th: Throwable =>
+            th.printStackTrace()
+            throw th
+        }
+        .await
+
+      println("Excercise")
+
+      Source.fromIterator(() => selectedTokens.toIterator)
+        .via(ExampleFlow.apply(vocabulary))
+        .runForeach {
+          case (token, statements) =>
+            println(s"= $token ${vocabulary.wordMap.getOrElse(token, "***")}=")
+            statements
+              .foreach { statement =>
+                println(s"  ${vocabulary.untokenize(statement)}")
+              }
+            println(s"")
         }
         .recover {
           case th: Throwable =>
@@ -297,7 +318,7 @@ object NLPTReplMain
         .await
 
       file foreach { file =>
-        save(file, vocabulary.miniLanguage(selectedTokens))
+        save(file, vocabulary.miniLanguage(selectedTokens.toSet))
           .time { t =>
             logger.info(s"Vocabulary has stored in time = $t ")
           }
