@@ -10,12 +10,13 @@ import akka.util.ByteString
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Statement, Token, TokenMap}
 import com.github.dronegator.nlp.utils.CFG
+import com.github.dronegator.nlp.utils.Match._
+import com.github.dronegator.nlp.utils.concurrent.Zukunft
 import com.github.dronegator.nlp.utils.stream._
 import com.github.dronegator.nlp.vocabulary.{VocabularyHintImpl, VocabularyImpl, VocabularyRawImpl}
-import com.github.dronegator.nlp.utils.concurrent.Zukunft
-import scala.concurrent.{Future, Await}
+
 import scala.concurrent.duration._
-import com.github.dronegator.nlp.utils.Match._
+import scala.concurrent.{Await, Future}
 /**
  * Created by cray on 8/15/16.
  */
@@ -91,6 +92,9 @@ object NLPTMainStream
         case (_, _, z) => z
       }.
       component(accumulatorTool).
+      filter { x =>
+        x.length > 4 && x.length < 15
+      }.
       alsoToMat(nGram1Flow)(Keep.both).
       alsoToMat(nGram2Flow)(Keep.both).
       alsoToMat(nGram3Flow)(Keep.both).
@@ -108,6 +112,9 @@ object NLPTMainStream
     (((((((_, futureNGram1), futureNGram2), futureNGram3), futurePhraseCorrelationRepeated), futurePhraseCorrelationConsequent), futurePhraseCorrelationInner), futurePhrases)) =
       (source.
         //trace("An original string: ").
+        map { x =>
+        x.toLowerCase
+      }.
         component(splitterTool).mapConcat(_.toList).
         map(x => substitute.getOrElse(x, x)).
         //trace("A word after substitution: ").

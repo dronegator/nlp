@@ -2,8 +2,8 @@ package com.github.dronegator.nlp.vocabulary
 
 import com.github.dronegator.nlp.common.Probability
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
-import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyRawTools
 import com.github.dronegator.nlp.trace._
+import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyRawTools
 import com.typesafe.scalalogging.LazyLogging
 
 /**
@@ -231,12 +231,12 @@ case class VocabularyImpl(tokenMap: Map[Word, List[Token]],
       }
       .map {
         case (key, values) =>
-          val delimiter = values.map(_._2).sum.toDouble
+          val denominator = values.map(_._2).sum.toDouble
 
           key -> values.
             map {
               case (_ :: y :: _, count) =>
-                count / delimiter -> y
+                count / denominator -> y
             }.
             toList.
             sortBy(_._1).

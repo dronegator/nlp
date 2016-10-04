@@ -86,8 +86,8 @@ object ExampleFlow extends LazyLogging {
                 val statement = ((af.statement ++ newStatement) & af.token2Statement.getOrElse(token, Set()))
                   .iterator
                   .flatMap(x => af.id2StatementOrig.get(x).map(x -> _))
-                  .map {
-                    case (statementId, statement) =>
+                  .collect {
+                    case (statementId, statement) if statement.size > 7 && !(statement contains 76) =>
                       //                      println(af.id2Statment(statementId).flatMap(x => vocabulary.wordMap.get(x)))
                       //                      println(vocabulary.untokenize(statement))
                       val probabilityStatement = vocabulary.probability(statement) / vocabulary.statementDenominator(statement)
@@ -110,7 +110,7 @@ object ExampleFlow extends LazyLogging {
                       (statementId, statement, probability3Gram, probabilityStatement)
                   }
                   .sortBy(x => (-x._3 * -x._4))
-                  .take(3)
+                  .take(8)
                   .map(x => (x._1, x._2))
                   .toList
                 (af.statement ++ newStatement -- statement.map(_._1), statement)
