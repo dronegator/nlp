@@ -112,9 +112,9 @@ object NLPTMainStream
     (((((((_, futureNGram1), futureNGram2), futureNGram3), futurePhraseCorrelationRepeated), futurePhraseCorrelationConsequent), futurePhraseCorrelationInner), futurePhrases)) =
       (source.
         //trace("An original string: ").
-        map { x =>
-        x.toLowerCase
-      }.
+        //        map { x =>
+        //          x.toLowerCase
+        //        }.
         component(splitterTool).mapConcat(_.toList).
         map(x => substitute.getOrElse(x, x)).
         //trace("A word after substitution: ").

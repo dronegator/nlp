@@ -1,7 +1,7 @@
 package com.github.dronegator.nlp.component.tokenizer
 
 import com.github.dronegator.nlp.component.ComponentScan
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{DEOP, DEOW, OtherWord, Reset}
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.Reset
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.vocabulary.VocabularyHint
@@ -58,13 +58,20 @@ object Tokenizer {
       val value = 6
     }
 
-    case object OtherWord extends TokenPreDef {
+    case object Comma extends TokenPreDef {
       val value = 7
+    }
+
+    case object OtherWord extends TokenPreDef {
+      val value = 8
     }
 
   }
 
+  import TokenPreDef._
+
   val MapOfPredefs = Map(
+    "," -> (Comma.value :: Nil),
     "." -> (DEOP.value :: DEOW.value :: Nil),
     "***" -> (OtherWord.value :: Nil))
 
