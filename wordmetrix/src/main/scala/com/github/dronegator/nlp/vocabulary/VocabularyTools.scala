@@ -3,8 +3,8 @@ package com.github.dronegator.nlp.vocabulary
 import com.github.dronegator.nlp.common._
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
 import com.github.dronegator.nlp.main
+import com.github.dronegator.nlp.utils.IteratorStage
 import com.github.dronegator.nlp.utils.RandomUtils._
-import com.github.dronegator.nlp.utils.{CFG, IteratorStage}
 
 /**
   * Created by cray on 8/28/16.
@@ -16,8 +16,6 @@ object VocabularyTools {
     extends main.NLPTAppPartial
       with main.Combinators
       with ToolAdviceTrait {
-
-    lazy val cfg = CFG()
 
     lazy val vocabularyHint: VocabularyHint = vocabulary
 
@@ -200,7 +198,6 @@ object VocabularyTools {
   implicit class VocabularyHintTools(val vocabularyHint: VocabularyHint)
     extends main.NLPTAppPartial
       with main.Combinators {
-    override def cfg: CFG = CFG()
 
     def keywords(statement: Statement) =
       statement.
@@ -219,8 +216,6 @@ object VocabularyTools {
   implicit class VocabularyRawTools(vocabulary: VocabularyRaw)
     extends main.NLPTAppPartial
       with main.Combinators {
-
-    val cfg = CFG()
 
     lazy val vocabularyHint: VocabularyHint = vocabulary
 
@@ -269,7 +264,6 @@ object VocabularyTools {
   implicit class VocabularyToolsOutdated(vocabulary: Vocabulary with VocabularyImplOutdated)
     extends main.NLPTAppPartial
       with main.Combinators {
-    val cfg = CFG()
 
     lazy val vocabularyHint: VocabularyHint = vocabulary
 

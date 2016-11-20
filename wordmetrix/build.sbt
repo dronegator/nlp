@@ -20,4 +20,8 @@ libraryDependencies += "com.softwaremill.macwire" %% "util" % "2.2.3"
 
 libraryDependencies += "com.softwaremill.macwire" %% "proxy" % "2.2.3"
 
+libraryDependencies += "com.typesafe" % "config" % "1.3.1"
+
+libraryDependencies += "com.github.kxbmap" %% "configs" % "0.4.4"
+
 //enablePlugins(ScalaKataPlugin)

@@ -2,19 +2,19 @@ package com.github.dronegator.nlp
 
 import java.io._
 
-import com.github.dronegator.nlp.component.accumulator.Accumulator
-import com.github.dronegator.nlp.component.ngramscounter.NGramsCounter
-import com.github.dronegator.nlp.component.phrase_correlation_consequent.PhraseCorrelationConsequentWithHints
-import com.github.dronegator.nlp.component.phrase_correlation_repeated.{PhraseCorrelationInnerWithHints, PhraseCorrelationRepeated}
-import com.github.dronegator.nlp.component.phrase_detector.PhraseDetector
-import com.github.dronegator.nlp.component.splitter.Splitter
+import com.github.dronegator.nlp.component.accumulator.{Accumulator, AccumulatorConfig}
+import com.github.dronegator.nlp.component.ngramscounter.{NGramsCounter, NGramsCounterConfig}
+import com.github.dronegator.nlp.component.phrase_correlation_consequent.{PhraseCorrelationConsequentWithHints, PhraseCorrelationConsequentWithHintsConfig}
+import com.github.dronegator.nlp.component.phrase_correlation_repeated.{PhraseCorrelationInnerWithHints, PhraseCorrelationInnerWithHintsConfig, PhraseCorrelationRepeated, PhraseCorrelationRepeatedConfig}
+import com.github.dronegator.nlp.component.phrase_detector.{PhraseDetector, PhraseDetectorConfig}
+import com.github.dronegator.nlp.component.splitter.{Splitter, SplitterConfig}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
-import com.github.dronegator.nlp.component.tokenizer.TokenizerWithHints
-import com.github.dronegator.nlp.utils.CFG
+import com.github.dronegator.nlp.component.tokenizer.{TokenizerConfig, TokenizerWithHints}
 import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyHint, VocabularyImplStored, VocabularyRaw}
 import com.softwaremill.macwire._
+import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-
+import configs.syntax._
 /**
   * Created by cray on 8/17/16.
   */
@@ -24,8 +24,6 @@ package object main {
 
   trait NLPTAppPartial
     extends LazyLogging {
-
-    def cfg: CFG
 
     def vocabularyHint: VocabularyHint
   }
@@ -38,13 +36,25 @@ package object main {
   trait Combinators {
     this: NLPTAppPartial =>
 
+    private val config = ConfigFactory.load().getConfig("com.github.dronegator.wordmetrix.component")
+
+    lazy val splitterConfig = config.get[SplitterConfig]("splitter").value
+
     lazy val splitterTool = wire[Splitter]
+
+    lazy val tokenizerConfig = config.get[TokenizerConfig]("tokenizer-with-hints").value
 
     lazy val tokenizerTool = wire[TokenizerWithHints]
 
+    lazy val phraseDetectorConfig = config.get[PhraseDetectorConfig]("phrase-detector").value
+
     lazy val phraseDetectorTool = wire[PhraseDetector]
 
+    lazy val accumulatorConfig = config.get[AccumulatorConfig]("accumulator").value
+
     lazy val accumulatorTool = wire[Accumulator]
+
+    lazy val nGramsCounterConfig = config.get[NGramsCounterConfig]("ngrams-counter").value
 
     lazy val nGram1Tool = wireWith(NGramsCounter.factoryNGramsCounter1 _)
 
@@ -52,9 +62,15 @@ package object main {
 
     lazy val nGram3Tool = wireWith(NGramsCounter.factoryNGramsCounter3 _)
 
+    lazy val phraseCorrelationRepeatedConfig = config.get[PhraseCorrelationRepeatedConfig]("phrase-correlation-repeated").value
+
     lazy val phraseCorrelationRepeatedTool = wire[PhraseCorrelationRepeated]
 
+    lazy val phraseCorrelationConsequentConfig = config.get[PhraseCorrelationConsequentWithHintsConfig]("phrase-correlation-consequent").value
+
     lazy val phraseCorrelationConsequentTool = wire[PhraseCorrelationConsequentWithHints]
+
+    lazy val phraseCorrelationInnerWithHintsConfig = config.get[PhraseCorrelationInnerWithHintsConfig]("phrase-correlation-inner-with-hints").value
 
     lazy val phraseCorrelationInnerTool = wire[PhraseCorrelationInnerWithHints]
   }

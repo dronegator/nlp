@@ -12,9 +12,9 @@ import com.github.dronegator.nlp.main.session.NLPTWebServiceSessionTrait
 import com.github.dronegator.nlp.main.system.NLPTWebServiceSystemTrait
 import com.github.dronegator.nlp.main.websocket.NLPTWebServiceSocketTrait
 import com.github.dronegator.nlp.trace._
-import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.Match._
 import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyHintImpl, VocabularyImpl}
+import configs.syntax._
 
 /**
   * Created by cray on 8/17/16.
@@ -28,9 +28,12 @@ trait NLPTAppForWeb
     }
 }
 
+case class NLPTAppForWebConfig(host: String = "0.0.0.0", port: Int = 8080)
+
 object NLPTWebServiceMain
   extends App
     with MainTools
+    with MainConfig[NLPTAppForWebConfig]
     with Concurent
     with NLPTAppForWeb
     with NLPTWebServiceSystemTrait
@@ -42,7 +45,7 @@ object NLPTWebServiceMain
 
   val fileIn :: OptFile(hints) = args.toList
 
-  lazy val cfg = CFG()
+  lazy val cfg = config.get[NLPTAppForWebConfig]("web").value
 
   lazy val vocabularyHint = hints.map(load(_): VocabularyImpl)
     .getOrElse {
@@ -62,9 +65,9 @@ object NLPTWebServiceMain
       vocabulary: VocabularyImpl
   }
 
-  val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
+  val bindingFuture = Http().bindAndHandle(route, cfg.host, cfg.port)
 
-  logger.info(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
+  logger.info(s"Server online at http://${cfg.host}:${cfg.port}/\nPress RETURN to stop...")
 
   Console.readLine() // for the future transformations
 
@@ -73,5 +76,4 @@ object NLPTWebServiceMain
     .onComplete(_ ⇒ system.shutdown())
 
   logger.info(s"Server shutdown")
-
 }

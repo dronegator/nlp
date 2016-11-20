@@ -1,14 +1,15 @@
 package com.github.dronegator.nlp.main.session
 
-import akka.actor.{Actor, ActorLogging, ActorRefFactory, Kill, Props}
-import com.github.dronegator.nlp.main.session.SessionStorage
+import akka.actor.{Actor, ActorLogging, Kill, Props}
 import com.github.dronegator.nlp.main.session.SessionStorage._
-import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.typeactor._
 
 /**
   * Created by cray on 9/18/16.
   */
+
+
+case class SessionStorageConfig()
 
 object SessionStorage {
 
@@ -31,11 +32,11 @@ object SessionStorage {
       f(value)
   }
 
-  def props(cfg: CFG): TypeProps[SessionMessage] =
+  def props(cfg: SessionStorageConfig): TypeProps[SessionMessage] =
     Props(new SessionStorage(cfg))
 }
 
-class SessionStorage(cfg: CFG)
+class SessionStorage(cfg: SessionStorageConfig)
   extends Actor
   with ActorLogging {
   override def receive: Receive = receive(Map(), System.currentTimeMillis())

@@ -12,8 +12,9 @@ import akka.http.scaladsl.server.Route
 import akka.util.Timeout
 import com.github.dronegator.nlp.main.session.SessionManager.CreateSession
 import com.github.dronegator.nlp.main.session.SessionStorage.SessionMessage
-import com.github.dronegator.nlp.main.{Concurent, NLPTAppForWeb}
+import com.github.dronegator.nlp.main.{Concurent, MainConfig, NLPTAppForWeb, NLPTAppForWebConfig}
 import com.github.dronegator.nlp.utils.typeactor._
+import configs.syntax._
 
 import scala.concurrent.duration._
 
@@ -22,9 +23,9 @@ object NLPTWebServiceSessionTrait {
 }
 
 protected trait SessionStorageTrait {
-  this: NLPTAppForWeb with Concurent =>
+  this: NLPTAppForWeb with MainConfig[NLPTAppForWebConfig] with Concurent =>
 
-  lazy val propsSessionStorage = SessionStorage.props(cfg)
+  lazy val propsSessionStorage = SessionStorage.props(config.get[SessionStorageConfig]("session-storage").value)
 
   private implicit val timeout: Timeout = 10 seconds
 
@@ -44,9 +45,10 @@ protected trait SessionStorageTrait {
 }
 
 protected trait SessionManagerTrait {
-  this: NLPTAppForWeb with Concurent with SessionStorageTrait =>
+  this: NLPTAppForWeb with MainConfig[NLPTAppForWebConfig] with Concurent with SessionStorageTrait =>
 
-  lazy val propsSessionManager = SessionManager.props(cfg, propsSessionStorage)
+
+  lazy val propsSessionManager = SessionManager.props(config.get[SessionManagerConfig]("session-manager").value, propsSessionStorage)
 
   lazy val sessionManager = system.actorOf(propsSessionManager)
 
@@ -61,7 +63,7 @@ trait NLPTWebServiceSessionTrait
   extends NLPTAppForWeb
   with SessionStorageTrait
   /*with SessionManagerTrait */ {
-  this: Concurent =>
+  this: Concurent with MainConfig[NLPTAppForWebConfig] =>
 
   override lazy val route: Route =
     optionalCookie("sessionId") {

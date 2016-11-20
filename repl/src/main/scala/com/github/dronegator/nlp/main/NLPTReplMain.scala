@@ -12,6 +12,7 @@ import com.github.dronegator.nlp.utils.concurrent.Zukunft
 import com.github.dronegator.nlp.vocabulary.ToolMiniLanguage.{ExampleFlow, VocabularyToolsAkka}
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.{VocabularyHintTools, VocabularyRawTools, VocabularyTools}
 import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyHint, VocabularyImpl, VocabularyImplStored}
+import configs.syntax._
 import enumeratum.EnumEntry.Lowercase
 import enumeratum._
 import jline.console.completer.StringsCompleter
@@ -23,13 +24,17 @@ import scala.collection.JavaConverters._
   * Created by cray on 8/17/16.
   */
 
+case class NLPTReplMainConfig()
+
 object NLPTReplMain
   extends App
     with NLPTAppPartial
+    with MainConfig[NLPTReplMainConfig]
     with MainTools
     with Concurent
     with DumpTools {
-  lazy val cfg: CFG = CFG()
+
+  lazy val cfg = config.get[NLPTReplMainConfig]("repl")
 
   sealed trait SubCommand extends EnumEntry with Lowercase with SubCommand.Overall
 

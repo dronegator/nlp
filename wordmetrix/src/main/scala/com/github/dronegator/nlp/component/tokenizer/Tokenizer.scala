@@ -3,13 +3,14 @@ package com.github.dronegator.nlp.component.tokenizer
 import com.github.dronegator.nlp.component.ComponentScan
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.Reset
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer._
-import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.vocabulary.VocabularyHint
 import enumeratum.values.{IntEnum, IntEnumEntry}
 
 /**
   * Created by cray on 8/14/16.
   */
+case class TokenizerConfig()
+
 object Tokenizer {
   type Token = Int
 
@@ -86,10 +87,8 @@ object Tokenizer {
 
 }
 
-class Tokenizer(cfgArg: => CFG)
+class Tokenizer(cfg: TokenizerConfig)
   extends ComponentScan[Word, (TokenMap, Token, List[Token]), (TokenMap, Token, List[Token])] {
-
-  def cfg = cfgArg
 
   override def init: (TokenMap, Token, List[Token]) = (MapOfPredefs, 10, List())
 
@@ -115,7 +114,7 @@ class Tokenizer(cfgArg: => CFG)
   }
 }
 
-class TokenizerWithHints(cfg: => CFG, vocabulary: VocabularyHint)
+class TokenizerWithHints(cfg: TokenizerConfig, vocabulary: VocabularyHint)
   extends Tokenizer(cfg) {
   override def init = (vocabulary.tokenMap, vocabulary.tokenMap.valuesIterator.flatten.max + 1, List.empty[Token])
 }

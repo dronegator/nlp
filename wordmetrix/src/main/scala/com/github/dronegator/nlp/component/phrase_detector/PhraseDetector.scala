@@ -4,16 +4,15 @@ import com.github.dronegator.nlp.component.ComponentMap
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{PEnd, PStart}
-import com.github.dronegator.nlp.utils.CFG
 
 /**
  * Created by cray on 8/15/16.
  */
+case class PhraseDetectorConfig()
 object PhraseDetector {
 }
 
-class PhraseDetector(cfgArg: => CFG) extends ComponentMap[List[List[Token]], Option[(List[Token], Seq[List[Token]])]] {
-  override def cfg: CFG = cfgArg
+class PhraseDetector(cfg: => PhraseDetectorConfig) extends ComponentMap[List[List[Token]], Option[(List[Token], Seq[List[Token]])]] {
 
   override def apply(in: List[List[Token]]): Option[(List[Token], Seq[List[Token]])] =
     in.span {

@@ -9,25 +9,31 @@ import akka.stream.scaladsl._
 import akka.util.ByteString
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Statement, Token, TokenMap}
-import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.Match._
 import com.github.dronegator.nlp.utils.concurrent.Zukunft
 import com.github.dronegator.nlp.utils.stream._
 import com.github.dronegator.nlp.vocabulary.{VocabularyHintImpl, VocabularyImpl, VocabularyRawImpl}
+import configs.syntax._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 /**
  * Created by cray on 8/15/16.
  */
+
+case class NLPTMainIndexStreamConfig(maximumFrameLength: Int = 1024 * 1025)
+
+
 object NLPTMainStream
   extends App
   with NLPTAppPartial
+    with MainConfig[NLPTMainIndexStreamConfig]
   with Combinators
   with MainTools {
 
   val fileIn :: fileOut ::  OptFile(hints) = args.toList
-  lazy val cfg = CFG()
+
+  lazy val cfg = config.get[NLPTMainIndexStreamConfig]("index-stream").value
 
   lazy val vocabularyHint = hints.map(load(_): VocabularyImpl).getOrElse{
     println("Hints have initialized")
@@ -37,7 +43,7 @@ object NLPTMainStream
   val source =
     FileIO.fromPath(Paths.get(fileIn)).
       progress().
-      via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 1024*1025, allowTruncation = true)).
+      via(Framing.delimiter(ByteString("\n"), cfg.maximumFrameLength, allowTruncation = true)).
       map(_.utf8String).
       //trace("Input string: ").
       //monitor()(Keep.right).
@@ -93,7 +99,7 @@ object NLPTMainStream
       }.
       component(accumulatorTool).
       filter { x =>
-        x.length > 4 && x.length < 15
+        x.length > 4 && x.length < 25
       }.
       alsoToMat(nGram1Flow)(Keep.both).
       alsoToMat(nGram2Flow)(Keep.both).
@@ -111,10 +117,10 @@ object NLPTMainStream
     val ((termination, futureTokenMap),
     (((((((_, futureNGram1), futureNGram2), futureNGram3), futurePhraseCorrelationRepeated), futurePhraseCorrelationConsequent), futurePhraseCorrelationInner), futurePhrases)) =
       (source.
-        //trace("An original string: ").
-        //        map { x =>
-        //          x.toLowerCase
-        //        }.
+        //        trace("An original string: ").
+        //                map { x =>
+        //                  x.toLowerCase
+        //                }.
         component(splitterTool).mapConcat(_.toList).
         map(x => substitute.getOrElse(x, x)).
         //trace("A word after substitution: ").

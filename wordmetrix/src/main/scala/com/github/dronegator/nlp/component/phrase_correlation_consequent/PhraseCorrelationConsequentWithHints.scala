@@ -4,22 +4,18 @@ package com.github.dronegator.nlp.component.phrase_correlation_consequent
  * Created by cray on 8/19/16.
  */
 
-import com.github.dronegator.nlp.component.{ComponentFold, ComponentState}
+import com.github.dronegator.nlp.component.ComponentFold
 import com.github.dronegator.nlp.component.phrase_correlation_consequent.PhraseCorrelationConsequentWithHints.Init
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
-import com.github.dronegator.nlp.main.TagHints
-import com.github.dronegator.nlp.utils.CFG
-import com.github.dronegator.nlp.vocabulary.{VocabularyHint }
+import com.github.dronegator.nlp.vocabulary.VocabularyHint
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyHintTools
-import com.softwaremill.tagging.@@
 
-
+case class PhraseCorrelationConsequentWithHintsConfig()
 object PhraseCorrelationConsequentWithHints {
   type Init = (List[Token], Map[List[Token], Int])
 }
 
-
-class PhraseCorrelationConsequentWithHints(cfgArg: CFG, vocabularyHint: VocabularyHint) extends ComponentFold[List[Token], Init, Map[List[Token], Int]] {
+class PhraseCorrelationConsequentWithHints(cfg: PhraseCorrelationConsequentWithHintsConfig, vocabularyHint: VocabularyHint) extends ComponentFold[List[Token], Init, Map[List[Token], Int]] {
 
   private val toWord =
     vocabularyHint.tokenMap.flatMap{
@@ -30,7 +26,6 @@ class PhraseCorrelationConsequentWithHints(cfgArg: CFG, vocabularyHint: Vocabula
         }
     }.withDefaultValue("unknown")
 
-  override def cfg: CFG = cfgArg
 
   override def init = (List[Token](), Map[List[Token], Int]())
 

@@ -1,9 +1,8 @@
 package com.github.dronegator.nlp.component.phrase_correlation_repeated
 
-import com.github.dronegator.nlp.component.{ComponentFold, ComponentState}
+import com.github.dronegator.nlp.component.ComponentFold
 import com.github.dronegator.nlp.component.phrase_correlation_repeated.PhraseCorrelationRepeated.Init
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
-import com.github.dronegator.nlp.utils.CFG
 
 /**
  * Created by cray on 8/19/16.
@@ -11,13 +10,14 @@ import com.github.dronegator.nlp.utils.CFG
  * Calculates correlation between tokens in two consequent phrases
  */
 
+case class PhraseCorrelationRepeatedConfig()
+
 object PhraseCorrelationRepeated {
   type Init = (List[Token], Map[Token, Int])
 
 }
 
-class PhraseCorrelationRepeated(cfgArg: CFG) extends ComponentFold[List[Token], Init, Map[Token, Int]] {
-  override def cfg: CFG = cfgArg
+class PhraseCorrelationRepeated(cfg: PhraseCorrelationRepeatedConfig) extends ComponentFold[List[Token], Init, Map[Token, Int]] {
 
   override def init: Init = (List[Token](), Map[Token, Int]())
 

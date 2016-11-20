@@ -3,16 +3,15 @@ package com.github.dronegator.nlp.main.session
 import akka.actor.{Actor, Props, Terminated}
 import com.github.dronegator.nlp.main.session.SessionManager.{CreateSession, SessionRef}
 import com.github.dronegator.nlp.main.session.SessionStorage.SessionMessage
-import com.github.dronegator.nlp.utils.CFG
 import com.github.dronegator.nlp.utils.typeactor._
 
 /**
  * Created by cray on 9/18/16.
  */
-
+case class SessionManagerConfig()
 object SessionManager {
 
-  def props(cfg: CFG, sessionStorage: TypeProps[SessionMessage]): TypeProps[SessionManagerMessage] =
+  def props(cfg: SessionManagerConfig, sessionStorage: TypeProps[SessionMessage]): TypeProps[SessionManagerMessage] =
     Props(new SessionManager(cfg, sessionStorage))
 
   trait SessionManagerMessage
@@ -22,7 +21,7 @@ object SessionManager {
   case class SessionRef(name: SessionId, typeActorRef: TypeActorRef[SessionMessage]) extends SessionManagerMessage
 }
 
-class SessionManager(cfg: CFG, sessionStorage: TypeProps[SessionMessage]) extends Actor {
+class SessionManager(cfg: SessionManagerConfig, sessionStorage: TypeProps[SessionMessage]) extends Actor {
   override def receive: Receive =
     receive(Map())
 

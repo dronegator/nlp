@@ -1,26 +1,23 @@
 package com.github.dronegator.nlp.component.phrase_correlation_repeated
 
-import com.github.dronegator.nlp.component.{ComponentFold, ComponentState}
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
+import com.github.dronegator.nlp.component.ComponentFold
 import com.github.dronegator.nlp.component.phrase_correlation_repeated.PhraseCorrelationInnerWithHints.Init
-import com.github.dronegator.nlp.main.TagHints
-import com.github.dronegator.nlp.utils.CFG
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.vocabulary.VocabularyHint
 import com.github.dronegator.nlp.vocabulary.VocabularyTools.VocabularyHintTools
-import com.softwaremill.tagging.@@
 
 /**
  * Created by cray on 8/19/16.
  *
  * Calculates correlation between tokens in a statement
  */
+case class PhraseCorrelationInnerWithHintsConfig()
 
 object PhraseCorrelationInnerWithHints {
   type Init = (Map[ List[Token], Int])
 }
 
-class PhraseCorrelationInnerWithHints(cfgArg: CFG, vocabularyHint: VocabularyHint) extends ComponentFold[List[Token], Init, Init] {
-  override def cfg: CFG = cfgArg
+class PhraseCorrelationInnerWithHints(cfgArg: PhraseCorrelationInnerWithHintsConfig, vocabularyHint: VocabularyHint) extends ComponentFold[List[Token], Init, Init] {
 
   private val toWord =
     vocabularyHint.tokenMap.flatMap{

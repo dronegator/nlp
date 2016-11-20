@@ -2,18 +2,23 @@ import java.io.File
 
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenMap}
-import com.github.dronegator.nlp.main.{Combinators, MainTools, NLPTApp, NLPTAppPartial}
+import com.github.dronegator.nlp.main._
+import com.github.dronegator.nlp.utils.Match._
 import com.github.dronegator.nlp.utils._
-import Match._
 import com.github.dronegator.nlp.vocabulary.{VocabularyHintImpl, VocabularyImpl, VocabularyRawImpl}
+import configs.syntax._
 
-object NLPTMain
+case class NLPTMainIndexConfig()
+
+object NLPTMainIndex
   extends App
   with NLPTAppPartial
+    with MainConfig[NLPTMainIndexConfig]
   with MainTools
   with Combinators {
   val fileIn :: fileOut ::  OptFile(hints) = args.toList
-  lazy val cfg = CFG()
+
+  lazy val cfg = config.get[NLPTMainIndexConfig]("index")
 
   lazy val vocabularyHint = hints.map(load(_): VocabularyImpl).getOrElse{
     println("Hints have initialized")

@@ -1,17 +1,15 @@
-import java.net.InetAddress
-
 import com.typesafe.sbt.SbtGit.git
+import sbt.Keys._
 import sbt._
-import Keys._
-
-import scala.util.Try
 
 object WordmetrixBuild extends Build {
   val Name = "nlp"
 
-  override lazy val settings = super.settings ++ Seq(version := "0.4")
-
-  import settings._
+  override lazy val settings = super.settings ++
+    Seq(
+      version := "0.4",
+      scalaVersion := "2.11.7"
+    )
 
   val buildTime = System.currentTimeMillis()
 
@@ -57,6 +55,14 @@ object WordmetrixBuild extends Build {
   val repl =
     Project(id = "repl", base = file("repl")).dependsOn(wordmetrix, akkaUtils, utils)
 
+  val ml =
+    Project(id = "ml", base = file("ml")).dependsOn(utils)
+      .settings(
+        libraryDependencies += "org.scalanlp" %% "breeze" % "0.12",
+        libraryDependencies += "org.scalanlp" %% "breeze-natives" % "0.12",
+        libraryDependencies += "org.scalanlp" %% "breeze-viz" % "0.12"
+      )
+
   val urls =
     "https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js" ::
       "https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.0/jquery-ui.min.js" ::
@@ -84,5 +90,5 @@ object WordmetrixBuild extends Build {
   lazy val root = Project(Name,
     base = file("."),
     settings = Project.defaultSettings
-  ).dependsOn().aggregate(wordmetrix, index, indexStream, repl, akkaUtils, www)
+  ).dependsOn().aggregate(wordmetrix, index, indexStream, repl, akkaUtils, www, ml)
 }
