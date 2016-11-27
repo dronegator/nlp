@@ -9,7 +9,7 @@ import enumeratum.values.{IntEnum, IntEnumEntry}
 /**
   * Created by cray on 8/14/16.
   */
-case class TokenizerConfig()
+case class TokenizerConfig(useLowercase: Boolean, stopWord: Set[Word])
 
 object Tokenizer {
   type Token = Int
@@ -36,22 +36,27 @@ object Tokenizer {
     }
 
     case object PStart extends TokenPreDef {
+      // Start of phrase
       val value = 1
     }
 
     case object PEnd extends TokenPreDef {
+      // End of phrase
       val value = 2
     }
 
     case object TEnd extends TokenPreDef {
+      // End of text
       val value = 3
     }
 
     case object DEOP extends TokenPreDef {
+      // Dot at the end of phrase
       val value = 4
     }
 
     case object DEOW extends TokenPreDef {
+      // Dot at the end of word
       val value = 5
     }
 
@@ -97,7 +102,12 @@ class Tokenizer(cfg: TokenizerConfig)
       case ((map, n, _), StopWord()) =>
         (map, n, List(Reset.value))
 
-      case ((map, n, _), w) =>
+      case ((map, n, _), word) if cfg.stopWord contains word =>
+        (map, n, List(Reset.value))
+
+      case ((map, n, _), word) =>
+        val w = if (cfg.useLowercase) word.toLowerCase else word
+
         map.get(w) match {
           case Some(tokens) =>
             (map, n, tokens)

@@ -13,7 +13,7 @@ object Accumulator {
   type Init = (List[List[Token]], Option[List[Token]])
 }
 
-case class AccumulatorConfig()
+case class AccumulatorConfig(minPhrase: Int, maxPhrase: Int)
 
 class Accumulator(cfg: AccumulatorConfig, phraseDetector: PhraseDetector)
   extends ComponentScan[List[Token], Init, Statement] {
@@ -30,7 +30,10 @@ class Accumulator(cfg: AccumulatorConfig, phraseDetector: PhraseDetector)
             (rest.toList, Some(Nil))
 
           case Some((statement, rest)) =>
-            (rest.toList, Some(statement))
+            if (cfg.minPhrase <= statement.length && statement.length < cfg.maxPhrase)
+              (rest.toList, Some(statement))
+            else
+              (rest.toList, None)
 
           case None =>
             (tokenizedText, None)
