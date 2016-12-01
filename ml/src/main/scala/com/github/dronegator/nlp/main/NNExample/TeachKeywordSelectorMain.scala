@@ -1,65 +1,63 @@
 package com.github.dronegator.nlp.main.NNExample
 
-import breeze.linalg.{DenseMatrix, DenseVector, SparseVector}
-import breeze.numerics.{exp, sqrt}
-import breeze.optimize.{DiffFunction, LBFGS}
+import java.io.File
+
+import breeze.linalg.{DenseVector, SparseVector}
+import breeze.optimize.LBFGS
 import breeze.util.Implicits._
+import com.github.dronegator.nlp.main.{Concurent, MainConfig, MainTools}
+import com.github.dronegator.nlp.trace._
+import com.github.dronegator.nlp.utils.Match._
+import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyImpl}
+import com.typesafe.scalalogging.LazyLogging
+import configs.syntax._
 
-/**
-  * Created by cray on 11/28/16.
-  */
+object TeachKeywordSelectorMain
+  extends App
+    with MainTools
+    with MainConfig[NLPTAppForNNConfig]
+    with Concurent
+    with LazyLogging
+    with NLPTAppForNN {
 
+  val fileIn :: OptFile(hints) = args.toList
 
-class NN(nKlassen: Int, nTerms: Int, sample: Iterator[(SparseVector[Double], SparseVector[Double])])
-  extends DiffFunction[DenseVector[Double]] {
+  lazy val cfg = config.get[NLPTAppForNNConfig]("nn").value
 
+  lazy val vocabulary: Vocabulary = load(new File(fileIn)).time { t =>
+    logger.info(s"Vocabulary has loaded in time=$t")
+  } match {
+    case vocabulary: Vocabulary =>
+      vocabulary
 
-  override def calculate(vector: DenseVector[Double]): (Double, DenseVector[Double]) = {
-    val termToKlassen: DenseMatrix[Double] = vector(0 until nTerms * nKlassen).asDenseMatrix.reshape(nTerms, nKlassen)
-
-    val klassenToOut: DenseMatrix[Double] = vector(nTerms * nKlassen to -1).asDenseMatrix.reshape(nKlassen * 2, 1)
-
-    sample
-      .map {
-        case (input, output) =>
-
-          val klassenI = DenseVector.zeros[Double](2 * nKlassen)
-
-          klassenI(0 until nKlassen) := termToKlassen * input(0 until nTerms)
-
-          klassenI(nKlassen to -1) := termToKlassen * input(nTerms to -1)
-
-          val klassenO = klassenI.map(x => 1 / (1 + exp(-x)))
-
-          val outI = DenseVector.zeros[Double](1)
-
-          outI := klassenToOut * klassenO
-
-          val outO = outI.map(x => 1 / (1 + exp(-x)))
-
-          val value = sqrt((outO - output) dot (outO - output))
-
-          val gradient: DenseVector[Double] = ???
-
-          (value, gradient)
-      }
-      .reduce {
-        case ((value1, gradient1), (value2, gradient2)) =>
-          ((value1 + value2), (gradient1 + gradient2))
-      }
+    case vocabulary =>
+      vocabulary: VocabularyImpl
   }
-}
 
-object TeachKeywordSelectorMain {
+  val nToken = vocabulary.wordMap.keys.max: Int
 
+  def samples = vocabulary.nGram3.keysIterator
+    .map {
+      case ws@w1 :: w2 :: w3 :: _ if ws.forall(_ <= nToken) =>
+        lazy val input = SparseVector(nToken * 2)(w1 -> 1.0, w3 + nToken -> 1.0)
+
+        if (vocabulary.sense contains w2)
+          Some(input -> SparseVector(1)(0 -> 1.0))
+        else if (vocabulary.auxiliary contains w2)
+          Some(input -> SparseVector(1)(0 -> -1.0))
+        else None
+    }
+    .collect {
+      case Some(sample) => sample
+    }
 
   val lbfgs = new LBFGS[DenseVector[Double]]()
 
-  val nn = new NN(2, 10, ???)
+  val nn = new NN(cfg.nKlassen, nToken, samples)
 
   //  val network = lbfgs.minimize(nn, DenseVector.rand(2*10+10*2))
 
-  val network = lbfgs.iterations(nn, DenseVector.rand(2 * 10 + 10 * 2))
+  val network = lbfgs.iterations(nn, DenseVector.rand(cfg.nKlassen * nToken + cfg.nKlassen * 2))
     .map {
       case x =>
         println(x.value)

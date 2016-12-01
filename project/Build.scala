@@ -62,6 +62,7 @@ object WordmetrixBuild extends Build {
         libraryDependencies += "org.scalanlp" %% "breeze-natives" % "0.12",
         libraryDependencies += "org.scalanlp" %% "breeze-viz" % "0.12"
       )
+      .dependsOn(wordmetrix, akkaUtils, utils)
 
   val urls =
     "https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js" ::
