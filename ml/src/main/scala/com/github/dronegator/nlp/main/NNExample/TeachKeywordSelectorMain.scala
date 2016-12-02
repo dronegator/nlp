@@ -44,24 +44,29 @@ object TeachKeywordSelectorMain
         if (vocabulary.sense contains w2)
           Some(input -> SparseVector(1)(0 -> 1.0))
         else if (vocabulary.auxiliary contains w2)
-          Some(input -> SparseVector(1)(0 -> -1.0))
+          Some(input -> SparseVector(1)(0 -> 0.0))
         else None
     }
     .collect {
       case Some(sample) => sample
     }
 
-  val lbfgs = new LBFGS[DenseVector[Double]]()
+  val lbfgs = new LBFGS[DenseVector[Double]]() //tolerance = 1E-2)
+
+  println(s"size = ${samples.length}")
 
   val nn = new NN(cfg.nKlassen, nToken, samples)
 
   //  val network = lbfgs.minimize(nn, DenseVector.rand(2*10+10*2))
 
-  val network = lbfgs.iterations(nn, DenseVector.rand(cfg.nKlassen * nToken + cfg.nKlassen * 2))
+  val network = lbfgs.iterations(nn, nn.initial :/ 1.0)
     .map {
       case x =>
         println(x.value)
         x.x
     }
     .last
+
+  println("stop")
+  system.shutdown()
 }

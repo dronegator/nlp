@@ -12,10 +12,11 @@ import breeze.optimize.DiffFunction
 class NN(nKlassen: Int, nToken: Int, sample: => Iterator[(SparseVector[Double], SparseVector[Double])])
   extends DiffFunction[DenseVector[Double]] {
 
+  def initial = DenseVector.rand[Double](nKlassen * nToken + nKlassen * 2)
 
   override def calculate(vector: DenseVector[Double]): (Double, DenseVector[Double]) = {
     val termToKlassen: DenseMatrix[Double] = vector(0 until nToken * nKlassen).asDenseMatrix.reshape(nKlassen, nToken)
-    println(nToken, nKlassen)
+
     val klassenToOut: DenseMatrix[Double] = vector(nToken * nKlassen until (nToken * nKlassen + nKlassen * 2)).asDenseMatrix.reshape(1, nKlassen * 2)
 
     sample
@@ -26,7 +27,7 @@ class NN(nKlassen: Int, nToken: Int, sample: => Iterator[(SparseVector[Double], 
 
           klassenI(0 until nKlassen) := termToKlassen * input(0 until nToken)
 
-          println(input(nToken until nToken * 2).size, input.size, nToken, "input2")
+          //println(input(nToken until nToken * 2).size, input.size, nToken, "input2")
 
           klassenI(nKlassen until nKlassen * 2) := termToKlassen * input(nToken until nToken * 2)
 
@@ -38,11 +39,26 @@ class NN(nKlassen: Int, nToken: Int, sample: => Iterator[(SparseVector[Double], 
 
           val outO = outI.map(x => 1 / (1 + exp(-x)))
 
-          val value = sqrt((outO - output) dot (outO - output))
+          val value = (outO - output).norm()
 
-          println(value, input, output)
+          //println(value, input, output)
 
-          val gradient: DenseVector[Double] = ???
+          val gradient: DenseVector[Double] = initial
+
+          val gKlassen2Out = gradient(nToken * nKlassen until (nToken * nKlassen + nKlassen * 2)).asDenseMatrix.reshape(1, nKlassen * 2)
+
+          val gTermToKlassen = gradient(0 until nToken * nKlassen).asDenseMatrix.reshape(nKlassen, nToken)
+
+          val backOutI = outO * 2.0 :* (outO :* (-outO + 1.0))
+
+          gKlassen2Out := (backOutI * klassenO.t)
+
+          val backKlassenO = klassenToOut.t * backOutI
+
+          val backKlassenI = backKlassenO :* klassenO :* (-klassenO + 1.0)
+
+          gTermToKlassen := (backKlassenI(0 until nKlassen) * input(0 until nToken).toDenseVector.t) +
+            (backKlassenI(nKlassen until 2 * nKlassen) * input(nToken until (2 * nToken)).toDenseVector.t)
 
           (value, gradient)
       }
