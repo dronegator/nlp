@@ -3,8 +3,10 @@ package com.github.dronegator.nlp.main.NNExample
 import java.io.File
 
 import breeze.linalg.{DenseVector, SparseVector}
+import breeze.numerics._
 import breeze.optimize.{DiffFunction, LBFGS}
 import breeze.util.Implicits._
+import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.main.{Concurent, MainConfig, MainTools}
 import com.github.dronegator.nlp.trace._
 import com.github.dronegator.nlp.utils.Match._
@@ -51,12 +53,20 @@ object TeachKeywordSelectorMain
       case Some(sample) => sample
     }
 
-  val lbfgs = new LBFGS[DenseVector[Double]](maxIter = cfg.maxIter) //tolerance = 1E-2)
+  val lbfgs = new LBFGS[DenseVector[Double]](maxIter = cfg.maxIter, m = cfg.memoryLimit, tolerance = cfg.tolerance)
 
-  println(s"size = ${cfg.nSample getOrElse samples.length}")
-  println(s"nToken = ${nToken}")
-  println(s"nKlassen = ${cfg.nKlassen}")
-  println(s"regularization = ${cfg.regularization}")
+  println(
+    s"""
+      size = ${cfg.nSample getOrElse samples.length}
+      nToken = ${nToken}
+      nKlassen = ${cfg.nKlassen}
+      regularization = ${cfg.regularization}
+      dropout = ${cfg.dropout}
+      maxIter = ${cfg.maxIter}
+      range = ${cfg.range}
+      tolerance = ${cfg.tolerance}
+      memoryLimit = ${cfg.memoryLimit}
+    """)
 
   val nn = new NN(cfg.nKlassen, nToken, cfg.dropout, cfg.nSample.map(samples.take(_)).getOrElse(samples))
 
@@ -74,7 +84,7 @@ object TeachKeywordSelectorMain
 
   println("stop")
 
-  val (termToKlassen, _) = nn.network(network)
+  val (termToKlassen, klassenToOut) = nn.network(network)
 
   for (i <- (0 until cfg.nKlassen)) {
     val vector = termToKlassen(i, ::).t
@@ -91,9 +101,79 @@ object TeachKeywordSelectorMain
         println(f"${vocabulary.wordMap(token)}%10s $weight")
 
     }
-
-
   }
+
+  println(s"====== ==")
+  implicit val orderingDenseVectorDouble = Ordering.fromLessThan[DenseVector[Double]] { (x, y) =>
+    (x :< y).forall(x => x)
+  }
+
+  def calc(samples: Iterable[(List[Token], List[(Double, Token)])]) =
+    samples.collect {
+      case (w1 :: w3 :: _, ws) =>
+        val input = SparseVector(nToken * 2)(w1 -> 1.0, w3 + nToken -> 1.0)
+
+        val klassenI = DenseVector.zeros[Double](2 * cfg.nKlassen)
+
+        klassenI(0 until cfg.nKlassen) := termToKlassen * input(0 until nToken)
+
+        klassenI(cfg.nKlassen until cfg.nKlassen * 2) := termToKlassen * input(nToken until nToken * 2)
+
+        val klassenO = klassenI.map(x => 1 / (1 + exp(-x)))
+
+        val outI = DenseVector.zeros[Double](1)
+
+        outI := klassenToOut * klassenO
+
+        val outO = outI.map(x => 1 / (1 + exp(-x)))
+
+        (ws, outO)
+    }
+      .foldLeft(Map[Token, (Int, DenseVector[Double])]()) {
+        case (map, (ws, outO)) =>
+          ws.foldLeft(map) {
+            case (map, (_, token)) =>
+              val v = map.get(token) match {
+                case Some((n, v)) =>
+                  (n + 1, v + outO)
+                case None =>
+                  (1, outO)
+              }
+
+              map + (token -> v)
+          }
+      }
+      .map {
+        case (token, (n, outO)) =>
+          (token, outO :/ n.toDouble)
+      }
+      .toList
+      .sortBy {
+        case (token, outO) =>
+          outO
+      }
+
+  println(" ====== From samples:")
+  val sampledTokens = calc(vocabulary.map2ToMiddle.collect {
+    case record@(w1 :: w3 :: _, ws) if ws.map(_._2).exists(x => vocabulary.sense(x) || vocabulary.auxiliary(x)) =>
+      record
+  })
+    .foldLeft(Set[Token]()) {
+      case (set, (token, outO)) =>
+        println(s"${vocabulary.wordMap.getOrElse(token, "***")} $outO")
+        set + token
+    }
+
+  println(" ====== From generalization:")
+  calc(vocabulary.map2ToMiddle.collect {
+    case record@(w1 :: w3 :: _, ws) if !(ws.map(_._2).exists(x => vocabulary.sense(x) || vocabulary.auxiliary(x))) =>
+      record
+  })
+    .foreach {
+      case (token, outO) =>
+        if (!(sampledTokens contains token))
+          println(s"${vocabulary.wordMap.getOrElse(token, "***")} $outO")
+    }
 
   system.shutdown()
 }

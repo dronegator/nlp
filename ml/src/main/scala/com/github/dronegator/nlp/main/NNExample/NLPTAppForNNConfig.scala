@@ -9,4 +9,6 @@ case class NLPTAppForNNConfig(nKlassen: Int = 20,
                               regularization: Double = 0.01,
                               range: Double = 0.1,
                               maxIter: Int = 10,
+                              tolerance: Double = 1E-02,
+                              memoryLimit: Int = 7,
                               dropout: Int = 20)

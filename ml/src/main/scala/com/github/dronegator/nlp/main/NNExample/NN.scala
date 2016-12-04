@@ -73,7 +73,7 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[(SparseVe
 
           val (gTermToKlassen, gKlassen2Out) = network(gradient)
 
-          val backOutI = outO * 2.0 :* (outO :* (-outO + 1.0))
+          val backOutI = (outO - output) * 2.0 :* (outO :* (-outO + 1.0))
 
           gKlassen2Out := (backOutI * klassenO.t)
 
