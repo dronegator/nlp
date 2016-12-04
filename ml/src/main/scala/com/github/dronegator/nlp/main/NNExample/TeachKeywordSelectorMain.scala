@@ -3,7 +3,7 @@ package com.github.dronegator.nlp.main.NNExample
 import java.io.File
 
 import breeze.linalg.{DenseVector, SparseVector}
-import breeze.optimize.LBFGS
+import breeze.optimize.{DiffFunction, LBFGS}
 import breeze.util.Implicits._
 import com.github.dronegator.nlp.main.{Concurent, MainConfig, MainTools}
 import com.github.dronegator.nlp.trace._
@@ -51,15 +51,18 @@ object TeachKeywordSelectorMain
       case Some(sample) => sample
     }
 
-  val lbfgs = new LBFGS[DenseVector[Double]]() //tolerance = 1E-2)
+  val lbfgs = new LBFGS[DenseVector[Double]](maxIter = cfg.maxIter) //tolerance = 1E-2)
 
-  println(s"size = ${samples.length}")
+  println(s"size = ${cfg.nSample getOrElse samples.length}")
+  println(s"nToken = ${nToken}")
+  println(s"nKlassen = ${cfg.nKlassen}")
+  println(s"regularization = ${cfg.regularization}")
 
-  val nn = new NN(cfg.nKlassen, nToken, samples)
+  val nn = new NN(cfg.nKlassen, nToken, cfg.nSample.map(samples.take(_)).getOrElse(samples))
 
   //  val network = lbfgs.minimize(nn, DenseVector.rand(2*10+10*2))
 
-  val network = lbfgs.iterations(nn, nn.initial :/ 1.0)
+  val network = lbfgs.iterations(DiffFunction.withL2Regularization(nn, cfg.regularization), nn.initial :/ 1.0)
     .map {
       case x =>
         println(x.value)
@@ -68,5 +71,27 @@ object TeachKeywordSelectorMain
     .last
 
   println("stop")
+
+  val (termToKlassen, _) = nn.network(network)
+
+  for (i <- (0 until cfg.nKlassen)) {
+    val vector = termToKlassen(i, ::).t
+
+    println(s"====== $i")
+    val tokens = vector.toScalaVector()
+      .zipWithIndex
+      .sortBy(-_._1)
+      .map(x => x._2 -> x._1)
+
+    //(tokens.take(20) ++ tokens.takeRight(20))
+    tokens.foreach {
+      case (token, weight) =>
+        println(f"${vocabulary.wordMap(token)}%10s $weight")
+
+    }
+
+
+  }
+
   system.shutdown()
 }

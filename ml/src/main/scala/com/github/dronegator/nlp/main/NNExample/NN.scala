@@ -14,10 +14,17 @@ class NN(nKlassen: Int, nToken: Int, sample: => Iterator[(SparseVector[Double], 
 
   def initial = DenseVector.rand[Double](nKlassen * nToken + nKlassen * 2)
 
-  override def calculate(vector: DenseVector[Double]): (Double, DenseVector[Double]) = {
+  def network(vector: DenseVector[Double]) = {
     val termToKlassen: DenseMatrix[Double] = vector(0 until nToken * nKlassen).asDenseMatrix.reshape(nKlassen, nToken)
 
     val klassenToOut: DenseMatrix[Double] = vector(nToken * nKlassen until (nToken * nKlassen + nKlassen * 2)).asDenseMatrix.reshape(1, nKlassen * 2)
+
+    (termToKlassen, klassenToOut)
+  }
+
+  override def calculate(vector: DenseVector[Double]): (Double, DenseVector[Double]) = {
+
+    val (termToKlassen, klassenToOut) = network(vector)
 
     sample
       .map {
@@ -45,9 +52,7 @@ class NN(nKlassen: Int, nToken: Int, sample: => Iterator[(SparseVector[Double], 
 
           val gradient: DenseVector[Double] = initial
 
-          val gKlassen2Out = gradient(nToken * nKlassen until (nToken * nKlassen + nKlassen * 2)).asDenseMatrix.reshape(1, nKlassen * 2)
-
-          val gTermToKlassen = gradient(0 until nToken * nKlassen).asDenseMatrix.reshape(nKlassen, nToken)
+          val (gTermToKlassen, gKlassen2Out) = network(gradient)
 
           val backOutI = outO * 2.0 :* (outO :* (-outO + 1.0))
 
