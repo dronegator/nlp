@@ -58,11 +58,13 @@ object TeachKeywordSelectorMain
   println(s"nKlassen = ${cfg.nKlassen}")
   println(s"regularization = ${cfg.regularization}")
 
-  val nn = new NN(cfg.nKlassen, nToken, cfg.nSample.map(samples.take(_)).getOrElse(samples))
+  val nn = new NN(cfg.nKlassen, nToken, cfg.dropout, cfg.nSample.map(samples.take(_)).getOrElse(samples))
 
   //  val network = lbfgs.minimize(nn, DenseVector.rand(2*10+10*2))
 
-  val network = lbfgs.iterations(DiffFunction.withL2Regularization(nn, cfg.regularization), nn.initial :/ 1.0)
+  val network = lbfgs.iterations(
+    if (cfg.regularization < 0.000001) nn else DiffFunction.withL2Regularization(nn, cfg.regularization),
+    ((nn.initial :* 2.0) :- 1.0) :* cfg.range)
     .map {
       case x =>
         println(x.value)

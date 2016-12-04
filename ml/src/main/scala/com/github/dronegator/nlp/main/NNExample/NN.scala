@@ -4,12 +4,14 @@ import breeze.linalg.{DenseMatrix, DenseVector, SparseVector}
 import breeze.numerics._
 import breeze.optimize.DiffFunction
 
+import scala.util.Random
+
 /**
   * Created by cray on 11/28/16.
   */
 
 
-class NN(nKlassen: Int, nToken: Int, sample: => Iterator[(SparseVector[Double], SparseVector[Double])])
+class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[(SparseVector[Double], SparseVector[Double])])
   extends DiffFunction[DenseVector[Double]] {
 
   def initial = DenseVector.rand[Double](nKlassen * nToken + nKlassen * 2)
@@ -26,6 +28,12 @@ class NN(nKlassen: Int, nToken: Int, sample: => Iterator[(SparseVector[Double], 
 
     val (termToKlassen, klassenToOut) = network(vector)
 
+    val indexes = (0 until nKlassen * 2)
+      .collect {
+        case i if Random.nextInt(100) > dropout =>
+          i
+      }
+
     sample
       .map {
         case (input, output) =>
@@ -37,6 +45,17 @@ class NN(nKlassen: Int, nToken: Int, sample: => Iterator[(SparseVector[Double], 
           //println(input(nToken until nToken * 2).size, input.size, nToken, "input2")
 
           klassenI(nKlassen until nKlassen * 2) := termToKlassen * input(nToken until nToken * 2)
+
+          //          if (dropout > 0)
+          //            for (i <- 0 until nKlassen * 2) {
+          //              if (Random.nextInt(100) <= dropout) {
+          //                klassenI(i) = 0.0
+          //              }
+          //            }
+
+          for (i <- indexes) {
+            klassenI(i) = 0.0
+          }
 
           val klassenO = klassenI.map(x => 1 / (1 + exp(-x)))
 

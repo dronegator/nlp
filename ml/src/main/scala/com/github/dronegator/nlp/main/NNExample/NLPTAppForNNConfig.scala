@@ -7,4 +7,6 @@ case class NLPTAppForNNConfig(nKlassen: Int = 20,
                               nGram: Option[Int] = None,
                               nSample: Option[Int],
                               regularization: Double = 0.01,
-                              maxIter: Int = 10)
+                              range: Double = 0.1,
+                              maxIter: Int = 10,
+                              dropout: Int = 20)
