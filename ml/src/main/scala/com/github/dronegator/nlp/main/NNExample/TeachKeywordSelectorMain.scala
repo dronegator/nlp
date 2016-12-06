@@ -87,7 +87,7 @@ object TeachKeywordSelectorMain
 
     } yield initial
 
-  //    val network = initial.get
+  //  val network = initial.get
   val network = lbfgs.iterations(
     if (cfg.regularization < 0.000001) nn else DiffFunction.withL2Regularization(nn, cfg.regularization),
     initial getOrElse (((nn.initial :* 2.0) :- 1.0) :* cfg.range))
@@ -139,9 +139,9 @@ object TeachKeywordSelectorMain
 
         val klassenI = DenseVector.zeros[Double](2 * cfg.nKlassen)
 
-        klassenI(0 until cfg.nKlassen) := termToKlassen * input(0 until nToken)
+        klassenI(0 until cfg.nKlassen) := termToKlassen(::, w1) * 1.0
 
-        klassenI(cfg.nKlassen until cfg.nKlassen * 2) := termToKlassen * input(nToken until nToken * 2)
+        klassenI(cfg.nKlassen until cfg.nKlassen * 2) := termToKlassen(::, w3) * 1.0 //termToKlassen * input(nToken until nToken * 2)
 
         val klassenO = klassenI.map(x => 1 / (1 + exp(-x)))
 
@@ -163,7 +163,6 @@ object TeachKeywordSelectorMain
                 case None =>
                   (1, outO)
               }
-
               map + (token -> v)
           }
       }
@@ -178,6 +177,7 @@ object TeachKeywordSelectorMain
       }
 
   println(" ====== From samples:")
+
   val sampledTokens = calc(vocabulary.map2ToMiddle.collect {
     case record@(w1 :: w3 :: _, ws) if ws.map(_._2).exists(x => vocabulary.sense(x) || vocabulary.auxiliary(x)) =>
       record
@@ -192,7 +192,7 @@ object TeachKeywordSelectorMain
 
   println(" ====== From generalization:")
   calc(vocabulary.map2ToMiddle.collect {
-    case record@(w1 :: w3 :: _, ws) if !(ws.map(_._2).exists(x => vocabulary.sense(x) || vocabulary.auxiliary(x))) =>
+    case record@(w1 :: w3 :: _, ws) if !(ws.map(_._2).exists(x => vocabulary.sense(x) || vocabulary.auxiliary(x))) => // && ((Random.nextInt() % 10) != 0)=>
       record
   })
     .foreach {
