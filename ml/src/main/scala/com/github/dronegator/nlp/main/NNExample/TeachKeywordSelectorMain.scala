@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp.main.NNExample
 
-import java.io.File
+import java.io._
 
 import breeze.linalg.{DenseVector, SparseVector}
 import breeze.numerics._
@@ -14,6 +14,8 @@ import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyImpl}
 import com.typesafe.scalalogging.LazyLogging
 import configs.syntax._
 
+import scala.util.Try
+
 object TeachKeywordSelectorMain
   extends App
     with MainTools
@@ -22,7 +24,7 @@ object TeachKeywordSelectorMain
     with LazyLogging
     with NLPTAppForNN {
 
-  val fileIn :: OptFile(hints) = args.toList
+  val fileIn :: OptFile(matrix) = args.toList
 
   lazy val cfg = config.get[NLPTAppForNNConfig]("nn").value
 
@@ -38,7 +40,7 @@ object TeachKeywordSelectorMain
 
   val nToken = vocabulary.wordMap.keys.max: Int
 
-  def samples = vocabulary.nGram3.keysIterator
+  lazy val samples = vocabulary.nGram3.keysIterator
     .map {
       case ws@w1 :: w2 :: w3 :: _ if ws.forall(_ <= nToken) =>
         lazy val input = SparseVector(nToken * 2)(w1 -> 1.0, w3 + nToken -> 1.0)
@@ -52,6 +54,7 @@ object TeachKeywordSelectorMain
     .collect {
       case Some(sample) => sample
     }
+    .toList
 
   val lbfgs = new LBFGS[DenseVector[Double]](maxIter = cfg.maxIter, m = cfg.memoryLimit, tolerance = cfg.tolerance)
 
@@ -68,16 +71,34 @@ object TeachKeywordSelectorMain
       memoryLimit = ${cfg.memoryLimit}
     """)
 
-  val nn = new NN(cfg.nKlassen, nToken, cfg.dropout, cfg.nSample.map(samples.take(_)).getOrElse(samples))
+  val nn = new NN(cfg.nKlassen, nToken, cfg.dropout, cfg.nSample.map(samples.toIterator.take(_)).getOrElse(samples.toIterator))
 
   //  val network = lbfgs.minimize(nn, DenseVector.rand(2*10+10*2))
 
+  val initial =
+    for {
+      matrix <- matrix
+      initial <- Try {
+        val file = new ObjectInputStream(new FileInputStream(matrix))
+        val nn = file.readObject().asInstanceOf[DenseVector[Double]]
+        file.close()
+        nn
+      }.toOption
+
+    } yield initial
+
+  //    val network = initial.get
   val network = lbfgs.iterations(
     if (cfg.regularization < 0.000001) nn else DiffFunction.withL2Regularization(nn, cfg.regularization),
-    ((nn.initial :* 2.0) :- 1.0) :* cfg.range)
+    initial getOrElse (((nn.initial :* 2.0) :- 1.0) :* cfg.range))
     .map {
       case x =>
         println(x.value)
+        matrix.foreach { matrix =>
+          val file = new ObjectOutputStream(new FileOutputStream(matrix))
+          file.writeObject(x.x)
+          file.close()
+        }
         x.x
     }
     .last
@@ -98,14 +119,17 @@ object TeachKeywordSelectorMain
     //(tokens.take(20) ++ tokens.takeRight(20))
     tokens.foreach {
       case (token, weight) =>
-        println(f"${vocabulary.wordMap(token)}%10s $weight")
+        println(f"${
+          vocabulary.wordMap(token)
+        }%10s $weight")
 
     }
   }
 
   println(s"====== ==")
-  implicit val orderingDenseVectorDouble = Ordering.fromLessThan[DenseVector[Double]] { (x, y) =>
-    (x :< y).forall(x => x)
+  implicit val orderingDenseVectorDouble = Ordering.fromLessThan[DenseVector[Double]] {
+    (x, y) =>
+      (x :< y).forall(x => x)
   }
 
   def calc(samples: Iterable[(List[Token], List[(Double, Token)])]) =
@@ -160,7 +184,9 @@ object TeachKeywordSelectorMain
   })
     .foldLeft(Set[Token]()) {
       case (set, (token, outO)) =>
-        println(s"${vocabulary.wordMap.getOrElse(token, "***")} $outO")
+        println(s"${
+          vocabulary.wordMap.getOrElse(token, "***")
+        } $outO")
         set + token
     }
 
@@ -172,7 +198,9 @@ object TeachKeywordSelectorMain
     .foreach {
       case (token, outO) =>
         if (!(sampledTokens contains token))
-          println(s"${vocabulary.wordMap.getOrElse(token, "***")} $outO")
+          println(s"${
+            vocabulary.wordMap.getOrElse(token, "***")
+          } $outO")
     }
 
   system.shutdown()

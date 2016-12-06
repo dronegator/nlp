@@ -14,6 +14,8 @@ import scala.util.Random
 class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[(SparseVector[Double], SparseVector[Double])])
   extends DiffFunction[DenseVector[Double]] {
 
+  val t = System.currentTimeMillis()
+
   def initial = DenseVector.rand[Double](nKlassen * nToken + nKlassen * 2)
 
   def network(vector: DenseVector[Double]) = {
@@ -85,6 +87,16 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[(SparseVe
             (backKlassenI(nKlassen until 2 * nKlassen) * input(nToken until (2 * nToken)).toDenseVector.t)
 
           (value, gradient)
+      }
+      .scanLeft((0, (0.0, DenseVector[Double]()))) {
+        case ((i, _), x) =>
+          if (i % 1000 == 0)
+            println(f"${(System.currentTimeMillis() - t) / 1000}%8d $i%8d")
+          (i + 1, x)
+      }
+      .drop(1)
+      .map {
+        _._2
       }
       .reduce[(Double, DenseVector[Double])] {
       case ((value1, gradient1), (value2, gradient2)) =>
