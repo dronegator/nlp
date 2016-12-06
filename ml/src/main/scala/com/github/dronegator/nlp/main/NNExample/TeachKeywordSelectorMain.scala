@@ -43,7 +43,7 @@ object TeachKeywordSelectorMain
   lazy val samples = vocabulary.nGram3.keysIterator
     .map {
       case ws@w1 :: w2 :: w3 :: _ if ws.forall(_ <= nToken) =>
-        lazy val input = SparseVector(nToken * 2)(w1 -> 1.0, w3 + nToken -> 1.0)
+        lazy val input = (w1, w3) //SparseVector(nToken * 2)(w1 -> 1.0, w3 + nToken -> 1.0)
 
         if (vocabulary.sense contains w2)
           Some(input -> SparseVector(1)(0 -> 1.0))
