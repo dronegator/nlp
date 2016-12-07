@@ -33,7 +33,7 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[((Token, 
 
     val (termToKlassen, klassenToOut) = network(vector)
 
-    val indexes = (0 until nKlassen * 2)
+    def indexes = (0 until nKlassen * 2)
       .collect {
         case i if Random.nextInt(100) > dropout =>
           i
@@ -95,7 +95,7 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[((Token, 
       }
       .scanLeft((0, (0.0))) {
         case ((i, _), x) =>
-          if (i % 1000 == 0)
+          if (i % 100000 == 0)
             println(f"${(System.currentTimeMillis() - t) / 1000}%8d $i%8d")
           (i + 1, x)
       }
@@ -104,7 +104,7 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[((Token, 
         _._2
       }
       .reduce(_ + _)
-    println(gradient.norm())
+    println(s"|grad| = ${gradient.norm()}")
     (value, gradient)
   }
 }
