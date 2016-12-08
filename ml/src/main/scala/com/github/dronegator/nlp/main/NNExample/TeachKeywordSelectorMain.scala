@@ -4,7 +4,7 @@ import java.io._
 
 import breeze.linalg.{DenseVector, SparseVector}
 import breeze.numerics._
-import breeze.optimize.{AdaDeltaGradientDescent, DiffFunction, LBFGS}
+import breeze.optimize.{DiffFunction, LBFGS}
 import breeze.util.Implicits._
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.main.{Concurent, MainConfig, MainTools}
@@ -14,7 +14,7 @@ import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyImpl}
 import com.typesafe.scalalogging.LazyLogging
 import configs.syntax._
 
-import scala.util.Try
+import scala.util.{Random, Try}
 
 object TeachKeywordSelectorMain
   extends App
@@ -40,14 +40,17 @@ object TeachKeywordSelectorMain
 
   val nToken = vocabulary.wordMap.keys.max: Int
 
-  lazy val samples = vocabulary.nGram3.keysIterator
+  lazy val (sense, crossValidationSense) = vocabulary.sense.partition(_ => Random.nextInt(100) > cfg.crossValidationWords)
+  lazy val (auxiliary, crossValidationAuxiliary) = vocabulary.auxiliary.partition(_ => Random.nextInt(100) > cfg.crossValidationWords)
+
+  lazy val (samples, crossValidationSamples) = vocabulary.nGram3.keysIterator
     .map {
       case ws@w1 :: w2 :: w3 :: _ if ws.forall(_ <= nToken) =>
         lazy val input = (w1, w3) //SparseVector(nToken * 2)(w1 -> 1.0, w3 + nToken -> 1.0)
 
-        if (vocabulary.sense contains w2)
+        if (sense contains w2)
           Some(input -> SparseVector(1)(0 -> 1.0))
-        else if (vocabulary.auxiliary contains w2)
+        else if (auxiliary contains w2)
           Some(input -> SparseVector(1)(0 -> 0.0))
         else None
     }
@@ -55,11 +58,12 @@ object TeachKeywordSelectorMain
       case Some(sample) => sample
     }
     .toList
+    .partition(_ => Random.nextInt(100) > cfg.crossValidationContext)
 
-  val lbfgs = if (cfg.useLBFGS)
+  val lbfgs = //if (cfg.useLBFGS)
     new LBFGS[DenseVector[Double]](maxIter = cfg.maxIter, m = cfg.memoryLimit, tolerance = cfg.tolerance)
-  else
-    new AdaDeltaGradientDescent[DenseVector[Double]](rho = cfg.rfo, maxIter = cfg.maxIter, tolerance = cfg.tolerance)
+  //  else
+  //    new AdaDeltaGradientDescent[DenseVector[Double]](rho = cfg.rfo, maxIter = cfg.maxIter, tolerance = cfg.tolerance).iterations(???, ???)
 
   println(
     s"""
@@ -75,6 +79,7 @@ object TeachKeywordSelectorMain
     """)
 
   val nn = new NN(cfg.nKlassen, nToken, cfg.dropout, cfg.nSample.map(samples.toIterator.take(_)).getOrElse(samples.toIterator))
+  val nnCrossValidation = new NN(cfg.nKlassen, nToken, cfg.dropout, cfg.nSample.map(crossValidationSamples.toIterator.take(_)).getOrElse(crossValidationSamples.toIterator))
 
   //  val network = lbfgs.minimize(nn, DenseVector.rand(2*10+10*2))
 
@@ -96,7 +101,8 @@ object TeachKeywordSelectorMain
     initial getOrElse (((nn.initial :* 2.0) :- 1.0) :* cfg.range))
     .map {
       case x =>
-        println(x.value)
+        val crossValue = nnCrossValidation.calculate(x.x)._1
+        println(f"value=${x.value}%8.6f cross=${crossValue}%8.6f")
         matrix.foreach { matrix =>
           val file = new ObjectOutputStream(new FileOutputStream(matrix))
           file.writeObject(x.x)

@@ -74,9 +74,6 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[((Token, 
 
           val value = (outO - output).norm()
 
-          //println(value, input, output)
-
-
           val (gTermToKlassen, gKlassen2Out) = network(gradient)
 
           val backOutI = (outO - output) * 2.0 :* (outO :* (-outO + 1.0))
@@ -104,7 +101,7 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[((Token, 
         _._2
       }
       .reduce(_ + _)
-    println(s"|grad| = ${gradient.norm()}")
-    (value, gradient)
+    //println(s"|grad| = ${gradient.norm()}")
+    (value / sample.size, gradient :/ sample.size.toDouble)
   }
 }
