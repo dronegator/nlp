@@ -41,6 +41,9 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[((Token, 
 
     val gradient: DenseVector[Double] = initialZ
 
+    var yes: Int = 0
+    var no: Int = 0
+
     val value = sample
       .map {
         case ((in1, in2), output) =>
@@ -93,7 +96,18 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[((Token, 
       .scanLeft((0, (0.0))) {
         case ((i, _), x) =>
           if (i % 100000 == 0)
-            println(f"${(System.currentTimeMillis() - t) / 1000}%8d $i%8d")
+            println(f"${(System.currentTimeMillis() - t) / 1000}%8d $i%8d $x $i")
+          if (x > 0.9) {
+            yes += 1
+          }
+
+          if (x < 0.1) {
+            no += 1
+          }
+
+          if (x > 1) {
+            println(x)
+          }
           (i + 1, x)
       }
       .drop(1)
@@ -102,6 +116,7 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[((Token, 
       }
       .reduce(_ + _)
     //println(s"|grad| = ${gradient.norm()}")
+    println(yes, no, sample.size)
     (value / sample.size, gradient :/ sample.size.toDouble)
   }
 }

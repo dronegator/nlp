@@ -4,7 +4,7 @@ import java.io._
 
 import breeze.linalg.{DenseVector, SparseVector}
 import breeze.numerics._
-import breeze.optimize.{DiffFunction, LBFGS}
+import breeze.optimize.{AdaDeltaGradientDescent, DiffFunction}
 import breeze.util.Implicits._
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.main.{Concurent, MainConfig, MainTools}
@@ -60,10 +60,26 @@ object TeachKeywordSelectorMain
     .toList
     .partition(_ => Random.nextInt(100) > cfg.crossValidationContext)
 
+  lazy val crossWordValidationSamples = vocabulary.nGram3.keysIterator
+    .map {
+      case ws@w1 :: w2 :: w3 :: _ if ws.forall(_ <= nToken) =>
+        lazy val input = (w1, w3) //SparseVector(nToken * 2)(w1 -> 1.0, w3 + nToken -> 1.0)
+
+        if (crossValidationSense contains w2)
+          Some(input -> SparseVector(1)(0 -> 1.0))
+        else if (crossValidationAuxiliary contains w2)
+          Some(input -> SparseVector(1)(0 -> 0.0))
+        else None
+    }
+    .collect {
+      case Some(sample) => sample
+    }
+    .toList
+
   val lbfgs = //if (cfg.useLBFGS)
-    new LBFGS[DenseVector[Double]](maxIter = cfg.maxIter, m = cfg.memoryLimit, tolerance = cfg.tolerance)
+  //new LBFGS[DenseVector[Double]](maxIter = cfg.maxIter, m = cfg.memoryLimit, tolerance = cfg.tolerance)
   //  else
-  //    new AdaDeltaGradientDescent[DenseVector[Double]](rho = cfg.rfo, maxIter = cfg.maxIter, tolerance = cfg.tolerance).iterations(???, ???)
+    new AdaDeltaGradientDescent[DenseVector[Double]](rho = cfg.rfo, maxIter = cfg.maxIter, tolerance = cfg.tolerance)
 
   println(
     s"""
@@ -80,6 +96,7 @@ object TeachKeywordSelectorMain
 
   val nn = new NN(cfg.nKlassen, nToken, cfg.dropout, cfg.nSample.map(samples.toIterator.take(_)).getOrElse(samples.toIterator))
   val nnCrossValidation = new NN(cfg.nKlassen, nToken, cfg.dropout, cfg.nSample.map(crossValidationSamples.toIterator.take(_)).getOrElse(crossValidationSamples.toIterator))
+  val nnCrossWordValidation = new NN(cfg.nKlassen, nToken, cfg.dropout, cfg.nSample.map(crossWordValidationSamples.toIterator.take(_)).getOrElse(crossWordValidationSamples.toIterator))
 
   //  val network = lbfgs.minimize(nn, DenseVector.rand(2*10+10*2))
 
@@ -95,14 +112,17 @@ object TeachKeywordSelectorMain
 
     } yield initial
 
-  //  val network = initial.get
+  //    val network = initial.get
   val network = lbfgs.iterations(
     if (cfg.regularization < 0.000001) nn else DiffFunction.withL2Regularization(nn, cfg.regularization),
     initial getOrElse (((nn.initial :* 2.0) :- 1.0) :* cfg.range))
     .map {
       case x =>
         val crossValue = nnCrossValidation.calculate(x.x)._1
-        println(f"value=${x.value}%8.6f cross=${crossValue}%8.6f")
+        val crossWordValue = nnCrossWordValidation.calculate(x.x)._1
+        val value = nn.calculate(x.x)._1
+
+        println(f"value=${x.value}%8.6f value=${value}%8.6f cross=${crossValue}%8.6f crossword=${crossWordValue}%8.6f")
         matrix.foreach { matrix =>
           val file = new ObjectOutputStream(new FileOutputStream(matrix))
           file.writeObject(x.x)
