@@ -94,9 +94,9 @@ object TeachKeywordSelectorMain
       memoryLimit = ${cfg.memoryLimit}
     """)
 
-  val nn = new NN(cfg.nKlassen, nToken, cfg.dropout, cfg.nSample.map(samples.toIterator.take(_)).getOrElse(samples.toIterator))
-  val nnCrossValidation = new NN(cfg.nKlassen, nToken, cfg.dropout, cfg.nSample.map(crossValidationSamples.toIterator.take(_)).getOrElse(crossValidationSamples.toIterator))
-  val nnCrossWordValidation = new NN(cfg.nKlassen, nToken, cfg.dropout, cfg.nSample.map(crossWordValidationSamples.toIterator.take(_)).getOrElse(crossWordValidationSamples.toIterator))
+  val nn = new NN(cfg.nKlassen, nToken, cfg.dropout, cfg.winnerGetsAll, cfg.nSample.map(samples.toIterator.take(_)).getOrElse(samples.toIterator))
+  val nnCrossValidation = new NN(cfg.nKlassen, nToken, 0, cfg.winnerGetsAll, cfg.nSample.map(crossValidationSamples.toIterator.take(_)).getOrElse(crossValidationSamples.toIterator))
+  val nnCrossWordValidation = new NN(cfg.nKlassen, nToken, 0, cfg.winnerGetsAll, cfg.nSample.map(crossWordValidationSamples.toIterator.take(_)).getOrElse(crossWordValidationSamples.toIterator))
 
   //  val network = lbfgs.minimize(nn, DenseVector.rand(2*10+10*2))
 
@@ -112,7 +112,7 @@ object TeachKeywordSelectorMain
 
     } yield initial
 
-  //    val network = initial.get
+  //val network = initial.get
   val network = lbfgs.iterations(
     if (cfg.regularization < 0.000001) nn else DiffFunction.withL2Regularization(nn, cfg.regularization),
     initial getOrElse (((nn.initial :* 2.0) :- 1.0) :* cfg.range))

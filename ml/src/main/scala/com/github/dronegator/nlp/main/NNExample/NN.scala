@@ -12,7 +12,7 @@ import scala.util.Random
   */
 
 
-class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[((Token, Token), SparseVector[Double])])
+class NN(nKlassen: Int, nToken: Int, dropout: Int, winnerGetsAll: Boolean, sample: => Iterator[((Token, Token), SparseVector[Double])])
   extends DiffFunction[DenseVector[Double]] {
 
   val t = System.currentTimeMillis()
@@ -35,7 +35,7 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[((Token, 
 
     def indexes = (0 until nKlassen * 2)
       .collect {
-        case i if Random.nextInt(100) > dropout =>
+        case i if Random.nextInt(100) < dropout =>
           i
       }
 
@@ -56,18 +56,31 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, sample: => Iterator[((Token, 
 
           klassenI(nKlassen until nKlassen * 2) := termToKlassen(::, in2) * 0.1 //input(nToken until nToken * 2)
 
-          //          if (dropout > 0)
-          //            for (i <- 0 until nKlassen * 2) {
-          //              if (Random.nextInt(100) <= dropout) {
-          //                klassenI(i) = 0.0
-          //              }
-          //            }
+          val klassenO = klassenI.map(x => 1 / (1 + exp(-x)))
 
           for (i <- indexes) {
-            klassenI(i) = 0.0
+            klassenO(i) = 0.0
           }
 
-          val klassenO = klassenI.map(x => 1 / (1 + exp(-x)))
+          if (winnerGetsAll) {
+            val (i1x, v1x) = klassenO(0 until nKlassen).iterator.maxBy(_._2)
+
+            val (i2x, v2x) = klassenO(nKlassen until nKlassen * 2).iterator.maxBy(_._2)
+
+            val (i1n, v1n) = klassenO(0 until nKlassen).iterator.minBy(_._2)
+
+            val (i2n, v2n) = klassenO(nKlassen until nKlassen * 2).iterator.minBy(_._2)
+
+            klassenO := 0.0
+
+            klassenO(i1x) = v1n
+
+            klassenO(i2x) = v2n
+
+            klassenO(i1n) = v1n
+
+            klassenO(i2n) = v2n
+          }
 
           val outI = DenseVector.zeros[Double](1)
 
