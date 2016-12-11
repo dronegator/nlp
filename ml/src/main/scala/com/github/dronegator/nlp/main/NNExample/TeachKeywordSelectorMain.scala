@@ -4,7 +4,7 @@ import java.io._
 
 import breeze.linalg.{DenseVector, SparseVector}
 import breeze.numerics._
-import breeze.optimize.{AdaDeltaGradientDescent, DiffFunction}
+import breeze.optimize.{DiffFunction, LBFGS}
 import breeze.util.Implicits._
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.main.{Concurent, MainConfig, MainTools}
@@ -77,10 +77,10 @@ object TeachKeywordSelectorMain
     .toList
 
   val lbfgs = //if (cfg.useLBFGS)
-  //new LBFGS[DenseVector[Double]](maxIter = cfg.maxIter, m = cfg.memoryLimit, tolerance = cfg.tolerance)
+    new LBFGS[DenseVector[Double]](maxIter = cfg.maxIter, m = cfg.memoryLimit, tolerance = cfg.tolerance)
   //  else
-    new AdaDeltaGradientDescent[DenseVector[Double]](rho = cfg.rfo, maxIter = cfg.maxIter, tolerance = cfg.tolerance)
-  //new SimpleSGD[DenseVector[Double]](maxIter = cfg.maxIter)
+  //  new AdaDeltaGradientDescent[DenseVector[Double]](rho = cfg.rfo, maxIter = cfg.maxIter, tolerance = cfg.tolerance)
+  // new SimpleSGD[DenseVector[Double]](maxIter = cfg.maxIter)
 
   println(
     s"""

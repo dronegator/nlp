@@ -104,22 +104,29 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, winnerGetsAll: Boolean, sampl
 
           (value, outO, output)
       }
-      .scanLeft((0, (0.0, DenseVector.zeros[Double](1), DenseVector.zeros[Double](1)))) {
-        case ((i, _), (x, out, output)) =>
+      .scanLeft((0, (0.0, DenseVector.zeros[Double](1), SparseVector.zeros[Double](1)))) {
+        case ((i, _), (x, outO, output)) =>
           if (i % 100000 == 0)
-            println(f"${(System.currentTimeMillis() - t) / 1000}%8d $i%8d $out $output $i")
-          if (out(0) > 0.9) {
+            println(f"${(System.currentTimeMillis() - t) / 1000}%8d $i%8d $outO $output $i")
+
+          //          if (i / 100000 % 2 == 0 && output(0) > 0.5 )
+          //            println(f"${(System.currentTimeMillis() - t) / 1000}%8d $i%8d $outO $output $i")
+          //
+          //          if (i / 100000 % 2 == 0 && output(0) < 0.5 )
+          //            println(f"${(System.currentTimeMillis() - t) / 1000}%8d $i%8d $outO $output $i")
+
+          if (outO(0) > 0.9) {
             yes += 1
           }
 
-          if (out(0) < 0.1) {
+          if (outO(0) < 0.1) {
             no += 1
           }
 
           if (x > 1) {
             println(x)
           }
-          (i + 1, (x, out))
+          (i + 1, (x, outO, output))
       }
       .drop(1)
       .map {
