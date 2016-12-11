@@ -50,11 +50,9 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, winnerGetsAll: Boolean, sampl
 
           val klassenI = DenseVector.zeros[Double](2 * nKlassen)
 
-          klassenI(0 until nKlassen) := termToKlassen(::, in1) * 0.1 //input(0 until nToken)
+          klassenI(0 until nKlassen) := termToKlassen(::, in1) * 1.0
 
-          //println(input(nToken until nToken * 2).size, input.size, nToken, "input2")
-
-          klassenI(nKlassen until nKlassen * 2) := termToKlassen(::, in2) * 0.1 //input(nToken until nToken * 2)
+          klassenI(nKlassen until nKlassen * 2) := termToKlassen(::, in2) * 1.0
 
           val klassenO = klassenI.map(x => 1 / (1 + exp(-x)))
 
@@ -75,11 +73,11 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, winnerGetsAll: Boolean, sampl
 
             klassenO(i1x) = v1n
 
-            klassenO(i2x) = v2n
+            klassenO(i2x + nKlassen) = v2n
 
             klassenO(i1n) = v1n
 
-            klassenO(i2n) = v2n
+            klassenO(i2n + nKlassen) = v2n
           }
 
           val outI = DenseVector.zeros[Double](1)
@@ -88,11 +86,11 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, winnerGetsAll: Boolean, sampl
 
           val outO = outI.map(x => 1 / (1 + exp(-x)))
 
-          val value = (outO - output).norm()
+          val value = ((outO - output) dot (outO - output)) / 2.0
 
           val (gTermToKlassen, gKlassen2Out) = network(gradient)
 
-          val backOutI = (outO - output) * 2.0 :* (outO :* (-outO + 1.0))
+          val backOutI = (outO - output) :* (outO :* (-outO + 1.0))
 
           gKlassen2Out :+= (backOutI * klassenO.t)
 
@@ -100,36 +98,36 @@ class NN(nKlassen: Int, nToken: Int, dropout: Int, winnerGetsAll: Boolean, sampl
 
           val backKlassenI = backKlassenO :* klassenO :* (-klassenO + 1.0)
 
-          gTermToKlassen(::, in1) :+= (backKlassenI(0 until nKlassen) * 1.0) /*input(0 until nToken).toDenseVector.t)*/
+          gTermToKlassen(::, in1) :+= (backKlassenI(0 until nKlassen) * 1.0)
 
           gTermToKlassen(::, in2) :+= (backKlassenI(nKlassen until 2 * nKlassen) * 1.0) //input(nToken until (2 * nToken)).toDenseVector.t)
 
-          value
+          (value, outO, output)
       }
-      .scanLeft((0, (0.0))) {
-        case ((i, _), x) =>
+      .scanLeft((0, (0.0, DenseVector.zeros[Double](1), DenseVector.zeros[Double](1)))) {
+        case ((i, _), (x, out, output)) =>
           if (i % 100000 == 0)
-            println(f"${(System.currentTimeMillis() - t) / 1000}%8d $i%8d $x $i")
-          if (x > 0.9) {
+            println(f"${(System.currentTimeMillis() - t) / 1000}%8d $i%8d $out $output $i")
+          if (out(0) > 0.9) {
             yes += 1
           }
 
-          if (x < 0.1) {
+          if (out(0) < 0.1) {
             no += 1
           }
 
           if (x > 1) {
             println(x)
           }
-          (i + 1, x)
+          (i + 1, (x, out))
       }
       .drop(1)
       .map {
-        _._2
+        _._2._1
       }
       .reduce(_ + _)
     //println(s"|grad| = ${gradient.norm()}")
     println(yes, no, sample.size)
-    (value / sample.size, gradient :/ sample.size.toDouble)
+    (value / sample.size, gradient :/ sample.size.toDouble :* 0.1)
   }
 }

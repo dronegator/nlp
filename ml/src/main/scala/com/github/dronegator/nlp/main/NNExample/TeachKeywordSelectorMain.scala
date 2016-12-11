@@ -46,7 +46,7 @@ object TeachKeywordSelectorMain
   lazy val (samples, crossValidationSamples) = vocabulary.nGram3.keysIterator
     .map {
       case ws@w1 :: w2 :: w3 :: _ if ws.forall(_ <= nToken) =>
-        lazy val input = (w1, w3) //SparseVector(nToken * 2)(w1 -> 1.0, w3 + nToken -> 1.0)
+        lazy val input = (w1, w3)
 
         if (sense contains w2)
           Some(input -> SparseVector(1)(0 -> 1.0))
@@ -63,7 +63,7 @@ object TeachKeywordSelectorMain
   lazy val crossWordValidationSamples = vocabulary.nGram3.keysIterator
     .map {
       case ws@w1 :: w2 :: w3 :: _ if ws.forall(_ <= nToken) =>
-        lazy val input = (w1, w3) //SparseVector(nToken * 2)(w1 -> 1.0, w3 + nToken -> 1.0)
+        lazy val input = (w1, w3)
 
         if (crossValidationSense contains w2)
           Some(input -> SparseVector(1)(0 -> 1.0))
@@ -80,6 +80,7 @@ object TeachKeywordSelectorMain
   //new LBFGS[DenseVector[Double]](maxIter = cfg.maxIter, m = cfg.memoryLimit, tolerance = cfg.tolerance)
   //  else
     new AdaDeltaGradientDescent[DenseVector[Double]](rho = cfg.rfo, maxIter = cfg.maxIter, tolerance = cfg.tolerance)
+  //new SimpleSGD[DenseVector[Double]](maxIter = cfg.maxIter)
 
   println(
     s"""
@@ -112,7 +113,7 @@ object TeachKeywordSelectorMain
 
     } yield initial
 
-  //val network = initial.get
+  //  val network = initial.get
   val network = lbfgs.iterations(
     if (cfg.regularization < 0.000001) nn else DiffFunction.withL2Regularization(nn, cfg.regularization),
     initial getOrElse (((nn.initial :* 2.0) :- 1.0) :* cfg.range))
@@ -122,7 +123,7 @@ object TeachKeywordSelectorMain
         val crossWordValue = nnCrossWordValidation.calculate(x.x)._1
         val value = nn.calculate(x.x)._1
 
-        println(f"value=${x.value}%8.6f value=${value}%8.6f cross=${crossValue}%8.6f crossword=${crossWordValue}%8.6f")
+        println(f"value=${math.sqrt(x.value)}%8.6f value=${math.sqrt(value)}%8.6f cross=${math.sqrt(crossValue)}%8.6f crossword=${math.sqrt(crossWordValue)}%8.6f")
         matrix.foreach { matrix =>
           val file = new ObjectOutputStream(new FileOutputStream(matrix))
           file.writeObject(x.x)
@@ -134,6 +135,8 @@ object TeachKeywordSelectorMain
 
   println("stop")
 
+  //  nn.calculate(network)
+  //
   val (termToKlassen, klassenToOut) = nn.network(network)
 
   for (i <- (0 until cfg.nKlassen)) {
@@ -164,13 +167,11 @@ object TeachKeywordSelectorMain
   def calc(samples: Iterable[(List[Token], List[(Double, Token)])]) =
     samples.collect {
       case (w1 :: w3 :: _, ws) =>
-        val input = SparseVector(nToken * 2)(w1 -> 1.0, w3 + nToken -> 1.0)
-
         val klassenI = DenseVector.zeros[Double](2 * cfg.nKlassen)
 
         klassenI(0 until cfg.nKlassen) := termToKlassen(::, w1) * 1.0
 
-        klassenI(cfg.nKlassen until cfg.nKlassen * 2) := termToKlassen(::, w3) * 1.0 //termToKlassen * input(nToken until nToken * 2)
+        klassenI(cfg.nKlassen until cfg.nKlassen * 2) := termToKlassen(::, w3) * 1.0
 
         val klassenO = klassenI.map(x => 1 / (1 + exp(-x)))
 
@@ -179,7 +180,7 @@ object TeachKeywordSelectorMain
         outI := klassenToOut * klassenO
 
         val outO = outI.map(x => 1 / (1 + exp(-x)))
-
+        println(s" ------------> ($w1 x $w3) $outO $outI ${klassenO} ${vocabulary.wordMap.get(ws.head._2)}")
         (ws, outO)
     }
       .foldLeft(Map[Token, (Int, DenseVector[Double])]()) {
@@ -204,6 +205,18 @@ object TeachKeywordSelectorMain
         case (token, outO) =>
           outO
       }
+
+  println(" ===== Main sample words")
+  calc(vocabulary.nGram3.keysIterator.collect {
+    case w1 :: w2 :: w3 :: _ if vocabulary.sense(w2) || vocabulary.auxiliary(w2) =>
+      (w1 :: w3 :: Nil, List((0.0, w2)))
+  }.toIterable)
+    .map {
+      case (token, out) =>
+        println(s"${
+          vocabulary.wordMap.getOrElse(token, "***")
+        } $out ${sense(token)} ${crossValidationSense(token)} ${auxiliary(token)} ${crossValidationAuxiliary(token)}")
+    }
 
   println(" ====== From samples:")
 
