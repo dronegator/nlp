@@ -79,7 +79,7 @@ object TeachKeywordSelectorMain
   val lbfgs = //if (cfg.useLBFGS)
     new LBFGS[DenseVector[Double]](maxIter = cfg.maxIter, m = cfg.memoryLimit, tolerance = cfg.tolerance)
   //  else
-  //  new AdaDeltaGradientDescent[DenseVector[Double]](rho = cfg.rfo, maxIter = cfg.maxIter, tolerance = cfg.tolerance)
+  // new AdaDeltaGradientDescent[DenseVector[Double]](rho = cfg.rfo, maxIter = cfg.maxIter, tolerance = cfg.tolerance)
   // new SimpleSGD[DenseVector[Double]](maxIter = cfg.maxIter)
 
   println(
@@ -115,7 +115,7 @@ object TeachKeywordSelectorMain
 
   //  val network = initial.get
   val network = lbfgs.iterations(
-    if (cfg.regularization < 0.000001) nn else DiffFunction.withL2Regularization(nn, cfg.regularization),
+    if (cfg.regularization < 0.00000001) nn else DiffFunction.withL2Regularization(nn, cfg.regularization),
     initial getOrElse (((nn.initial :* 2.0) :- 1.0) :* cfg.range))
     .map {
       case x =>
