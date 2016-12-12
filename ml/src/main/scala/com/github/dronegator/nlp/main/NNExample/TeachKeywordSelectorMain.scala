@@ -211,12 +211,26 @@ object TeachKeywordSelectorMain
     case w1 :: w2 :: w3 :: _ if vocabulary.sense(w2) || vocabulary.auxiliary(w2) =>
       (w1 :: w3 :: Nil, List((0.0, w2)))
   }.toIterable)
-    .map {
-      case (token, out) =>
+    .foldLeft((0.0, 0), (0.0, 0)) {
+      case (((err1, n1), (err2, n2)), (token, out)) =>
         println(s"${
           vocabulary.wordMap.getOrElse(token, "***")
         } $out ${sense(token)} ${crossValidationSense(token)} ${auxiliary(token)} ${crossValidationAuxiliary(token)}")
-    }
+
+        if (sense(token)) {
+          ((err1 + math.pow(1 - out(0), 2), n1 + 1), (err2, n2))
+        } else if (auxiliary(token)) {
+          ((err1 + math.pow(out(0), 2), n1 + 1), (err2, n2))
+        } else if (crossValidationSense(token)) {
+          ((err1, n1), (err2 + math.pow(1 - out(0), 2), n2 + 1))
+        } else if (crossValidationAuxiliary(token)) {
+          ((err1, n1), (err2 + math.pow(out(0), 2), n2 + 1))
+        } else ((err1, n1), (err2, n2))
+    } match {
+    case ((err1, n1), (err2, n2)) =>
+      println(s"error=${math.sqrt(err1 / n1)}")
+      println(s"error=${math.sqrt(err2 / n2)}")
+  }
 
   println(" ====== From samples:")
 
