@@ -21,8 +21,7 @@ object TeachKeywordSelectorMain
     with MainTools
     with MainConfig[NLPTAppForNNConfig]
     with Concurent
-    with LazyLogging
-    with NLPTAppForNN {
+    with LazyLogging {
 
   val fileIn :: OptFile(matrix) = args.toList
 
