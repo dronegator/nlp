@@ -84,17 +84,25 @@ object NNKeywordMain
 
   lazy val (auxiliary, auxiliaryCrossValidation) = vocabulary.auxiliary.partition(_ => Random.nextInt(100) > cfg.doubleCrossvalidationRatio)
 
-  lazy val sampling: Iterable[((Token, Token), O)] =
+
+  private def proSampling(tokens: Set[Token]) =
     vocabulary.nGram3.keysIterator
+      .filter {
+        case ws@w1 :: w2 :: w3 :: _ =>
+          ((tokens contains w2) || (tokens contains w2)) && ws.forall(_ <= nToken)
+      }
+
+  private def convert(sampling: Iterator[List[Token]]) =
+    sampling
       .collect {
-        case ws@w1 :: w2 :: w3 :: _ if ws.forall(_ <= nToken) =>
+        case ws@w1 :: w2 :: w3 :: _ =>
           lazy val input = (w1, w3)
 
           val output = DenseVector[Double](1)
 
-          if (sense contains w2)
+          if (vocabulary.sense contains w2)
             Some(input -> (output := 1.0))
-          else if (auxiliary contains w2)
+          else if (vocabulary.auxiliary contains w2)
             Some(input -> (output := 0.0))
           else None
       }
@@ -102,26 +110,13 @@ object NNKeywordMain
         case Some(sample) => sample
       }
       .toIterable
+
+
+  lazy val sampling: Iterable[((Token, Token), O)] =
+    convert(proSampling(sense ++ auxiliary))
 
   lazy val samplingDoubleCross =
-    vocabulary.nGram3.keysIterator
-      .map {
-        case ws@w1 :: w2 :: w3 :: _ if ws.forall(_ <= nToken) =>
-          lazy val input = (w1, w3)
-
-          val output = DenseVector[Double](1)
-
-          if (senseCrossValidation contains w2)
-            Some(input -> (output := 1.0))
-          else if (auxiliaryCrossValidation contains w2)
-            Some(input -> (output := 0.0))
-          else None
-      }
-      .collect {
-        case Some(sample) => sample
-      }
-      .toIterable
-
+    convert(proSampling(senseCrossValidation ++ auxiliaryCrossValidation))
 
   override def nn: NNSampleTrait[(Token, Token), O, Network, _, _] with DiffFunction[DenseVector[Double]] =
     new NNSampleKeywordYesNo(nKlassen = cfg.nKlassen,
@@ -176,7 +171,7 @@ object NNKeywordMain
   override def calc(sampling: Iterable[((Token, Token), O)]): Unit = {
     val calulate = new NNKeywordYesNoImpl(nn.network(network), cfg.nKlassen)
 
-    sampling
+    val map = sampling
       .foldLeft(Map[Int, (Double, DenseVector[Double])]()) {
         case (map, ((t1, t3), _)) =>
           val vector = calulate.apply((t1, t3))
@@ -192,11 +187,12 @@ object NNKeywordMain
                 })
             }
       }
-      .toSeq
       .map {
         case (token, (weight, estimation)) =>
           (token, estimation :/ weight)
       }
+
+    map.toSeq
       .sortBy(_._2)
       .foreach {
         case (token, estimation) =>
@@ -206,6 +202,13 @@ object NNKeywordMain
             }%-20s ${estimation}""")
       }
 
+    val senseErr = vocabulary.sense.flatMap(map.get).reduce(_ + _) :/ vocabulary.sense.size.toDouble
+
+    val auxiliaryErr = vocabulary.auxiliary.flatMap(map.get).reduce(_ + _) :/ vocabulary.auxiliary.size.toDouble
+
+    println(s"senseErr = $senseErr")
+
+    println(s"auxiliaryErr = $auxiliaryErr")
   }
 
   try {

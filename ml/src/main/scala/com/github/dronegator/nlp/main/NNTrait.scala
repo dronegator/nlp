@@ -12,7 +12,7 @@ trait NNQuality[O, Q] {
   def quality: Q
 
   def report(quality: Q) =
-    println(quality)
+    println(s"        quality = $quality")
 }
 
 trait NNCalc[O] {
@@ -86,7 +86,7 @@ trait NNSampleTrait[I, O, N, H, Q] {
           (n + 1, accumulatedValue + value, gradient, quality(qualityValue, result), nextTime)
       }
 
-    // report(qualityValue)
+    report(qualityValue)
     (math.sqrt(accumulatedValue / n), gradient11 :/ n.toDouble)
   }
 }
