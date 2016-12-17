@@ -14,7 +14,11 @@ object WordmetrixBuild extends Build {
   val buildTime = System.currentTimeMillis()
 
   val utils =
-    Project(id = "utils", base = file("utils")).dependsOn()
+    Project(id = "utils", base = file("utils"))
+      .settings(
+        libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2"
+      )
+      .dependsOn()
 
   val wordmetrix =
     Project(id = "wordmetrix", base = file("wordmetrix"))

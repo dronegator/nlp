@@ -4,6 +4,7 @@ import java.io.File
 
 import breeze.linalg.DenseVector
 import breeze.optimize.DiffFunction
+import com.github.dronegator.nlp.CaseClassToMap._
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 import com.github.dronegator.nlp.main.keyword.NNSampleKeyword.Network
 import com.github.dronegator.nlp.main.{Concurent, MainConfig, _}
@@ -58,7 +59,10 @@ object NNKeywordMain
       .withFallback(config.getConfig("keyword"))
       .extract[NNKeywordConfig].value
 
-    println(cfg)
+    cfg.toMap.toList.sortBy(_._1).foreach {
+      case (key, value) =>
+        println(f"${key}%-32s = ${value}%-10s")
+    }
 
     cfg
   }
