@@ -27,20 +27,20 @@ trait NNCalcDenseVector
   }
 }
 
-trait NN[I, O, H] {
-  def forward(hidden: H, input: I): O
+trait NN[I, O, H, N] {
+  def forward(n: N, hidden: H, input: I): O
 
   def hiddenInit(): H
 
-  def forward(input: I): O =
-    forward(hiddenInit(), input)
+  def forward(n: N, input: I): O =
+    forward(n: N, hiddenInit(), input)
 }
 
 trait NNSampleTrait[I, O, N, H, Q] {
   self: DiffFunction[DenseVector[Double]]
     with NNQuality[O, Q]
     with NNCalc[O]
-    with NN[I, O, H] =>
+    with NN[I, O, H, N] =>
 
   lazy val startTime = System.currentTimeMillis()
 
@@ -50,37 +50,43 @@ trait NNSampleTrait[I, O, N, H, Q] {
 
   def empty = DenseVector.zeros[Double](size)
 
-  def initial = DenseVector.zeros[Double](size)
+  def initial = DenseVector.rand[Double](size)
 
   def sampling: Iterable[(I, O)]
 
-  def backward(hidden: H, input: I, output: O, result: O): O
-
+  def backward(nn: N, gradient: N, hidden: H, input: I, output: O, result: O): Unit
 
   override def calculate(vector: DenseVector[Double]): (Double, DenseVector[Double]) = {
 
     val nn = network(vector)
 
-    val (n, accumulatedValue, gradient, qualityValue) = sampling
-      .foldLeft((1, 0.0, empty, quality)) {
-        case ((n, accumulatedValue, gradient, qualityValue), (input, output)) =>
+    val gradient11 = empty
+
+    val (n, accumulatedValue, _, qualityValue, _) = sampling
+      .foldLeft((1, 0.0, network(gradient11), quality, System.currentTimeMillis())) {
+        case ((n, accumulatedValue, gradient, qualityValue, lastTime), (input, output)) =>
 
           val hidden: H = hiddenInit()
 
-          val result = forward(hidden, input)
+          val result = forward(nn, hidden, input)
 
           val value = error(output, result)
 
-          backward(hidden, input, output, result)
+          backward(nn, gradient, hidden, input, output, result)
 
-          if (n % 10000 == 0) {
-            println(f"${(System.currentTimeMillis() - startTime) / 1000}%8d $n%8d $output $result")
+          val currentTime = System.currentTimeMillis()
+
+          val nextTime = if (currentTime - lastTime > 1000) {
+            println(f"${(currentTime - startTime) / 1000}%8d $n%8d $output $result")
+            currentTime
+          } else {
+            lastTime
           }
 
-          (n, accumulatedValue + value, gradient, quality(qualityValue, result))
+          (n + 1, accumulatedValue + value, gradient, quality(qualityValue, result), nextTime)
       }
 
-    report(qualityValue)
-    (math.sqrt(accumulatedValue) / n, gradient :/ n.toDouble)
+    // report(qualityValue)
+    (math.sqrt(accumulatedValue) / n, gradient11 :/ n.toDouble)
   }
 }

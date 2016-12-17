@@ -13,15 +13,6 @@ import scala.collection.JavaConverters._
 trait MainConfig[CFG] {
   val config = ConfigFactory.load().getConfig("com.github.dronegator.wordmetrix")
 
-  implicit def configToInt(config: Config, path: String) =
-    config.getInt(path)
-
-  implicit def configToBoolean(config: Config, path: String) =
-    config.getBoolean(path)
-
-  implicit def configToString(config: Config, path: String) =
-    config.getString(path)
-
   implicit class ConfigToMap[B](config: Config) {
     def getMap[Map[String, B]](key: String)(implicit parse: (Config, String) => B) = {
       (for {

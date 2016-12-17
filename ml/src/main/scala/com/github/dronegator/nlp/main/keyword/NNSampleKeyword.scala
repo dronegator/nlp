@@ -13,39 +13,28 @@ object NNSampleKeyword {
 
   case class Quality(yes: Int, no: Int)
 
-  case class Network(termToKlassen: DenseMatrix[Double], klassenToOut: DenseMatrix[Double])
+  case class Network(termToKlassen: DenseMatrix[Double], klassenToOut: DenseMatrix[Double], indexes: Seq[Int])
 
-  case class Hidden()
+  case class Hidden(klassenI: DenseVector[Double],
+                    klassenO: DenseVector[Double],
+                    outI: DenseVector[Double],
+                    outO: DenseVector[Double])
 
 }
 
-class NNKeyword
-  extends NN[(Token, Token), DenseVector[Double], Hidden] {
-  override def forward(hidden: Hidden, input: (Token, Token)): DenseVector[Double] = ???
+trait NNKeyword
+  extends NN[(Token, Token), DenseVector[Double], Hidden, Network] {
 
-  override def hiddenInit(): Hidden = ???
+  def winnerGetsAll: Boolean
+
+  override def forward(n: Network, hidden: Hidden, input: (Token, Token)): DenseVector[Double]
+
+  override def hiddenInit(): Hidden
 }
 
-case class NNKeywordImpl(network: Network) extends NNKeyword {
-  def apply(input: (Token, Token)) =
-    forward(input)
-}
-
-class NNSampleKeyword
+trait NNSampleKeyword
   extends NNKeyword
     with DiffFunction[DenseVector[Double]]
     with NNSampleTrait[(Token, Token), DenseVector[Double], Network, Hidden, Quality]
     with NNQuality[DenseVector[Double], Quality]
-    with NNCalcDenseVector {
-  override def network(vector: DenseVector[Double]): Network = ???
-
-  override def size: Token = ???
-
-  override def sampling: Iterable[((Token, Token), DenseVector[Double])] = ???
-
-  override def backward(hidden: Hidden, input: (Token, Token), output: DenseVector[Double], result: DenseVector[Double]): DenseVector[Double] = ???
-
-  override def quality(quality: Quality, result: DenseVector[Double]): Quality = ???
-
-  override def quality: Quality = ???
-}
+    with NNCalcDenseVector

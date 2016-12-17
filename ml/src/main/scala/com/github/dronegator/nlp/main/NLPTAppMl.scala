@@ -40,7 +40,6 @@ trait MLCfg {
   val regularization: Double
   val range: Double
   val maxIter: Int
-  val useLBFGS: Boolean
   val rfo: Double
   val tolerance: Double
   val memoryLimit: Int
@@ -48,21 +47,23 @@ trait MLCfg {
   val crossvalidationFrequency: Int
 }
 
-trait NLPTAppMlTools[C <: MLCfg, I, O] {
+trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
 
   self: App with MainConfig[C] =>
 
   def sampling: Iterable[(I, O)]
 
+  def samplingDoubleCross: Iterable[(I, O)]
+
   def cfg: C
 
-  val fileIn :: OptFile(matrix) = args.toList
-
-  println(cfg)
+  lazy val Switches(switches, fileIn :: OptFile(matrix)) = {
+    println(args)
+    args.toList
+  }
 
   lazy val (samplingLearn, samplingCross) =
-    sampling.partition(_ => Random.nextInt(100) < cfg.crossvalidationRatio)
-
+    sampling.partition(_ => Random.nextInt(100) > cfg.crossvalidationRatio)
 
   lazy val algorithmIterator =
     cfg.algorithm match {
@@ -87,7 +88,7 @@ trait NLPTAppMlTools[C <: MLCfg, I, O] {
           .iterations(nn, initial)
     }
 
-  def nn: DiffFunction[DenseVector[Double]]
+  def nn: NNSampleTrait[I, O, N, _, _] with DiffFunction[DenseVector[Double]]
 
   def nnR = if (cfg.regularization < 0.00000001) nn else DiffFunction.withL2Regularization(nn, cfg.regularization)
 
@@ -95,7 +96,7 @@ trait NLPTAppMlTools[C <: MLCfg, I, O] {
 
   def nnDoubleCross: DiffFunction[DenseVector[Double]]
 
-  def genInitial: DenseVector[Double]
+  def genInitial: DenseVector[Double] = nn.initial
 
   def initial =
     (for {
@@ -109,39 +110,55 @@ trait NLPTAppMlTools[C <: MLCfg, I, O] {
 
     } yield initial) getOrElse (((genInitial :* 2.0) :- 1.0) :* cfg.range)
 
-  lazy val network = algorithmIterator
-    .scanLeft((0, Option.empty[DenseVector[Double]])) {
-      case ((n, _), x) =>
-        val value = nn.calculate(x.x)._1
+  lazy val network = {
+    println(s"sampling size =               ${sampling.size}")
+    println(s"cross sampling size =         ${samplingCross.size}")
+    println(s"double cross sampling size =  ${samplingDoubleCross.size}")
+    algorithmIterator
+      .scanLeft((0, Option.empty[DenseVector[Double]])) {
+        case ((n, _), x) =>
+          val value = x.value //nn.calculate(x.x)._1
 
-        if ((n + 1) % cfg.crossvalidationFrequency == 0) {
-          val valueCross = nnCross.calculate(x.x)._1
-          val valueDoubleCross = nnDoubleCross.calculate(x.x)._1
-          println(f"value=${math.sqrt(x.value)}%8.6f value=${math.sqrt(value)}%8.6f cross_value=${math.sqrt(valueCross)}%8.6f double_cross_value=${math.sqrt(valueDoubleCross)}%8.6f")
-        } else {
-          println(f"value=${math.sqrt(x.value)}%8.6f value=${math.sqrt(value)}%8.6f ")
-        }
+          if (n % cfg.crossvalidationFrequency == 0) {
+            val valueCross = nnCross.calculate(x.x)._1
+            val valueDoubleCross = nnDoubleCross.calculate(x.x)._1
+            println(f"value=${math.sqrt(x.value)}%8.6f cross_value=${math.sqrt(valueCross)}%8.6f double_cross_value=${math.sqrt(valueDoubleCross)}%8.6f")
+          } else {
+            println(f"value=${math.sqrt(x.value)}%8.6f")
+          }
 
-        matrix.foreach { matrix =>
-          val file = new ObjectOutputStream(new FileOutputStream(matrix))
-          file.writeObject(x.x)
-          file.close()
-        }
+          matrix.foreach { matrix =>
+            val file = new ObjectOutputStream(new FileOutputStream(matrix))
+            file.writeObject(x.x)
+            file.close()
+          }
 
-        (n + 1, Some(x.x))
-    }
-    .collect {
-      case (_, Some(x)) => x
-    }
-    .last
+          (n + 1, Some(x.x))
+      }
+      .collect {
+        case (_, Some(x)) =>
+          x
+      }
+      .last
+  }
+  def printNetwork(network: N): Unit
 
   def calc(sampling: Iterable[(I, O)]): Unit
 
   def report: Unit = {
     // print interesting options of the network itself
-    network
+    println("== The Network:")
+    printNetwork(nn.network(network))
 
     // print a few specific examples
+    println("== The outcome on the Sampling:")
+    calc(sampling)
+
+    println("== The outcome on the Crosssampling:")
+    calc(samplingCross)
+
+    println("== The outcome on the Doublecrosssampling:")
+    calc(samplingDoubleCross)
   }
 
 
