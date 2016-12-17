@@ -23,7 +23,7 @@ trait NNCalcDenseVector
   extends NNCalc[DenseVector[Double]] {
   override def error(output: DenseVector[Double], result: DenseVector[Double]): Double = {
     val v = (result - output)
-    v dot v
+    (v dot v) / 2.0
   }
 }
 
@@ -87,6 +87,6 @@ trait NNSampleTrait[I, O, N, H, Q] {
       }
 
     // report(qualityValue)
-    (math.sqrt(accumulatedValue) / n, gradient11 :/ n.toDouble)
+    (math.sqrt(accumulatedValue / n), gradient11 :/ n.toDouble)
   }
 }
