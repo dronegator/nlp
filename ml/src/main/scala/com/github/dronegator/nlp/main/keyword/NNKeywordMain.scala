@@ -6,7 +6,7 @@ import breeze.linalg.DenseVector
 import breeze.optimize.DiffFunction
 import com.github.dronegator.nlp.CaseClassToMap._
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
-import com.github.dronegator.nlp.main.keyword.NNSampleKeyword.Network
+import com.github.dronegator.nlp.main.keyword.NNSampleKeywordYesNo.Network
 import com.github.dronegator.nlp.main.{Concurent, MainConfig, _}
 import com.github.dronegator.nlp.trace._
 import com.github.dronegator.nlp.vocabulary.{Vocabulary, VocabularyImpl}

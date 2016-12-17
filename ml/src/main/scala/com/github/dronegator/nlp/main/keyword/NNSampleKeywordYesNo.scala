@@ -1,17 +1,40 @@
 package com.github.dronegator.nlp.main.keyword
 
-import breeze.linalg.DenseVector
+import breeze.linalg.{DenseMatrix, DenseVector}
 import breeze.numerics._
+import breeze.optimize.DiffFunction
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
-import com.github.dronegator.nlp.main.keyword.NNSampleKeyword.{Hidden, Network, Quality}
+import com.github.dronegator.nlp.main.keyword.NNSampleKeywordYesNo.{Hidden, Network, Quality}
+import com.github.dronegator.nlp.main.{NN, NNCalcDenseVector, NNQuality, NNSampleTrait}
 
 import scala.util.Random
 
 /**
   * Created by cray on 12/15/16.
   */
+
+object NNSampleKeywordYesNo {
+
+  case class Quality(yes: Int, no: Int)
+
+  case class Network(termToKlassen: DenseMatrix[Double], klassenToOut: DenseMatrix[Double], indexes: Seq[Int])
+
+  case class Hidden(klassenI: DenseVector[Double],
+                    klassenO: DenseVector[Double],
+                    outI: DenseVector[Double],
+                    outO: DenseVector[Double])
+
+}
+
+trait NNKeyword
+  extends NN[(Token, Token), DenseVector[Double], Hidden, Network] {
+
+}
+
 trait NNKeywordYesNo
-  extends NNKeyword {
+  extends NN[(Token, Token), DenseVector[Double], Hidden, Network] {
+
+  def winnerGetsAll: Boolean
 
   override def forward(network: Network, hidden: Hidden, input: (Token, Token)): O =
     input match {
@@ -25,7 +48,6 @@ trait NNKeywordYesNo
         for (i <- network.indexes) {
           hidden.klassenO(i) = 0.0
         }
-
 
         if (winnerGetsAll) {
           val (i1x, v1x) = hidden.klassenO(0 until nKlassen).iterator.maxBy(_._2)
@@ -47,7 +69,6 @@ trait NNKeywordYesNo
           hidden.klassenO(i2n + nKlassen) = v2n
         }
 
-
         hidden.outI := network.klassenToOut * hidden.klassenO
 
         hidden.outO := hidden.outI.map(x => 1 / (1 + exp(-x)))
@@ -64,7 +85,8 @@ trait NNKeywordYesNo
     )
 }
 
-case class NNKeywordYesNoImpl(network: Network, nKlassen: Int) extends NNKeywordYesNo {
+case class NNKeywordYesNoImpl(network: Network, nKlassen: Int)
+  extends NNKeywordYesNo {
   require(network.termToKlassen.rows == nKlassen)
 
   val winnerGetsAll = false
@@ -78,7 +100,11 @@ class NNSampleKeywordYesNo(val nKlassen: Int,
                            dropout: Int,
                            val winnerGetsAll: Boolean,
                            val sampling: Iterable[((Token, Token), DenseVector[Double])])
-  extends NNSampleKeyword
+  extends NN[(Token, Token), DenseVector[Double], Hidden, Network]
+    with DiffFunction[DenseVector[Double]]
+    with NNSampleTrait[(Token, Token), DenseVector[Double], Network, Hidden, Quality]
+    with NNQuality[DenseVector[Double], Quality]
+    with NNCalcDenseVector
     with NNKeywordYesNo {
 
   override def network(vector: DenseVector[Double]): Network =
