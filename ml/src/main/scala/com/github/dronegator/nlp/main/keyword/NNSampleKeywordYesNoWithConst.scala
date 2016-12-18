@@ -4,7 +4,7 @@ import breeze.linalg.{DenseMatrix, DenseVector}
 import breeze.numerics._
 import breeze.optimize.DiffFunction
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
-import com.github.dronegator.nlp.main.keyword.NNSampleKeywordYesNo.{Hidden, Network, Quality}
+import com.github.dronegator.nlp.main.keyword.NNSampleKeywordYesNoWithConst.{Hidden, Network, Quality}
 import com.github.dronegator.nlp.main.{NN, NNCalcDenseVector, NNQuality, NNSampleTrait}
 
 import scala.util.Random
@@ -13,11 +13,11 @@ import scala.util.Random
   * Created by cray on 12/15/16.
   */
 
-object NNSampleKeywordYesNo {
+object NNSampleKeywordYesNoWithConst {
 
   case class Quality(yes: Int, no: Int)
 
-  case class Network(termToKlassen: DenseMatrix[Double], klassenToOut: DenseMatrix[Double], indexes: Seq[Int])
+  case class Network(constToKlassen: DenseVector[Double], termToKlassen: DenseMatrix[Double], klassenToOut: DenseMatrix[Double], indexes: Seq[Int])
     extends NetworkBase
 
   case class Hidden(klassenI: DenseVector[Double],
@@ -27,8 +27,7 @@ object NNSampleKeywordYesNo {
 
 }
 
-
-trait NNKeywordYesNo
+trait NNKeywordYesNoWithConst
   extends NN[(Token, Token), DenseVector[Double], Hidden, Network] {
 
   def winnerGetsAll: Boolean
@@ -38,7 +37,11 @@ trait NNKeywordYesNo
       case (in1, in2) =>
         hidden.klassenI(0 until nKlassen) := network.termToKlassen(::, in1) * 1.0
 
+        hidden.klassenI(0 until nKlassen) :+= network.constToKlassen * 1.0
+
         hidden.klassenI(nKlassen until nKlassen * 2) := network.termToKlassen(::, in2) * 1.0
+
+        hidden.klassenI(nKlassen until nKlassen * 2) :+= network.constToKlassen * 1.0
 
         hidden.klassenO := hidden.klassenI.map(x => 1 / (1 + exp(-x)))
 
@@ -82,8 +85,8 @@ trait NNKeywordYesNo
     )
 }
 
-case class NNKeywordYesNoImpl(network: Network, nKlassen: Int)
-  extends NNKeywordYesNo {
+case class NNKeywordYesNoImplWithConst(network: Network, nKlassen: Int)
+  extends NNKeywordYesNoWithConst {
   require(network.termToKlassen.rows == nKlassen)
 
   val winnerGetsAll = false
@@ -92,34 +95,35 @@ case class NNKeywordYesNoImpl(network: Network, nKlassen: Int)
     forward(network, input)
 }
 
-class NNSampleKeywordYesNo(val nKlassen: Int,
-                           nToken: Int,
-                           dropout: Int,
-                           val winnerGetsAll: Boolean,
-                           val sampling: Iterable[((Token, Token), DenseVector[Double])])
+class NNSampleKeywordYesNoWithConst(val nKlassen: Int,
+                                    nToken: Int,
+                                    dropout: Int,
+                                    val winnerGetsAll: Boolean,
+                                    val sampling: Iterable[((Token, Token), DenseVector[Double])])
   extends NN[(Token, Token), DenseVector[Double], Hidden, Network]
     with DiffFunction[DenseVector[Double]]
     with NNSampleTrait[(Token, Token), DenseVector[Double], Network, Hidden, Quality]
     with NNQuality[DenseVector[Double], Quality]
     with NNCalcDenseVector
-    with NNKeywordYesNo {
+    with NNKeywordYesNoWithConst {
 
   override def network(vector: DenseVector[Double]): Network =
     Network(
+      constToKlassen = vector(nToken * nKlassen + nKlassen * 2 until nToken * nKlassen + nKlassen * 2 + nKlassen),
       termToKlassen = vector(0 until nToken * nKlassen).asDenseMatrix.reshape(nKlassen, nToken),
       klassenToOut = vector(nToken * nKlassen until (nToken * nKlassen + nKlassen * 2)).asDenseMatrix.reshape(1, nKlassen * 2),
       (0 until nKlassen * 2)
         .filter(_ => Random.nextInt(100) < dropout)
     )
 
-  override def size: Token = nKlassen * nToken + nKlassen * 2
+  override def size: Token = nKlassen * nToken + nKlassen * 2 + nKlassen
 
   override def backward(nn: Network, gradient: Network, hidden: Hidden, input: (Token, Token), output: DenseVector[Double], result: DenseVector[Double]): Unit =
 
     input match {
       case (in1, in2) =>
 
-        val Network(gTermToKlassen, gKlassen2Out, _) = gradient
+        val Network(gConstToKlassen, gTermToKlassen, gKlassen2Out, _) = gradient
 
         val backOutI = (result - output) :* (result :* (-result + 1.0))
 
@@ -128,6 +132,10 @@ class NNSampleKeywordYesNo(val nKlassen: Int,
         val backKlassenO = nn.klassenToOut.t * backOutI
 
         val backKlassenI = backKlassenO :* hidden.klassenO :* (-hidden.klassenO + 1.0)
+
+        gConstToKlassen :+= (backKlassenI(0 until nKlassen) * 1.0)
+
+        gConstToKlassen :+= (backKlassenI(nKlassen until 2 * nKlassen) * 1.0)
 
         gTermToKlassen(::, in1) :+= (backKlassenI(0 until nKlassen) * 1.0)
 
@@ -143,4 +151,5 @@ class NNSampleKeywordYesNo(val nKlassen: Int,
 
   override def quality: Quality =
     Quality(0, 0)
+
 }

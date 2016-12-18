@@ -2,7 +2,7 @@ package com.github.dronegator.nlp.main.keyword
 
 import java.io.File
 
-import breeze.linalg.DenseVector
+import breeze.linalg.{DenseMatrix, DenseVector}
 import breeze.optimize.DiffFunction
 import com.github.dronegator.nlp.CaseClassToMap._
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
@@ -28,6 +28,12 @@ trait NNKeywordFunctionConfig {
   val winnerGetsAll: Boolean
 }
 
+trait NetworkBase {
+  val termToKlassen: DenseMatrix[Double]
+  val klassenToOut: DenseMatrix[Double]
+  val indexes: Seq[Int]
+}
+
 case class NNKeywordConfig(crossvalidationRatio: Int,
                            doubleCrossvalidationRatio: Int,
                            algorithm: Algorithm,
@@ -46,11 +52,11 @@ case class NNKeywordConfig(crossvalidationRatio: Int,
     with NNKeywordFunctionConfig
 
 
-object NNKeywordMain
+trait NNKeywordMain[N]
   extends App
     with MainTools
     with MainConfig[NNKeywordConfig]
-    with NLPTAppMlTools[NNKeywordConfig, I, O, Network]
+    with NLPTAppMlTools[NNKeywordConfig, I, O, N]
     with Concurent
     with LazyLogging {
 
@@ -83,7 +89,6 @@ object NNKeywordMain
   lazy val (sense, senseCrossValidation) = vocabulary.sense.partition(_ => Random.nextInt(100) > cfg.doubleCrossvalidationRatio)
 
   lazy val (auxiliary, auxiliaryCrossValidation) = vocabulary.auxiliary.partition(_ => Random.nextInt(100) > cfg.doubleCrossvalidationRatio)
-
 
   private def proSampling(tokens: Set[Token]) =
     vocabulary.nGram3.keysIterator
@@ -118,32 +123,11 @@ object NNKeywordMain
   lazy val samplingDoubleCross =
     convert(proSampling(senseCrossValidation ++ auxiliaryCrossValidation))
 
-  override def nn: NNSampleTrait[(Token, Token), O, Network, _, _] with DiffFunction[DenseVector[Double]] =
-    new NNSampleKeywordYesNo(nKlassen = cfg.nKlassen,
-      nToken = nToken,
-      dropout = cfg.dropout,
-      winnerGetsAll = cfg.winnerGetsAll,
-      sampling = sampling)
-
-  override def nnCross: DiffFunction[DenseVector[Double]] =
-    new NNSampleKeywordYesNo(nKlassen = cfg.nKlassen,
-      nToken = nToken,
-      dropout = 0,
-      winnerGetsAll = false,
-      sampling = samplingCross)
-
-  override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
-    new NNSampleKeywordYesNo(nKlassen = cfg.nKlassen,
-      nToken = nToken,
-      dropout = 0,
-      winnerGetsAll = false,
-      sampling = samplingDoubleCross)
-
-  override def printNetwork(network: Network): Unit = {
+  override def printNetwork(network: N): Unit = {
     println("== Classes: ")
 
-    for (n <- (0 until network.termToKlassen.rows)) {
-      val vector = network.termToKlassen(n, ::).t
+    for (n <- (0 until network.asInstanceOf[NetworkBase].termToKlassen.rows)) {
+      val vector = network.asInstanceOf[NetworkBase].termToKlassen(n, ::).t
 
       println(s"====== $n ==")
       val tokens = vector.toScalaVector()
@@ -168,13 +152,15 @@ object NNKeywordMain
       (x :> y).forall(x => x)
   }
 
+  def net(network: N): NN[(Token, Token), DenseVector[Double], _, N]
+
   override def calc(sampling: Iterable[((Token, Token), O)]): Unit = {
-    val calulate = new NNKeywordYesNoImpl(nn.network(network), cfg.nKlassen)
+    val calulate = net(nn.network(network))
 
     val map = sampling
       .foldLeft(Map[Int, (Double, DenseVector[Double])]()) {
         case (map, ((t1, t3), _)) =>
-          val vector = calulate.apply((t1, t3))
+          val vector = calulate.forward(nn.network(network), (t1, t3))
 
           vocabulary.map2ToMiddle(t1 :: t3 :: Nil)
             .foldLeft(map) {
@@ -211,6 +197,23 @@ object NNKeywordMain
     println(s"auxiliaryErr = $auxiliaryErr")
   }
 
+
+
+}
+
+object NNKeywordMain
+  extends NNKeywordMain[Network] {
+  override def nn: NNSampleTrait[(Token, Token), O, Network, _, _] with DiffFunction[DenseVector[Double]] =
+    new NNSampleKeywordYesNo(
+      nKlassen = cfg.nKlassen,
+      nToken = nToken,
+      dropout = cfg.dropout,
+      winnerGetsAll = cfg.winnerGetsAll,
+      sampling = sampling)
+
+  def net(network: Network): NN[(Token, Token), DenseVector[Double], _, Network] =
+    new NNKeywordYesNoImpl(network, cfg.nKlassen)
+
   try {
     report
   } finally {
@@ -218,4 +221,53 @@ object NNKeywordMain
     mat.shutdown()
   }
 
+  override def nnCross: DiffFunction[DenseVector[Double]] =
+    new NNSampleKeywordYesNo(nKlassen = cfg.nKlassen,
+      nToken = nToken,
+      dropout = 0,
+      winnerGetsAll = false,
+      sampling = samplingCross)
+
+  override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
+    new NNSampleKeywordYesNo(nKlassen = cfg.nKlassen,
+      nToken = nToken,
+      dropout = 0,
+      winnerGetsAll = false,
+      sampling = samplingDoubleCross)
+
+}
+
+object NNKeywordMainWithConst
+  extends NNKeywordMain[NNSampleKeywordYesNoWithConst.Network] {
+  override def nn: NNSampleTrait[(Token, Token), O, NNSampleKeywordYesNoWithConst.Network, _, _] with DiffFunction[DenseVector[Double]] =
+    new NNSampleKeywordYesNoWithConst(
+      nKlassen = cfg.nKlassen,
+      nToken = nToken,
+      dropout = cfg.dropout,
+      winnerGetsAll = cfg.winnerGetsAll,
+      sampling = sampling)
+
+  def net(network: NNSampleKeywordYesNoWithConst.Network): NN[(Token, Token), DenseVector[Double], _, NNSampleKeywordYesNoWithConst.Network] =
+    new NNKeywordYesNoImplWithConst(network, cfg.nKlassen)
+
+  override def nnCross: DiffFunction[DenseVector[Double]] =
+    new NNSampleKeywordYesNoWithConst(nKlassen = cfg.nKlassen,
+      nToken = nToken,
+      dropout = 0,
+      winnerGetsAll = false,
+      sampling = samplingCross)
+
+  override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
+    new NNSampleKeywordYesNoWithConst(nKlassen = cfg.nKlassen,
+      nToken = nToken,
+      dropout = 0,
+      winnerGetsAll = false,
+      sampling = samplingDoubleCross)
+
+  try {
+    report
+  } finally {
+    system.terminate()
+    mat.shutdown()
+  }
 }
