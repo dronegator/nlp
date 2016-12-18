@@ -45,6 +45,11 @@ trait MLCfg {
   val memoryLimit: Int
   val dropout: Int
   val crossvalidationFrequency: Int
+  val lambda: Double
+  val delta: Double
+  val eta: Double
+  val stepSize: Double
+  val minImprovementWindow: Int
 }
 
 trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
@@ -76,11 +81,18 @@ trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
           .iterations(nnR, initial)
 
       case Algorithm.L1Regularization =>
-        new AdaptiveGradientDescent.L1Regularization[DenseVector[Double]]()
+        new AdaptiveGradientDescent.L1Regularization[DenseVector[Double]](
+          lambda = cfg.lambda,
+          delta = cfg.delta,
+          eta = cfg.eta,
+          maxIter = cfg.maxIter)
           .iterations(nn, initial)
 
       case Algorithm.L2Regularization =>
-        new AdaptiveGradientDescent.L2Regularization[DenseVector[Double]](stepSize = 1.0, maxIter = cfg.maxIter)
+        new AdaptiveGradientDescent.L2Regularization[DenseVector[Double]](
+          regularizationConstant = cfg.regularization,
+          stepSize = cfg.stepSize, maxIter = cfg.maxIter,
+          tolerance = cfg.stepSize, minImprovementWindow = cfg.minImprovementWindow)
           .iterations(nn, initial)
 
       case Algorithm.SimpleSGD =>
@@ -141,6 +153,7 @@ trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
       }
       .last
   }
+
   def printNetwork(network: N): Unit
 
   def calc(sampling: Iterable[(I, O)]): Unit

@@ -47,12 +47,17 @@ case class NNKeywordConfig(crossvalidationRatio: Int,
                            nKlassen: Int,
                            nToken: Option[Int],
                            dropout: Int,
-                           winnerGetsAll: Boolean)
+                           winnerGetsAll: Boolean,
+                           lambda: Double,
+                           delta: Double,
+                           eta: Double,
+                           stepSize: Double,
+                           minImprovementWindow: Token)
   extends MLCfg
     with NNKeywordFunctionConfig
 
 
-trait NNKeywordMain[N]
+trait NNKeywordMain[N <: NetworkBase]
   extends App
     with MainTools
     with MainConfig[NNKeywordConfig]
@@ -126,8 +131,8 @@ trait NNKeywordMain[N]
   override def printNetwork(network: N): Unit = {
     println("== Classes: ")
 
-    for (n <- (0 until network.asInstanceOf[NetworkBase].termToKlassen.rows)) {
-      val vector = network.asInstanceOf[NetworkBase].termToKlassen(n, ::).t
+    for (n <- (0 until network.termToKlassen.rows)) {
+      val vector = network.termToKlassen(n, ::).t
 
       println(s"====== $n ==")
       val tokens = vector.toScalaVector()
@@ -135,7 +140,6 @@ trait NNKeywordMain[N]
         .sortBy(-_._1)
         .map(x => x._2 -> x._1)
 
-      //(tokens.take(20) ++ tokens.takeRight(20))
       tokens.foreach {
         case (token, weight) =>
           println(f"${
@@ -196,7 +200,6 @@ trait NNKeywordMain[N]
 
     println(s"auxiliaryErr = $auxiliaryErr")
   }
-
 
 
 }
