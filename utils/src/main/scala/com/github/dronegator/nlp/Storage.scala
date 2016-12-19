@@ -39,15 +39,27 @@ trait Storage[AI, A, B] {
   def select(id: AI): B
 }
 
-//object StorageApp
-//  extends App {
-//
-//  case class T(id: String @@ T, t1: Int, t2: Int)
-//
-//  case class TData(t1: Int, t2: Int)
-//
-//  println(3)
-//  val t = Storage[(Int, Int), T].create(tag[T]("qq"), (1, 2))
-//
-//  println(t)
-//}
+object StorageApp
+  extends App {
+
+  sealed abstract trait T {
+    val id: String @@ TR
+  }
+
+  case class TId(id: String @@ TR) extends T
+
+  case class TR(id: String @@ TR, t1: Int, t2: Int) extends T
+
+  case class TData(t1: Int, t2: Int)
+
+  case class S(id: String @@ S, s1: String, s2: Int, t: T)
+
+  println(3)
+  val t = Storage[(Int, Int), TR].create(tag[TR]("qq"), (1, 2))
+
+  val s = Storage[(String, Int, T), S].create(tag[S]("qq"), ("", 2, t))
+
+  val s1 = Storage[(String, Int, T), S].create(tag[S]("qq"), ("", 2, TId(tag[TR]("tid"))))
+
+  println(t, s, s1)
+}
