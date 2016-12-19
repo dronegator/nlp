@@ -79,42 +79,42 @@ trait Storage[AI, A, B] {
   def select(id: AI): B
 }
 
-object StorageApp
-  extends App {
-
-  sealed abstract trait T {
-    val id: String @@ TR
-  }
-
-  case class TId(id: String @@ TR) extends T
-
-  case class TR(id: String @@ TR, t1: Int, t2: Int) extends T
-
-  case class TData(t1: Int, t2: Int)
-
-  case class S(id: String @@ S, s1: String, s2: Int, t: T)
-
-  case class SData(s1: String, d: Double, s2: String, i: Int, t: T)
-
-  println(3)
-
-  val t = Storage[(Int, Int), TR].create(tag[TR]("qq"), (1, 2))
-
-  val s = Storage[(String, Int, T), S].create(tag[S]("qq"), ("", 2, t))
-
-  val s1 = Storage[(String, Int, T), S].create(tag[S]("qq"), ("", 2, TId(tag[TR]("tid"))))
-
-  //val a = the[Conv[(String, Int, T), SData]]
-
-  val s3 = Storage[(String, Int, T), S].createApprox(tag[S]("qq"), SData("", 2.0, "asdasd", 3, TId(tag[TR]("tid")): T))
-
-  case class V(i: Int, s: String)
-
-  case class W(i: Int, d: Double, s: String)
-
-  println(Conv[W, V].conv(W(1, 0.1, "1")))
-
-  println(t, s, s1)
-
-  println(s3)
-}
+//object StorageApp
+//  extends App {
+//
+//  sealed abstract trait T {
+//    val id: String @@ TR
+//  }
+//
+//  case class TId(id: String @@ TR) extends T
+//
+//  case class TR(id: String @@ TR, t1: Int, t2: Int) extends T
+//
+//  case class TData(t1: Int, t2: Int)
+//
+//  case class S(id: String @@ S, s1: String, s2: Int, t: T)
+//
+//  case class SData(s1: String, d: Double, s2: String, i: Int, t: T)
+//
+//  println(3)
+//
+//  val t = Storage[(Int, Int), TR].create(tag[TR]("qq"), (1, 2))
+//
+//  val s = Storage[(String, Int, T), S].create(tag[S]("qq"), ("", 2, t))
+//
+//  val s1 = Storage[(String, Int, T), S].create(tag[S]("qq"), ("", 2, TId(tag[TR]("tid"))))
+//
+//  //val a = the[Conv[(String, Int, T), SData]]
+//
+//  val s3 = Storage[(String, Int, T), S].createApprox(tag[S]("qq"), SData("", 2.0, "asdasd", 3, TId(tag[TR]("tid")): T))
+//
+//  case class V(i: Int, s: String)
+//
+//  case class W(i: Int, d: Double, s: String)
+//
+//  println(Conv[W, V].conv(W(1, 0.1, "1")))
+//
+//  println(t, s, s1)
+//
+//  println(s3)
+//}
