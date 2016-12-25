@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp.main
 
-import breeze.linalg.DenseVector
+import breeze.linalg.{DenseVector, SparseVector}
 import breeze.optimize.DiffFunction
 
 /**
@@ -22,6 +22,14 @@ trait NNCalc[O] {
 trait NNCalcDenseVector
   extends NNCalc[DenseVector[Double]] {
   override def error(output: DenseVector[Double], result: DenseVector[Double]): Double = {
+    val v = (result - output)
+    (v dot v) / 2.0
+  }
+}
+
+trait NNCalcSparseVector
+  extends NNCalc[SparseVector[Double]] {
+  override def error(output: SparseVector[Double], result: SparseVector[Double]): Double = {
     val v = (result - output)
     (v dot v) / 2.0
   }

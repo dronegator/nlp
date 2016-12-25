@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp.main
 
-import breeze.linalg.DenseVector
+import breeze.linalg.SparseVector
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
 
 /**
@@ -10,5 +10,5 @@ import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
   */
 package object chain {
   type I = (Token, Token)
-  type O = DenseVector[Double]
+  type O = SparseVector[Double]
 }
