@@ -51,7 +51,8 @@ case class NNChainConfig(crossvalidationRatio: Int,
                          delta: Double,
                          eta: Double,
                          stepSize: Double,
-                         minImprovementWindow: Token)
+                         minImprovementWindow: Token,
+                         learn: Boolean)
   extends MLCfg
     with NNChainFunctionConfig
 
@@ -130,7 +131,25 @@ trait NNChainMain[N <: NetworkBase]
 
   def net(network: N): NN[I, O, _, N]
 
-  override def calc(sampling: Iterable[((Token, Token), O)]): Unit = {
+  override def calc(sampling: Iterable[(I, O)]): Unit = {
+    val calculate = net(nn.network(network))
+
+    sampling.foreach {
+      case ((t1, t2), _) =>
+        val vector = calculate.forward(nn.network(network), (t1, t2))
+        val words = vector.iterator.toList.sortBy(-_._2).take(20)
+          .flatMap {
+            case (x, y) =>
+              vocabulary.wordMap.get(x).map(x => (x /*, y*/))
+          }
+          .mkString(" ")
+
+        val w1 = vocabulary.wordMap.get(t1).getOrElse("***")
+        val w2 = vocabulary.wordMap.get(t2).getOrElse("***")
+
+        println(s"$w1 $w2 $words")
+    }
+
     // TODO: We have to find a way to represent quality of the service
     //    val calulate = net(nn.network(network))
     //

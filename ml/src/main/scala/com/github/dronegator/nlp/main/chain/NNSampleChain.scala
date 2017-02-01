@@ -124,7 +124,7 @@ class NNSampleChain(val nKlassen: Int,
 
   override def size: Token = nKlassen * nToken + 2 * nKlassen * nKlassen + nKlassen * nToken
 
-  override def backward(nn: Network, gradient: Network, hidden: Hidden, input: I, output: O, result: SparseVector[Double]): Unit =
+  override def backward(nn: Network, gradient: Network, hidden: Hidden, input: I, output: O, result: O): Unit =
     input match {
       case (in1, in2) =>
 

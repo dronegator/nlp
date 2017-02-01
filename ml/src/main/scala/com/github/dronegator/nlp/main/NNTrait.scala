@@ -85,7 +85,7 @@ trait NNSampleTrait[I, O, N, H, Q] {
           val currentTime = System.currentTimeMillis()
 
           val nextTime = if (currentTime - lastTime > 1000) {
-            println(f"${(currentTime - startTime) / 1000}%8d $n%8d $output $result")
+            println(f"${(currentTime - startTime) / 1000}%8d $n%8d" /*"$output $result"*/)
             currentTime
           } else {
             lastTime

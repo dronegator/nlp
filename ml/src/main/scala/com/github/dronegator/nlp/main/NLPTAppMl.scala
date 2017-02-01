@@ -50,6 +50,7 @@ trait MLCfg {
   val eta: Double
   val stepSize: Double
   val minImprovementWindow: Int
+  val learn: Boolean
 }
 
 trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
@@ -123,9 +124,11 @@ trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
     } yield initial) getOrElse (((genInitial :* 2.0) :- 1.0) :* cfg.range)
 
   lazy val network = {
-    println(s"sampling size =               ${sampling.size}")
-    println(s"cross sampling size =         ${samplingCross.size}")
-    println(s"double cross sampling size =  ${samplingDoubleCross.size}")
+    if (cfg.learn) {
+      println(s"sampling size =               ${sampling.size}")
+      println(s"cross sampling size =         ${samplingCross.size}")
+      println(s"double cross sampling size =  ${samplingDoubleCross.size}")
+
     algorithmIterator
       .scanLeft((0, Option.empty[DenseVector[Double]])) {
         case ((n, _), x) =>
@@ -152,6 +155,11 @@ trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
           x
       }
       .last
+    }
+    else {
+      println("Do not learn")
+      initial
+    }
   }
 
   def printNetwork(network: N): Unit

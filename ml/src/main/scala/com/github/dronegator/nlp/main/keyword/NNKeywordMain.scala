@@ -52,7 +52,8 @@ case class NNKeywordConfig(crossvalidationRatio: Int,
                            delta: Double,
                            eta: Double,
                            stepSize: Double,
-                           minImprovementWindow: Token)
+                           minImprovementWindow: Token,
+                           learn: Boolean)
   extends MLCfg
     with NNKeywordFunctionConfig
 
