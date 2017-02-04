@@ -249,6 +249,25 @@ object NLPTReplMain
            | - inner correlation size = ${vocabulary.map1ToTheSamePhrase.size}
          """.stripMargin)
 
+    case MiniLanguage() :: Switches(switches, _) =>
+      val size = switches.getOrElse("size", "2000").toInt
+      val file = switches.get("save").map(new File(_))
+
+      val selectedTokens = vocabulary.nGram1.toList.sortBy(-_._2).take(size).flatMap(_._1.headOption)
+
+      selectedTokens
+        .foreach { x =>
+          println(vocabulary.wordMap(x))
+
+        }
+
+      file foreach { file =>
+        save(file, vocabulary.miniLanguage(selectedTokens.toSet))
+          .time { t =>
+            logger.info(s"Vocabulary has stored in time = $t ")
+          }
+      }
+
     case MiniLanguage() :: Switches(switches, words) =>
       val size = switches.getOrElse("size", "200").toInt
       val file = switches.get("save").map(new File(_))
