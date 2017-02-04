@@ -80,22 +80,29 @@ trait NNChainMain[N <: NetworkBase]
 
   lazy val nToken = cfg.nToken.getOrElse(vocabulary.wordMap.keys.max)
 
-  lazy val vocabulary: Vocabulary = load(new File(fileIn)).time { t =>
-    logger.info(s"Vocabulary has loaded in time=$t")
-  } match {
-    case vocabulary: Vocabulary =>
-      vocabulary
+  lazy val vocabulary: Vocabulary =
+    if (fileIn == "Test") {
+      new TestVocabulary: VocabularyImpl
+    } else {
+      load(new File(fileIn)).time { t =>
+        logger.info(s"Vocabulary has loaded in time=$t")
+      } match {
+        case vocabulary: Vocabulary =>
+          vocabulary
 
-    case vocabulary =>
-      vocabulary: VocabularyImpl
-  }
+        case vocabulary =>
+          vocabulary: VocabularyImpl
+      }
+    }
 
 
   lazy val sampling: Iterable[(I, O)] =
     vocabulary.map2ToNext
       .collect {
         case (t1 :: t2 :: _, tokens) =>
-          (t1, t2) -> SparseVector(nToken)(tokens.map { case (x, y) => (y, x) }: _*)
+          val qq = (t1, t2) -> SparseVector(nToken)(tokens.map { case (x, y) => (y, x) }: _*)
+          println(qq)
+          qq
       }
 
   lazy val samplingDoubleCross =
