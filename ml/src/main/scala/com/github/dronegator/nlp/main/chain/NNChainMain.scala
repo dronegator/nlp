@@ -142,19 +142,27 @@ trait NNChainMain[N <: NetworkBase]
     val calculate = net(nn.network(network))
 
     sampling.foreach {
-      case ((t1, t2), _) =>
+      case ((t1, t2), output) =>
         val vector = calculate.forward(nn.network(network), (t1, t2))
-        val words = vector.iterator.toList.sortBy(-_._2).take(20)
+        val words = vector.activeIterator.toList.sortBy(-_._2).take(20).takeWhile(_._2 > 0.001)
           .flatMap {
             case (x, y) =>
-              vocabulary.wordMap.get(x).map(x => (x /*, y*/))
+              vocabulary.wordMap.get(x).map(x => (x, f"${y}%5.3f" /**/ ))
           }
           .mkString(" ")
 
         val w1 = vocabulary.wordMap.get(t1).getOrElse("***")
         val w2 = vocabulary.wordMap.get(t2).getOrElse("***")
 
-        println(s"$w1 $w2 $words")
+        val outputWords = output.activeIterator.toList.sortBy(-_._2).take(20).takeWhile(_._2 > 0.001)
+          .flatMap {
+            case (x, y) =>
+              vocabulary.wordMap.get(x).map(x => (x, f"${y}%5.3f" /**/ ))
+          }
+          .mkString(" ")
+
+        println(f"$w1%10s $w2%10s -> $words")
+        println(f"$w1%10s $w2%10s -> $outputWords")
     }
 
     // TODO: We have to find a way to represent quality of the service
@@ -206,23 +214,16 @@ trait NNChainMain[N <: NetworkBase]
 object NNChainMainImpl
   extends NNChainMain[Network] {
 
+  def net(network: Network): NN[I, O, _, Network] =
+    new NNChainImpl(network, cfg.nKlassen, nToken)
+
   override def nn: NNSampleTrait[I, O, Network, _, _] with DiffFunction[DenseVector[Double]] =
     new NNSampleChain(
       nKlassen = cfg.nKlassen,
       nToken = nToken,
       dropout = cfg.dropout,
       winnerGetsAll = cfg.winnerGetsAll,
-      sampling = sampling)
-
-  def net(network: Network): NN[I, O, _, Network] =
-    new NNChainImpl(network, cfg.nKlassen, nToken)
-
-  try {
-    report
-  } finally {
-    system.terminate()
-    mat.shutdown()
-  }
+      sampling = samplingLearn)
 
   override def nnCross: DiffFunction[DenseVector[Double]] =
     new NNSampleChain(nKlassen = cfg.nKlassen,
@@ -237,6 +238,14 @@ object NNChainMainImpl
       dropout = 0,
       winnerGetsAll = false,
       sampling = samplingDoubleCross)
+
+  try {
+    report
+  } finally {
+    system.terminate()
+    mat.shutdown()
+  }
+
 
 }
 

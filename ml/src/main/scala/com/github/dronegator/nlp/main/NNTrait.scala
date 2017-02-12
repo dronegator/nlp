@@ -23,7 +23,7 @@ trait NNCalcDenseVector
   extends NNCalc[DenseVector[Double]] {
   override def error(output: DenseVector[Double], result: DenseVector[Double]): Double = {
     val v = (result - output)
-    (v dot v) / 2.0
+    (v dot v) / 2.0 / v.iterableSize
   }
 }
 
@@ -31,7 +31,7 @@ trait NNCalcSparseVector
   extends NNCalc[SparseVector[Double]] {
   override def error(output: SparseVector[Double], result: SparseVector[Double]): Double = {
     val v = (result - output)
-    (v dot v) / 2.0
+    (v dot v) / 2.0 / v.iterableSize
   }
 }
 
@@ -71,7 +71,7 @@ trait NNSampleTrait[I, O, N, H, Q] {
     val gradient11 = empty
 
     val (n, accumulatedValue, _, qualityValue, _) = sampling
-      .foldLeft((1, 0.0, network(gradient11), quality, System.currentTimeMillis())) {
+      .foldLeft((0, 0.0, network(gradient11), quality, System.currentTimeMillis())) {
         case ((n, accumulatedValue, gradient, qualityValue, lastTime), (input, output)) =>
 
           val hidden: H = hiddenInit()
@@ -91,9 +91,12 @@ trait NNSampleTrait[I, O, N, H, Q] {
             lastTime
           }
 
+          //          println(s"accumulatedValue=$accumulatedValue value=$value")
           (n + 1, accumulatedValue + value, gradient, quality(qualityValue, result), nextTime)
       }
 
+
+    //println(s"---> $accumulatedValue $n ${network(gradient11).asInstanceOf[com.github.dronegator.nlp.main.chain.NNSampleChain.Network].tokenToKlassen.t}")
     report(qualityValue)
     (math.sqrt(accumulatedValue / n), gradient11 :/ n.toDouble)
   }

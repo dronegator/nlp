@@ -69,7 +69,7 @@ trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
   }
 
   lazy val (samplingLearn, samplingCross) =
-    sampling.partition(_ => Random.nextInt(100) > cfg.crossvalidationRatio)
+    sampling.partition(_ => Random.nextInt(100) >= cfg.crossvalidationRatio)
 
   lazy val algorithmIterator =
     cfg.algorithm match {
@@ -125,7 +125,7 @@ trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
 
   lazy val network = {
     if (cfg.learn) {
-      println(s"sampling size =               ${sampling.size}")
+      println(s"sampling size =               ${samplingLearn.size}")
       println(s"cross sampling size =         ${samplingCross.size}")
       println(s"double cross sampling size =  ${samplingDoubleCross.size}")
 
@@ -173,7 +173,7 @@ trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
 
     // print a few specific examples
     println("== The outcome on the Sampling:")
-    calc(sampling)
+    calc(samplingLearn)
 
     println("== The outcome on the Crosssampling:")
     calc(samplingCross)
