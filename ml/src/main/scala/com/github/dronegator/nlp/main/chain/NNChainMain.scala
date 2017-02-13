@@ -247,37 +247,39 @@ object NNChainMainImpl
 
 }
 
-//object NNChainMainWithConst
-//  extends NNChainMain[NNSampleChainYesNoWithConst.Network] {
-//  override def nn: NNSampleTrait[I, O, NNSampleChainYesNoWithConst.Network, _, _] with DiffFunction[DenseVector[Double]] =
-//    new NNSampleChainYesNoWithConst(
-//      nKlassen = cfg.nKlassen,
-//      nToken = nToken,
-//      dropout = cfg.dropout,
-//      winnerGetsAll = cfg.winnerGetsAll,
-//      sampling = sampling)
-//
-//  def net(network: NNSampleChainYesNoWithConst.Network): NN[(Token, Token), DenseVector[Double], _, NNSampleChainYesNoWithConst.Network] =
-//    new NNChainYesNoImplWithConst(network, cfg.nKlassen)
-//
-//  override def nnCross: DiffFunction[DenseVector[Double]] =
-//    new NNSampleChainYesNoWithConst(nKlassen = cfg.nKlassen,
-//      nToken = nToken,
-//      dropout = 0,
-//      winnerGetsAll = false,
-//      sampling = samplingCross)
-//
-//  override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
-//    new NNSampleChainYesNoWithConst(nKlassen = cfg.nKlassen,
-//      nToken = nToken,
-//      dropout = 0,
-//      winnerGetsAll = false,
-//      sampling = samplingDoubleCross)
-//
-//  try {
-//    report
-//  } finally {
-//    system.terminate()
-//    mat.shutdown()
-//  }
-//}
+object NNChainMainWithConstImpl
+  extends NNChainMain[NNSampleChainWithConst.Network] {
+
+  def net(network: NNSampleChainWithConst.Network): NN[I, O, _, NNSampleChainWithConst.Network] =
+    new NNChainWithConstImpl(network, cfg.nKlassen, nToken)
+
+  override def nn: NNSampleTrait[I, O, NNSampleChainWithConst.Network, _, _] with DiffFunction[DenseVector[Double]] =
+    new NNSampleChainWithConst(
+      nKlassen = cfg.nKlassen,
+      nToken = nToken,
+      dropout = cfg.dropout,
+      winnerGetsAll = cfg.winnerGetsAll,
+      sampling = samplingLearn)
+
+  override def nnCross: DiffFunction[DenseVector[Double]] =
+    new NNSampleChainWithConst(nKlassen = cfg.nKlassen,
+      nToken = nToken,
+      dropout = 0,
+      winnerGetsAll = false,
+      sampling = samplingCross)
+
+  override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
+    new NNSampleChainWithConst(nKlassen = cfg.nKlassen,
+      nToken = nToken,
+      dropout = 0,
+      winnerGetsAll = false,
+      sampling = samplingDoubleCross)
+
+  try {
+    report
+  } finally {
+    system.terminate()
+    mat.shutdown()
+  }
+}
+
