@@ -137,9 +137,9 @@ trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
           if (n % cfg.crossvalidationFrequency == 0) {
             val valueCross = nnCross.calculate(x.x)._1
             val valueDoubleCross = nnDoubleCross.calculate(x.x)._1
-            println(f"value=${math.sqrt(x.value)}%8.6f cross_value=${math.sqrt(valueCross)}%8.6f double_cross_value=${math.sqrt(valueDoubleCross)}%8.6f")
+            println(f"${n}%7d value=${math.sqrt(x.value)}%8.6f cross_value=${math.sqrt(valueCross)}%8.6f double_cross_value=${math.sqrt(valueDoubleCross)}%8.6f")
           } else {
-            println(f"value=${math.sqrt(x.value)}%8.6f")
+            println(f"${n}%7d value=${math.sqrt(x.value)}%8.6f")
           }
 
           matrix.foreach { matrix =>

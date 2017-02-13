@@ -100,9 +100,7 @@ trait NNChainMain[N <: NetworkBase]
     vocabulary.map2ToNext
       .collect {
         case (t1 :: t2 :: _, tokens) =>
-          val qq = (t1, t2) -> SparseVector(nToken)(tokens.map { case (x, y) => (y, x) }: _*)
-          println(qq)
-          qq
+          (t1, t2) -> SparseVector(nToken)(tokens.map { case (x, y) => (y, x) }: _*)
       }
 
   lazy val samplingDoubleCross =
