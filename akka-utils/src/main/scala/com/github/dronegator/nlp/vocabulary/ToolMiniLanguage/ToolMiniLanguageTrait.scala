@@ -20,12 +20,16 @@ trait ToolMiniLanguageTrait {
 
   def vocabulary: Vocabulary
 
-  def miniLanguage(keywords: Set[Token]): VocabularyRaw = {
-    val renumerator = keywords.toList.sorted.span(_ < 10) match {
-      case (ks1, ks2) =>
-        val map = (ks1.map(x => x -> x) ++ ks2.zipWithIndex.map(x => x._1 -> (x._2 + 10))).toMap
+  def miniLanguage(keywords: Seq[Token]): VocabularyRaw = {
+    println(keywords.sorted)
+    val renumerator = keywords.toList.sorted.partition(_ < 10) match {
+      case (_, ks2) =>
+        val map = ((1 until 10).map(x => x -> x) ++ ks2.zipWithIndex.map(x => x._1 -> (x._2 + 10))).toMap
         x: Token => map.getOrElse(x, OtherWord.value): Token
     }
+
+    val doesKeywordExist = keywords.toSet
+
     VocabularyRawImpl(
       tokenMap = vocabulary.tokenMap
         .map {
@@ -47,17 +51,17 @@ trait ToolMiniLanguageTrait {
         },
       nGram1 = vocabulary.nGram1
         .collect {
-          case (tokens, p) if tokens.forall(keywords(_)) =>
+          case (tokens, p) if tokens.forall(doesKeywordExist(_)) =>
             (tokens.map(renumerator), p)
         },
       nGram2 = vocabulary.nGram2
         .collect {
-          case (tokens, p) if tokens.forall(keywords(_)) =>
+          case (tokens, p) if tokens.forall(doesKeywordExist(_)) =>
             (tokens.map(renumerator), p)
         },
       nGram3 = vocabulary.nGram3
         .collect {
-          case (tokens, p) if tokens.forall(keywords(_)) =>
+          case (tokens, p) if tokens.forall(doesKeywordExist(_)) =>
             (tokens.map(renumerator), p)
         },
       phraseCorrelationRepeated = vocabulary.phraseCorrelationRepeated

@@ -262,7 +262,7 @@ object NLPTReplMain
         }
 
       file foreach { file =>
-        save(file, vocabulary.miniLanguage(selectedTokens.toSet))
+        save(file, vocabulary.miniLanguage(selectedTokens))
           .time { t =>
             logger.info(s"Vocabulary has stored in time = $t ")
           }
@@ -342,7 +342,7 @@ object NLPTReplMain
         .await
 
       file foreach { file =>
-        save(file, vocabulary.miniLanguage(selectedTokens.toSet))
+        save(file, vocabulary.miniLanguage(selectedTokens))
           .time { t =>
             logger.info(s"Vocabulary has stored in time = $t ")
           }

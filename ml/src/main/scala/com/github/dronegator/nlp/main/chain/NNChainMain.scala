@@ -78,7 +78,7 @@ trait NNChainMain[N <: NetworkBase]
     cfg
   }
 
-  lazy val nToken = cfg.nToken.getOrElse(vocabulary.wordMap.keys.max)
+  lazy val nToken = cfg.nToken.getOrElse(vocabulary.wordMap.keys.max + 1)
 
   lazy val vocabulary: Vocabulary =
     if (fileIn == "Test") {
@@ -99,8 +99,8 @@ trait NNChainMain[N <: NetworkBase]
   lazy val sampling: Iterable[(I, O)] =
     vocabulary.map2ToNext
       .collect {
-        case (t1 :: t2 :: _, tokens) =>
-          (t1, t2) -> SparseVector(nToken)(tokens.map { case (x, y) => (y, x) }: _*)
+        case (t1 :: t2 :: _, tokens) if t1 < nToken && t2 < nToken =>
+          (t1, t2) -> SparseVector(vocabulary.wordMap.keys.max + 1)(tokens.collect { case (x, y) if y < 100 => (y, x) }: _*)
       }
 
   lazy val samplingDoubleCross =
@@ -212,27 +212,29 @@ trait NNChainMain[N <: NetworkBase]
 object NNChainMainImpl
   extends NNChainMain[Network] {
 
+  val nTokenMax = vocabulary.wordMap.keys.max + 1
+
   def net(network: Network): NN[I, O, _, Network] =
-    new NNChainImpl(network, cfg.nKlassen, nToken)
+    new NNChainImpl(network, cfg.nKlassen, nTokenMax)
 
   override def nn: NNSampleTrait[I, O, Network, _, _] with DiffFunction[DenseVector[Double]] =
     new NNSampleChain(
       nKlassen = cfg.nKlassen,
-      nToken = nToken,
+      nToken = nTokenMax,
       dropout = cfg.dropout,
       winnerGetsAll = cfg.winnerGetsAll,
       sampling = samplingLearn)
 
   override def nnCross: DiffFunction[DenseVector[Double]] =
     new NNSampleChain(nKlassen = cfg.nKlassen,
-      nToken = nToken,
+      nToken = nTokenMax,
       dropout = 0,
       winnerGetsAll = false,
       sampling = samplingCross)
 
   override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
     new NNSampleChain(nKlassen = cfg.nKlassen,
-      nToken = nToken,
+      nToken = nTokenMax,
       dropout = 0,
       winnerGetsAll = false,
       sampling = samplingDoubleCross)
@@ -250,27 +252,29 @@ object NNChainMainImpl
 object NNChainMainWithConstImpl
   extends NNChainMain[NNSampleChainWithConst.Network] {
 
+  val nTokenMax = vocabulary.wordMap.keys.max + 1
+
   def net(network: NNSampleChainWithConst.Network): NN[I, O, _, NNSampleChainWithConst.Network] =
-    new NNChainWithConstImpl(network, cfg.nKlassen, nToken)
+    new NNChainWithConstImpl(network, cfg.nKlassen, nTokenMax)
 
   override def nn: NNSampleTrait[I, O, NNSampleChainWithConst.Network, _, _] with DiffFunction[DenseVector[Double]] =
     new NNSampleChainWithConst(
       nKlassen = cfg.nKlassen,
-      nToken = nToken,
+      nToken = nTokenMax,
       dropout = cfg.dropout,
       winnerGetsAll = cfg.winnerGetsAll,
       sampling = samplingLearn)
 
   override def nnCross: DiffFunction[DenseVector[Double]] =
     new NNSampleChainWithConst(nKlassen = cfg.nKlassen,
-      nToken = nToken,
+      nToken = nTokenMax,
       dropout = 0,
       winnerGetsAll = false,
       sampling = samplingCross)
 
   override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
     new NNSampleChainWithConst(nKlassen = cfg.nKlassen,
-      nToken = nToken,
+      nToken = nTokenMax,
       dropout = 0,
       winnerGetsAll = false,
       sampling = samplingDoubleCross)
