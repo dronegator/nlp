@@ -52,7 +52,9 @@ case class NNChainConfig(crossvalidationRatio: Int,
                          eta: Double,
                          stepSize: Double,
                          minImprovementWindow: Token,
-                         learn: Boolean)
+                         learn: Boolean,
+                         insignificance: Double,
+                         oppression: Double)
   extends MLCfg
     with NNChainFunctionConfig
 
@@ -270,21 +272,27 @@ object NNChainMainWithConstImpl
       nToken = nTokenMax,
       dropout = cfg.dropout,
       winnerGetsAll = cfg.winnerGetsAll,
-      sampling = samplingLearn)
+      sampling = samplingLearn,
+      insignificance = cfg.insignificance,
+      oppression = cfg.oppression)
 
   override def nnCross: DiffFunction[DenseVector[Double]] =
     new NNSampleChainWithConst(nKlassen = cfg.nKlassen,
       nToken = nTokenMax,
       dropout = 0,
       winnerGetsAll = false,
-      sampling = samplingCross)
+      sampling = samplingCross,
+      insignificance = cfg.insignificance,
+      oppression = cfg.oppression)
 
   override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
     new NNSampleChainWithConst(nKlassen = cfg.nKlassen,
       nToken = nTokenMax,
       dropout = 0,
       winnerGetsAll = false,
-      sampling = samplingDoubleCross)
+      sampling = samplingDoubleCross,
+      insignificance = cfg.insignificance,
+      oppression = cfg.oppression)
 
   try {
     report

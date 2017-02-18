@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp.main.chain
 
-import breeze.linalg.{DenseMatrix, DenseVector, SparseVector}
+import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, sum}
 import breeze.numerics._
 import breeze.optimize.DiffFunction
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
@@ -99,6 +99,8 @@ class NNSampleChainWithConst(val nKlassen: Int,
                              val nToken: Int,
                              dropout: Int,
                              val winnerGetsAll: Boolean,
+                             insignificance: Double,
+                             oppression: Double,
                              val sampling: Iterable[(I, O)])
   extends NN[I, O, Hidden, Network]
     with DiffFunction[DenseVector[Double]]
@@ -133,6 +135,17 @@ class NNSampleChainWithConst(val nKlassen: Int,
 
   override def size: Token = EndOfConstToToken
 
+  override def error(output: SparseVector[Double], result: SparseVector[Double]): Double = {
+    val v = (result - output)
+    output.iterator.foreach {
+      case (n, x) =>
+        if (x < insignificance)
+          v.update(n, 0.0)
+    }
+
+    ((v dot v) / 2.0 + sum(v * oppression)) / v.iterableSize
+  }
+
   override def backward(nn: Network, gradient: Network, hidden: Hidden, input: I, output: O, result: O): Unit =
     input match {
       case (in1, in2) =>
@@ -140,7 +153,19 @@ class NNSampleChainWithConst(val nKlassen: Int,
         val Network(gTokenToKlassen, klassenToReklassen, gReKlassen2Token, constToKlassen, constToReKlassen, constToToken, _) =
           gradient
 
-        val backOutI = ((result - output) :* (result :* (-result + 1.0))).toDenseVector
+        val backerr = result - output
+
+        output.iterator.foreach {
+          case (n, x) =>
+            if (x < insignificance)
+              backerr.update(n, 0.0)
+        }
+
+        backerr :+= oppression
+
+        //backerr :/= backerr.iterableSize.toDouble
+
+        val backOutI = (backerr :* (result :* (-result + 1.0))).toDenseVector
 
         gReKlassen2Token :+= (backOutI * hidden.reKlassenO.t)
 
