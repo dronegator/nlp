@@ -116,8 +116,6 @@ class NNSampleChainWithConst(val nKlassen: Int,
 
 
   override def network(vector: DenseVector[Double]): Network = {
-    println(EndOfReKlassenToToken, EndOfConstToKlassen)
-
     Network(
       tokenToKlassen =
         vector(0 until EndOfTokenToKlassen).asDenseMatrix.reshape(nKlassen, nToken),

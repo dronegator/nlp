@@ -21,7 +21,6 @@ trait ToolMiniLanguageTrait {
   def vocabulary: Vocabulary
 
   def miniLanguage(keywords: Seq[Token]): VocabularyRaw = {
-    println(keywords.sorted)
     val renumerator = keywords.toList.sorted.partition(_ < 10) match {
       case (_, ks2) =>
         val map = ((1 until 10).map(x => x -> x) ++ ks2.zipWithIndex.map(x => x._1 -> (x._2 + 10))).toMap

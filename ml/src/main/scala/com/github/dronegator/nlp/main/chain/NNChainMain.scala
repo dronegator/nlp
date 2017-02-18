@@ -2,7 +2,7 @@ package com.github.dronegator.nlp.main.chain
 
 import java.io.File
 
-import breeze.linalg.{DenseMatrix, DenseVector, SparseVector}
+import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, sum}
 import breeze.optimize.DiffFunction
 import com.github.dronegator.nlp.CaseClassToMap._
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
@@ -100,8 +100,15 @@ trait NNChainMain[N <: NetworkBase]
     vocabulary.map2ToNext
       .collect {
         case (t1 :: t2 :: _, tokens) if t1 < nToken && t2 < nToken =>
-          (t1, t2) -> SparseVector(vocabulary.wordMap.keys.max + 1)(tokens.collect { case (x, y) if y < 100 => (y, x) }: _*)
+          val out = SparseVector(vocabulary.wordMap.keys.max + 1)(tokens.collect { case (x, y) if y < 100 => (y, x) }: _*)
+          val summa = sum(out)
+          if (summa < 0.01) None
+          else {
+            out :/= summa
+            Some((t1, t2) -> out)
+          }
       }
+      .flatten
 
   lazy val samplingDoubleCross =
     Iterable.empty[(I, O)]
