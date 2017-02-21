@@ -14,7 +14,7 @@ import com.github.dronegator.nlp.utils.concurrent.Zukunft
 import com.github.dronegator.nlp.utils.stream._
 import com.github.dronegator.nlp.vocabulary.{VocabularyHintImpl, VocabularyImpl, VocabularyRawImpl}
 import configs.syntax._
-
+import com.github.dronegator.nlp.{IsTuple, Not, FutureFlatZip}, FutureFlatZip.FutureFlatZipOps
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 /**
@@ -134,9 +134,11 @@ object NLPTMainStream
         th
     }.await}")
 
-    val status = (futureNGram1 zip futureNGram2 zip futureNGram3 zip futurePhraseCorrelationRepeated zip futurePhraseCorrelationConsequent zip futurePhraseCorrelationInner zip futureTokenMap zip futurePhrases).
+    val status = (futureNGram1 zip futureNGram2 flatZip futureNGram3 flatZip futurePhraseCorrelationRepeated
+      flatZip futurePhraseCorrelationConsequent flatZip futurePhraseCorrelationInner flatZip futureTokenMap flatZip futurePhrases).
       flatMap {
-        case (((((((Some(nGram1), Some(nGram2)), Some(nGram3)), Some(phraseCorrelationRepeated)), Some(phraseCorrelationConsequent)), Some(phraseCorrelationInner)), Some((tokenMap, lastToken))), phrases) =>
+        case (Some(nGram1), Some(nGram2), Some(nGram3), Some(phraseCorrelationRepeated),
+        Some(phraseCorrelationConsequent), Some(phraseCorrelationInner), Some((tokenMap, lastToken)), phrases) =>
 
           val vocabularyRaw = VocabularyRawImpl(tokenMap, vocabularyHint.meaningMap,  phrases, nGram1, nGram2, nGram3,  phraseCorrelationRepeated, phraseCorrelationConsequent, phraseCorrelationInner)
 

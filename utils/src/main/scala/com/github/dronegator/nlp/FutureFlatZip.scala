@@ -30,6 +30,58 @@ object IsTuple {
 
   implicit def isTuple5[A, B, C, D, E] =
     createIsTuple[Tuple5[A, B, C, D, E]]
+
+  implicit def isTuple6[A, B, C, D, E, F] =
+    createIsTuple[Tuple6[A, B, C, D, E, F]]
+
+  implicit def isTuple7[A, B, C, D, E, F, G] =
+    createIsTuple[Tuple7[A, B, C, D, E, F, G]]
+
+  implicit def isTuple8[A, B, C, D, E, F, G, H] =
+    createIsTuple[Tuple8[A, B, C, D, E, F, G, H]]
+
+  implicit def isTuple9[A, B, C, D, E, F, G, H, I] =
+    createIsTuple[Tuple9[A, B, C, D, E, F, G, H, I]]
+
+  implicit def isTuple10[A, B, C, D, E, F, G, H, I, J] =
+    createIsTuple[Tuple10[A, B, C, D, E, F, G, H, I, J]]
+
+  implicit def isTuple11[A, B, C, D, E, F, G, H, I, J, K] =
+    createIsTuple[Tuple11[A, B, C, D, E, F, G, H, I, J, K]]
+
+  implicit def isTuple12[A, B, C, D, E, F, G, H, I, J, K, L] =
+    createIsTuple[Tuple12[A, B, C, D, E, F, G, H, I, J, K, L]]
+
+  implicit def isTuple13[A, B, C, D, E, F, G, H, I, J, K, L, M] =
+    createIsTuple[Tuple13[A, B, C, D, E, F, G, H, I, J, K, L, M]]
+
+  implicit def isTuple14[A, B, C, D, E, F, G, H, I, J, K, L, M, N] =
+    createIsTuple[Tuple14[A, B, C, D, E, F, G, H, I, J, K, L, M, N]]
+
+  implicit def isTuple15[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O] =
+    createIsTuple[Tuple15[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O]]
+
+  implicit def isTuple16[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P] =
+    createIsTuple[Tuple16[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P]]
+
+  implicit def isTuple17[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, R] =
+    createIsTuple[Tuple17[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, R]]
+
+  implicit def isTuple18[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, R, S] =
+    createIsTuple[Tuple18[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, R, S]]
+
+  implicit def isTuple19[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, R, S, T] =
+    createIsTuple[Tuple19[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, R, S, T]]
+
+  implicit def isTuple20[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, R, S, T, U] =
+    createIsTuple[Tuple20[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, R, S, T, U]]
+
+  implicit def isTuple21[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, R, S, T, U, V] =
+    createIsTuple[Tuple21[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, R, S, T, U, V]]
+
+  implicit def isTuple22[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, R, S, T, U, V, W] =
+    createIsTuple[Tuple22[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, R, S, T, U, V, W]]
+
 }
 
 trait IsTuple[A] {
@@ -65,7 +117,7 @@ object Not {
     evidence.asInstanceOf[Not[T]]
 }
 
-trait FutureFlatZipLowest {
+trait FutureFlatZipLow {
 
   def apply[A, B, C](implicit futureFlatZip: FutureFlatZip.Aux[A, B, C]) =
     futureFlatZip
@@ -87,10 +139,6 @@ trait FutureFlatZipLowest {
       as.zip(bs)
     }
 
-}
-
-trait FutureFlatZipLow
-  extends FutureFlatZipLowest {
   implicit def futureFlatZipTupleAny[A, B, C](implicit
                                               aIsNotATuple: Not[IsTuple[A]],
                                               isTupleB: IsTuple[B],
@@ -115,10 +163,7 @@ trait FutureFlatZipLow
       }
     }
 
-}
 
-trait FutureFlatZipHigh
-  extends FutureFlatZipLow {
   implicit def futureFlatZipTupleTuple[A, B, C](implicit
                                                 isTupleA: IsTuple[A],
                                                 isTupleB: IsTuple[B],
@@ -135,7 +180,7 @@ trait FutureFlatZipHigh
 
 
 object FutureFlatZip
-  extends FutureFlatZipHigh {
+  extends FutureFlatZipLow {
 
   type Aux[A, B, C] = FutureFlatZip[A, B] {
     type Out = C
