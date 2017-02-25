@@ -88,35 +88,6 @@ trait IsTuple[A] {
 
 }
 
-sealed trait Existence
-
-trait Exists extends Existence
-
-trait NotExists extends Existence
-
-trait IsTypeClassExists[TypeClass, Answer]
-
-object IsTypeClassExists {
-  private val evidence: IsTypeClassExists[Any, Any] =
-    new Object with IsTypeClassExists[Any, Any]
-
-  implicit def typeClassExistsEv[TypeClass, Answer](implicit a: TypeClass) =
-    evidence.asInstanceOf[IsTypeClassExists[TypeClass, Exists]]
-
-  implicit def typeClassNotExistsEv[TypeClass, Answer] =
-    evidence.asInstanceOf[IsTypeClassExists[TypeClass, NotExists]]
-}
-
-@implicitNotFound("Argument does not satisfy constraints: Not ${T}")
-trait Not[T]
-
-object Not {
-  private val evidence: Not[Any] = new Object with Not[Any]
-
-  implicit def notEv[T, Answer](implicit a: IsTypeClassExists[T, Answer], ne: Answer =:= NotExists) =
-    evidence.asInstanceOf[Not[T]]
-}
-
 trait FutureFlatZipLow {
 
   def apply[A, B, C](implicit futureFlatZip: FutureFlatZip.Aux[A, B, C]) =
