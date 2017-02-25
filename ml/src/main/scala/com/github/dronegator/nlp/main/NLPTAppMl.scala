@@ -51,6 +51,7 @@ trait MLCfg {
   val stepSize: Double
   val minImprovementWindow: Int
   val learn: Boolean
+  val windowRate: Int
 }
 
 trait NLPTAppMlTools[C <: MLCfg, I, O, N] {

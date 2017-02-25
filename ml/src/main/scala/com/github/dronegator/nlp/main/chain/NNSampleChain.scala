@@ -105,7 +105,8 @@ class NNSampleChain(val nKlassen: Int,
                     val nToken: Int,
                     dropout: Int,
                     val winnerGetsAll: Boolean,
-                    val sampling: Iterable[(I, O)])
+                    val sampling: Iterable[(I, O)],
+                    val rate: Int)
   extends NN[I, O, Hidden, Network]
     with DiffFunction[DenseVector[Double]]
     with NNSampleTrait[I, O, Network, Hidden, Quality]

@@ -96,7 +96,8 @@ class NNSampleKeywordYesNo(val nKlassen: Int,
                            nToken: Int,
                            dropout: Int,
                            val winnerGetsAll: Boolean,
-                           val sampling: Iterable[((Token, Token), DenseVector[Double])])
+                           val sampling: Iterable[((Token, Token), DenseVector[Double])],
+                           val rate: Int)
   extends NN[(Token, Token), DenseVector[Double], Hidden, Network]
     with DiffFunction[DenseVector[Double]]
     with NNSampleTrait[(Token, Token), DenseVector[Double], Network, Hidden, Quality]

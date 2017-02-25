@@ -54,7 +54,8 @@ case class NNChainConfig(crossvalidationRatio: Int,
                          minImprovementWindow: Token,
                          learn: Boolean,
                          insignificance: Double,
-                         oppression: Double)
+                         oppression: Double,
+                         windowRate: Int)
   extends MLCfg
     with NNChainFunctionConfig
 
@@ -232,21 +233,24 @@ object NNChainMainImpl
       nToken = nTokenMax,
       dropout = cfg.dropout,
       winnerGetsAll = cfg.winnerGetsAll,
-      sampling = samplingLearn)
+      sampling = samplingLearn,
+      cfg.windowRate)
 
   override def nnCross: DiffFunction[DenseVector[Double]] =
     new NNSampleChain(nKlassen = cfg.nKlassen,
       nToken = nTokenMax,
       dropout = 0,
       winnerGetsAll = false,
-      sampling = samplingCross)
+      sampling = samplingCross,
+      cfg.windowRate)
 
   override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
     new NNSampleChain(nKlassen = cfg.nKlassen,
       nToken = nTokenMax,
       dropout = 0,
       winnerGetsAll = false,
-      sampling = samplingDoubleCross)
+      sampling = samplingDoubleCross,
+      cfg.windowRate)
 
   try {
     report
@@ -274,7 +278,8 @@ object NNChainMainWithConstImpl
       winnerGetsAll = cfg.winnerGetsAll,
       sampling = samplingLearn,
       insignificance = cfg.insignificance,
-      oppression = cfg.oppression)
+      oppression = cfg.oppression,
+      rate = cfg.windowRate)
 
   override def nnCross: DiffFunction[DenseVector[Double]] =
     new NNSampleChainWithConst(nKlassen = cfg.nKlassen,
@@ -283,7 +288,8 @@ object NNChainMainWithConstImpl
       winnerGetsAll = false,
       sampling = samplingCross,
       insignificance = cfg.insignificance,
-      oppression = cfg.oppression)
+      oppression = cfg.oppression,
+      rate = cfg.windowRate)
 
   override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
     new NNSampleChainWithConst(nKlassen = cfg.nKlassen,
@@ -292,7 +298,8 @@ object NNChainMainWithConstImpl
       winnerGetsAll = false,
       sampling = samplingDoubleCross,
       insignificance = cfg.insignificance,
-      oppression = cfg.oppression)
+      oppression = cfg.oppression,
+      rate = cfg.windowRate)
 
 
   try {

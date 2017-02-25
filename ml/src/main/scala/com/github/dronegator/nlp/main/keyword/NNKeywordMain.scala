@@ -53,7 +53,8 @@ case class NNKeywordConfig(crossvalidationRatio: Int,
                            eta: Double,
                            stepSize: Double,
                            minImprovementWindow: Token,
-                           learn: Boolean)
+                           learn: Boolean,
+                           windowRate: Int)
   extends MLCfg
     with NNKeywordFunctionConfig
 
@@ -213,7 +214,8 @@ object NNKeywordMain
       nToken = nToken,
       dropout = cfg.dropout,
       winnerGetsAll = cfg.winnerGetsAll,
-      sampling = sampling)
+      sampling = sampling,
+      rate = cfg.windowRate)
 
   def net(network: Network): NN[(Token, Token), DenseVector[Double], _, Network] =
     new NNKeywordYesNoImpl(network, cfg.nKlassen)
@@ -230,14 +232,16 @@ object NNKeywordMain
       nToken = nToken,
       dropout = 0,
       winnerGetsAll = false,
-      sampling = samplingCross)
+      sampling = samplingCross,
+      rate = cfg.windowRate)
 
   override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
     new NNSampleKeywordYesNo(nKlassen = cfg.nKlassen,
       nToken = nToken,
       dropout = 0,
       winnerGetsAll = false,
-      sampling = samplingDoubleCross)
+      sampling = samplingDoubleCross,
+      rate = cfg.windowRate)
 
 }
 
@@ -249,7 +253,8 @@ object NNKeywordMainWithConst
       nToken = nToken,
       dropout = cfg.dropout,
       winnerGetsAll = cfg.winnerGetsAll,
-      sampling = sampling)
+      sampling = sampling,
+      rate = cfg.windowRate)
 
   def net(network: NNSampleKeywordYesNoWithConst.Network): NN[(Token, Token), DenseVector[Double], _, NNSampleKeywordYesNoWithConst.Network] =
     new NNKeywordYesNoImplWithConst(network, cfg.nKlassen)
@@ -259,14 +264,16 @@ object NNKeywordMainWithConst
       nToken = nToken,
       dropout = 0,
       winnerGetsAll = false,
-      sampling = samplingCross)
+      sampling = samplingCross,
+      rate = cfg.windowRate)
 
   override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
     new NNSampleKeywordYesNoWithConst(nKlassen = cfg.nKlassen,
       nToken = nToken,
       dropout = 0,
       winnerGetsAll = false,
-      sampling = samplingDoubleCross)
+      sampling = samplingDoubleCross,
+      rate = cfg.windowRate)
 
   try {
     report

@@ -3,6 +3,8 @@ package com.github.dronegator.nlp.main
 import breeze.linalg.{DenseVector, SparseVector}
 import breeze.optimize.DiffFunction
 
+import scala.util.Random
+
 /**
   * Created by cray on 12/13/16.
   */
@@ -56,6 +58,8 @@ trait NNSampleTrait[I, O, N, H, Q] {
 
   def size: Int
 
+  def rate: Int
+
   def empty = DenseVector.zeros[Double](size)
 
   def initial = DenseVector.rand[Double](size)
@@ -71,6 +75,7 @@ trait NNSampleTrait[I, O, N, H, Q] {
     val gradient11 = empty
 
     val (n, accumulatedValue, _, qualityValue, _) = sampling
+      .filter(_ => Random.nextInt < rate)
       .foldLeft((0, 0.0, network(gradient11), quality, System.currentTimeMillis())) {
         case ((n, accumulatedValue, gradient, qualityValue, lastTime), (input, output)) =>
 
