@@ -75,7 +75,7 @@ trait NNSampleTrait[I, O, N, H, Q] {
     val gradient11 = empty
 
     val (n, accumulatedValue, _, qualityValue, _) = sampling
-      .filter(_ => Random.nextInt < rate)
+      .filter(_ => Random.nextInt(100) < rate)
       .foldLeft((0, 0.0, network(gradient11), quality, System.currentTimeMillis())) {
         case ((n, accumulatedValue, gradient, qualityValue, lastTime), (input, output)) =>
 
