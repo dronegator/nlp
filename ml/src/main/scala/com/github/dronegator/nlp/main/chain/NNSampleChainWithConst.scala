@@ -137,13 +137,15 @@ class NNSampleChainWithConst(val nKlassen: Int,
 
   override def error(output: SparseVector[Double], result: SparseVector[Double]): Double = {
     val v = (result - output)
-    output.iterator.foreach {
-      case (n, x) =>
-        if (x < insignificance)
-          v.update(n, 0.0)
-    }
-
-    ((v dot v) / 2.0 + sum(v * oppression)) / v.iterableSize
+    output.iterator
+      .map {
+        case (n, x) =>
+          if (x < insignificance)
+            v(n) * oppression
+          else
+            v(n) * v(n)
+      }
+      .sum / v.iterableSize
   }
 
   override def backward(nn: Network, gradient: Network, hidden: Hidden, input: I, output: O, result: O): Unit =
@@ -158,10 +160,10 @@ class NNSampleChainWithConst(val nKlassen: Int,
         output.iterator.foreach {
           case (n, x) =>
             if (x < insignificance)
-              backerr.update(n, 0.0)
+              backerr.update(n, oppression)
         }
 
-        backerr :+= oppression
+        //backerr :+= oppression
 
         //backerr :/= backerr.iterableSize.toDouble
 

@@ -294,6 +294,7 @@ object NNChainMainWithConstImpl
       insignificance = cfg.insignificance,
       oppression = cfg.oppression)
 
+
   try {
     report
   } finally {
