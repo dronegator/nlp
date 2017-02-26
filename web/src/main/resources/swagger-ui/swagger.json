@@ -1,0 +1,91 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "0.0.0",
+    "title": "NLPT Web Service"
+  },
+  "paths": {
+    "/phrase/{word}/generate": {
+      "get": {
+        "description": "Generate a phrase from the words",
+        "parameters": [
+          {
+            "name": "word",
+            "in": "path",
+            "description": "word",
+            "required": true,
+            "type": "array",
+            "collectionFormat": "csv",
+            "items": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "data",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "type": "string",
+            "default": "{}"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "title": "",
+              "type": "array",
+              "items": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string"
+                    },
+                    "weight": {
+                      "type": "number",
+                      "format": "double"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/system/version": {
+      "get": {
+        "description": "Get description of the current version of the service",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "title": "Version Object",
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "commit": {
+                  "type": "string"
+                },
+                "buildTime": {
+                  "type": "string"
+                },
+                "branch": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

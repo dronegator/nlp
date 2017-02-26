@@ -9,6 +9,7 @@ import akka.http.scaladsl.server.Route
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer
 import com.github.dronegator.nlp.main.phrase._
 import com.github.dronegator.nlp.main.session.NLPTWebServiceSessionTrait
+import com.github.dronegator.nlp.main.swagger.NLPTWebServiceSwaggerTrait
 import com.github.dronegator.nlp.main.system.NLPTWebServiceSystemTrait
 import com.github.dronegator.nlp.main.websocket.NLPTWebServiceSocketTrait
 import com.github.dronegator.nlp.trace._
@@ -40,6 +41,7 @@ object NLPTWebServiceMain
     with NLPTWebServicePhraseTrait
     with NLPTWebServiceUITrait
     with NLPTWebServiceSocketTrait
+    with NLPTWebServiceSwaggerTrait
     with NLPTWebServiceSessionTrait
     /*with NLPTWebServiceHTMLTrait */ {
 
