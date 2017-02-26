@@ -67,7 +67,14 @@ trait NNChainWithConst
 
         hidden.tokenI += network.constToToken * 1.0
 
-        hidden.tokenO := hidden.tokenI.map(x => 1 / (1 + exp(-x)))
+        //hidden.tokenO := hidden.tokenI.map(x => 1 / (1 + exp(-x)))
+        // Softmax
+
+        val denominator = sum(hidden.tokenI.map(exp(_)))
+
+        if (denominator > 1e10) println(denominator)
+
+        hidden.tokenO := hidden.tokenI.map(exp(_) / denominator)
     }
 
   val nKlassen: Int
@@ -136,18 +143,18 @@ class NNSampleChainWithConst(val nKlassen: Int,
 
   override def size: Token = EndOfConstToToken
 
-  override def error(output: SparseVector[Double], result: SparseVector[Double]): Double = {
-    val v = (result - output)
-    output.iterator
-      .map {
-        case (n, x) =>
-          if (x < insignificance)
-            v(n) * oppression
-          else
-            v(n) * v(n)
-      }
-      .sum / v.iterableSize
-  }
+  //  override def error(output: SparseVector[Double], result: SparseVector[Double]): Double = {
+  //    val v = (result - output)
+  //    output.iterator
+  //      .map {
+  //        case (n, x) =>
+  //          if (x < insignificance)
+  //            v(n) * oppression
+  //          else
+  //            v(n) * v(n)
+  //      }
+  //      .sum / v.iterableSize
+  //  }
 
   override def backward(nn: Network, gradient: Network, hidden: Hidden, input: I, output: O, result: O): Unit =
     input match {
@@ -158,17 +165,40 @@ class NNSampleChainWithConst(val nKlassen: Int,
 
         val backerr = result - output
 
-        output.iterator.foreach {
-          case (n, x) =>
-            if (x < insignificance)
-              backerr.update(n, oppression)
-        }
+        //        output.iterator.foreach {
+        //          case (n, x) =>
+        //            if (x < insignificance)
+        //              backerr.update(n, oppression)
+        //        }
 
         //backerr :+= oppression
 
         //backerr :/= backerr.iterableSize.toDouble
 
-        val backOutI = (backerr :* (result :* (-result + 1.0))).toDenseVector
+        //val backOutI = (backerr :* (result :* (-result + 1.0))).toDenseVector
+        //Try Softmax function
+
+
+        val backOutI = DenseVector.fill(nToken)(0.0)
+        def kronekerDelta(i: Int, j: Int) =
+          if (i == j) 1.0 else 0.0
+
+        (0 until nToken)
+          .foreach { k =>
+            val backOutIk = DenseVector.fill(nToken)(0.0)
+
+            (0 until nToken)
+              .foreach { j =>
+                backOutIk.update(j, result(j) * (kronekerDelta(j, k) - result(k)))
+              }
+
+            backOutIk :+= backerr
+
+            backOutI :+= backOutIk
+
+          }
+
+        //println(backOutI)
 
         gReKlassen2Token :+= (backOutI * hidden.reKlassenO.t)
 
