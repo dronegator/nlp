@@ -1,5 +1,6 @@
 package com.github.dronegator.nlp.main.swagger
 
+import com.github.dronegator.nlp.main.Handler
 import shapeless.ops.hlist.IsHCons
 import shapeless.{HList, HNil}
 
@@ -21,9 +22,9 @@ object SwaggerAppGen {
   implicit def swaggerAppGenHNil =
     createSwaggerAppGen[HNil]("")
 
-  implicit def swaggerAppGenHCons[HS <: HList, R <: SwaggerRoute, T <: HList](implicit isHCons: IsHCons.Aux[HS, R, T],
-                                                                              swaggerRouteGen: SwaggerRouteGen[R],
-                                                                              swaggerAppGen: SwaggerAppGen[T]) =
+  implicit def swaggerAppGenHCons[HS <: HList, I, O, H <: Handler[I, O], R <: SwaggerRoute[H], T <: HList](implicit isHCons: IsHCons.Aux[HS, R, T],
+                                                                                                           swaggerRouteGen: SwaggerRouteGen[I, O, H, R],
+                                                                                                           swaggerAppGen: SwaggerAppGen[T]) =
     createSwaggerAppGen[HS] {
       swaggerRouteGen.swagger ++ swaggerAppGen.swagger
     }

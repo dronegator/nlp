@@ -6,13 +6,13 @@ package com.github.dronegator.nlp.main
 package object swagger {
   type JS = String
 
-  trait SwaggerRoute {
+  trait SwaggerRoute[H <: Handler[_, _]] {
     def swagger: JS
   }
 
   object SwaggerRoute {
-    def apply(f: JS) =
-      new SwaggerRoute {
+    def apply[I, O, Hander](f: JS) =
+      new SwaggerRoute[Handler[I, O]] {
         override def swagger: JS =
           f
       }
