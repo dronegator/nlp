@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp.sample
 
-import com.github.dronegator.nlp.sample.DBack.DBackTag
+import com.github.dronegator.nlp.sample.DBackImpl.DBack
 import shapeless._
 import shapeless.ops.hlist.IsHCons
 
@@ -8,49 +8,49 @@ import shapeless.ops.hlist.IsHCons
   * Created by cray on 3/4/17.
   */
 
-object DBack {
+object DBackImpl {
 
-  trait DBackTag
+  trait DBack
 
-  def apply[A](implicit d: DBack[A]) =
+  def apply[A](implicit d: DBackImpl[A]) =
     d
 
-  def instance[A](f: A => List[Any]): DBack[A] =
-    new DBack[A] {
-      override def dd(a: A): List[Any] =
+  def instance[A](f: A => List[Any]): DBackImpl[A] =
+    new DBackImpl[A] {
+      override def doD(a: A): List[Any] =
         f(a)
     }
 
 
-  implicit def dBackHNil: DBack[HNil] =
+  implicit def dBackHNil: DBackImpl[HNil] =
     instance[HNil] { a =>
       List()
     }
 
   implicit def dBackHConsString[A <: HList, T <: HList](implicit
                                                         isHCons: IsHCons.Aux[A, String, T],
-                                                        dBackT: DBack[T]) =
+                                                        dBackT: DBackImpl[T]) =
     instance[A] { a =>
-      dBackT.dd(isHCons.tail(a)) :+ isHCons.head(a)
+      dBackT.doD(isHCons.tail(a)) :+ isHCons.head(a)
     }
 
   implicit def dBackHConsInt[A <: HList, T <: HList](implicit
                                                      isHCons: IsHCons.Aux[A, Int, T],
-                                                     dBackT: DBack[T]) =
+                                                     dBackT: DBackImpl[T]) =
     instance[A] { a =>
       val h: Int = isHCons.head(a)
-      val t: List[Any] = dBackT.dd(isHCons.tail(a))
+      val t: List[Any] = dBackT.doD(isHCons.tail(a))
 
       t :+ h
     }
 
   implicit def dBackCaseClass[A, Repr <: HList](implicit gen: Generic.Aux[A, Repr],
-                                                dBack: DBack[Repr]) =
+                                                dBack: DBackImpl[Repr]) =
     instance[A] { a =>
-      dBack.dd(gen.to(a))
+      dBack.doD(gen.to(a))
     }
 }
 
-trait DBack[A]
+trait DBackImpl[A]
   extends D[A]
-    with DBackTag
+    with DBack

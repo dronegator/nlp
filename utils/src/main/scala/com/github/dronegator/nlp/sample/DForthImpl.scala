@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp.sample
 
-import com.github.dronegator.nlp.sample.DForth.DForthTag
+import com.github.dronegator.nlp.sample.DForthImpl.DForth
 import shapeless._
 import shapeless.ops.hlist.IsHCons
 
@@ -8,49 +8,49 @@ import shapeless.ops.hlist.IsHCons
   * Created by cray on 3/4/17.
   */
 
-object DForth {
+object DForthImpl {
 
-  trait DForthTag
+  trait DForth
 
-  def apply[A](implicit d: DForth[A]) =
+  def apply[A](implicit d: DForthImpl[A]) =
     d
 
-  def instance[A](f: A => List[Any]): DForth[A] =
-    new DForth[A] {
-      override def dd(a: A): List[Any] =
+  def instance[A](f: A => List[Any]): DForthImpl[A] =
+    new DForthImpl[A] {
+      override def doD(a: A): List[Any] =
         f(a)
     }
 
 
-  implicit def dForthHNil: DForth[HNil] =
+  implicit def dForthHNil: DForthImpl[HNil] =
     instance[HNil] { a =>
       List()
     }
 
   implicit def dForthHConsString[A <: HList, T <: HList](implicit
                                                          isHCons: IsHCons.Aux[A, String, T],
-                                                         dForthT: DForth[T]) =
+                                                         dForthT: DForthImpl[T]) =
     instance[A] { a =>
-      isHCons.head(a) :: dForthT.dd(isHCons.tail(a))
+      isHCons.head(a) :: dForthT.doD(isHCons.tail(a))
     }
 
   implicit def dForthHConsInt[A <: HList, T <: HList](implicit
                                                       isHCons: IsHCons.Aux[A, Int, T],
-                                                      dForthT: DForth[T]) =
+                                                      dForthT: DForthImpl[T]) =
     instance[A] { a =>
       val h: Int = isHCons.head(a)
-      val t: List[Any] = dForthT.dd(isHCons.tail(a))
+      val t: List[Any] = dForthT.doD(isHCons.tail(a))
 
       h :: t
     }
 
   implicit def dForthCaseClass[A, Repr <: HList](implicit gen: Generic.Aux[A, Repr],
-                                                 dForth: DForth[Repr]) =
+                                                 dForth: DForthImpl[Repr]) =
     instance[A] { a =>
-      dForth.dd(gen.to(a))
+      dForth.doD(gen.to(a))
     }
 }
 
-trait DForth[A]
+trait DForthImpl[A]
   extends D[A]
-    with DForthTag
+    with DForth
