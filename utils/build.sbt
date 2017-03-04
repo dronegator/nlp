@@ -14,3 +14,4 @@ libraryDependencies += "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2.1"
 
 libraryDependencies += "com.beachape" %% "enumeratum" % "1.4.9"
 
+libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2"
