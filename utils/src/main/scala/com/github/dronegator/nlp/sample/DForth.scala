@@ -1,5 +1,6 @@
 package com.github.dronegator.nlp.sample
 
+import com.github.dronegator.nlp.sample.DForth.DForthTag
 import shapeless._
 import shapeless.ops.hlist.IsHCons
 
@@ -8,6 +9,9 @@ import shapeless.ops.hlist.IsHCons
   */
 
 object DForth {
+
+  trait DForthTag
+
   def apply[A](implicit d: DForth[A]) =
     d
 
@@ -49,3 +53,4 @@ object DForth {
 
 trait DForth[A]
   extends D[A]
+    with DForthTag

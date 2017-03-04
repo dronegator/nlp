@@ -6,7 +6,7 @@ package com.github.dronegator.nlp
 package object sample {
 
   class QD {
-    def qd[A, D1 <: D[A]](a: A)(implicit q: Q[A, D1]) =
+    def qd[A, T](a: A)(implicit q: Q[A, D[A] with T]) =
       q.qq(a)
   }
 
@@ -16,12 +16,12 @@ package object sample {
 
 
   object Q {
-    implicit def q[A, D1 <: D[A]](implicit d: D1) =
-      new Q[A, D1]
+    implicit def q[A, T](implicit d: D[A] with T) =
+      new Q[A, D[A] with T]
 
   }
 
-  class Q[A, D1 <: D[A]](implicit d: D1) {
+  class Q[A, T](implicit d: D[A] with T) {
     def qq(a: A): List[Any] =
       d.dd(a)
   }

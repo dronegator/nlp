@@ -1,5 +1,6 @@
 package com.github.dronegator.nlp.sample
 
+import com.github.dronegator.nlp.sample.DBack.DBackTag
 import shapeless._
 import shapeless.ops.hlist.IsHCons
 
@@ -8,6 +9,9 @@ import shapeless.ops.hlist.IsHCons
   */
 
 object DBack {
+
+  trait DBackTag
+
   def apply[A](implicit d: DBack[A]) =
     d
 
@@ -49,3 +53,4 @@ object DBack {
 
 trait DBack[A]
   extends D[A]
+    with DBackTag

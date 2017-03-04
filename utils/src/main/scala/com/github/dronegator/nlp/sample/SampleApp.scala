@@ -1,5 +1,7 @@
 package com.github.dronegator.nlp.sample
 
+import com.github.dronegator.nlp.sample.DBack.DBackTag
+import com.github.dronegator.nlp.sample.DForth.DForthTag
 import shapeless._
 
 /**
@@ -15,7 +17,10 @@ object SampleApp
 
   val qd = new QD()
 
-  println(qd.qd[(Int, Int, String, Int), DForth[(Int, Int, String, Int)]]((1, 2, "3", 4)))
+  val lf = qd.qd[(Int, Int, String, Int), DForthTag]((1, 2, "3", 4))
 
-  println(qd.qd[(Int, Int, String, Int), DBack[(Int, Int, String, Int)]]((1, 2, "3", 4)))
+  val rf = qd.qd[(Int, Int, String, Int), DBackTag]((1, 2, "3", 4))
+
+  println(lf, rf)
+
 }
