@@ -19,8 +19,13 @@ object SampleApp
 
   val lf = qd.qd[(Int, Int, String, Int), DForthTag]((1, 2, "3", 4))
 
-  val rf = qd.qd[(Int, Int, String, Int), DBackTag]((1, 2, "3", 4))
+  val lb = qd.qd[(Int, Int, String, Int), DBackTag]((1, 2, "3", 4))
 
-  println(lf, rf)
+  println(lf, lb)
 
+  val l1f = qd.forTag[DForthTag].qd((1, 2, "3", 4))
+
+  val l1b = qd.forTag[DBackTag].qd((1, 2, "3", 4))
+
+  println(l1f, l1b)
 }

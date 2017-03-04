@@ -5,9 +5,18 @@ package com.github.dronegator.nlp
   */
 package object sample {
 
+  class QDForTag[T](originalQd: QD) {
+    def qd[A](a: A)(implicit q: Q[A, D[A] with T]) =
+      originalQd.qd[A, T](a)
+
+    def forTag[T1] = new QDForTag[T](originalQd)
+  }
+
   class QD {
     def qd[A, T](a: A)(implicit q: Q[A, D[A] with T]) =
       q.qq(a)
+
+    def forTag[T] = new QDForTag[T](this)
   }
 
   trait D[A] {
