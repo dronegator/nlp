@@ -28,4 +28,10 @@ object SampleApp
   val l1b = qd.forTag[DBackTag].qd((1, 2, "3", 4))
 
   println(l1f, l1b)
+
+  val l2f = qd.tqd[DForthTag].qd((1, 2, "3", 4))
+
+  val l2b = qd.tqd[DBackTag].qd((1, 2, "3", 4))
+
+  println(l2f, l2b)
 }
