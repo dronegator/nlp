@@ -85,6 +85,12 @@ trait SchemeLowPriority {
       schemeT.value.gen(isHCons.tail(routes))
     }
 
+
+  implicit def schemeModule[RS <: HList, M <: Module[RS]](implicit schemeRS: Scheme[RS]) =
+    instance[M] { m =>
+      schemeRS.gen(m.routes)
+    }
+
 }
 
 object Scheme extends SchemeLowPriority {
@@ -92,12 +98,6 @@ object Scheme extends SchemeLowPriority {
   implicit def schemeHNil: Scheme[HNil] =
     instance[HNil] { _ =>
       Map()
-    }
-
-
-  implicit def schemeModule[RS <: HList, M <: Module[RS]](implicit schemeRS: Scheme[RS]) =
-    instance[M] { m =>
-      schemeRS.gen(m.routes)
     }
 
   implicit def schemeModules[MS <: HList, M <: Module[_], T <: HList](implicit isHCons: IsHCons.Aux[MS, M, T],
@@ -137,7 +137,7 @@ object WebApp
 
   implicit def schemeM1 = Scheme.schemeModule[(R1, H1) :: HNil, M1]
 
-  val scheme = //Scheme[M :: HNil]
-    Scheme.schemeModules[M1 :: HNil, M1, HNil]
+  val scheme = Scheme[M1 :: HNil]
+  //Scheme.schemeModules[M1 :: HNil, M1, HNil]
   //println(scheme.gen(modules))
 }
