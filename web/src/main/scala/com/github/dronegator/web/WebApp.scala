@@ -116,7 +116,7 @@ object Scheme extends SchemeLowPriority {
     instance[MS] { modules =>
       val m = isHCons.value.head(modules)
       println(s"Module: $m")
-      //      schemeRS.value.gen(module.value.routes(m)) ++
+      schemeRS.value.gen(module.value.routes(m)) ++
         schemeT.gen(isHCons.value.tail(modules))
 
     }
