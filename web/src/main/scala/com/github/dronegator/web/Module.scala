@@ -1,7 +1,6 @@
 package com.github.dronegator.web
 
-import com.github.dronegator.web.WebModel._
-import shapeless.{::, HList, HNil}
+import shapeless.HList
 
 /**
   * Created by cray on 3/5/17.
@@ -10,29 +9,44 @@ import shapeless.{::, HList, HNil}
 object ModuleHasRS {
   type Aux[M <: Module[_], RS1] = ModuleHasRS[M] {type RS = RS1}
 
-  implicit def instanceM1: Aux[M1, (R1, H1) :: HNil] =
-    new ModuleHasRS[M1] {
-      type RS = (R1, H1) :: HNil
+  //  implicit def instanceM1_ = ModuleHasRS.instance[M1, (R1, H1) :: HNil]
 
-      override def routes(module: M1): RS =
-        module.routes
-    }
+  //    implicit def instanceM1: Aux[M1, (R1, H1) :: HNil] =
+  //    new ModuleHasRS[M1] {
+  //      type RS = (R1, H1) :: HNil
+  //
+  //      override def routes(module: M1): RS =
+  //        module.routes
+  //    }
+  //
+  //  implicit def instanceM2: Aux[M2, (R2, H2) :: HNil] =
+  //    new ModuleHasRS[M2] {
+  //      type RS = (R2, H2) :: HNil
+  //
+  //      override def routes(module: M2): RS =
+  //        module.routes
+  //    }
+  //
+  //  implicit def instanceM: Aux[M, (R1, H1) :: (R2, H2) :: HNil] =
+  //    new ModuleHasRS[M] {
+  //      type RS = (R1, H1) :: (R2, H2) :: HNil
+  //
+  //      override def routes(module: M): RS =
+  //        module.routes
+  //    }
 
-  implicit def instanceM2: Aux[M2, (R2, H2) :: HNil] =
-    new ModuleHasRS[M2] {
-      type RS = (R2, H2) :: HNil
+  def apply[M <: Module[RS1], RS1 <: HList](implicit moduleHasRS: ModuleHasRS.Aux[M, RS1]) =
+    moduleHasRS
 
-      override def routes(module: M2): RS =
-        module.routes
-    }
-
-  implicit def instanceM: Aux[M, (R1, H1) :: (R2, H2) :: HNil] =
+  implicit
+  def instance[M <: Module[RS1], RS1 <: HList]: Aux[M, RS1] =
     new ModuleHasRS[M] {
-      type RS = (R1, H1) :: (R2, H2) :: HNil
+      type RS = RS1
 
       override def routes(module: M): RS =
-        module.routes
+        ??? //module.routes
     }
+
 }
 
 trait ModuleHasRS[M <: Module[_]] {
@@ -45,5 +59,5 @@ trait ModuleHasRS[M <: Module[_]] {
 trait Module[RS <: HList] {
   type RS1 = RS
 
-  def routes: RS
+  def routes: RS1
 }

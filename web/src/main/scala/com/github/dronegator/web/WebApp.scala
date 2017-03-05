@@ -1,6 +1,6 @@
 package com.github.dronegator.web
 
-import com.github.dronegator.web.WebModel.{M, M1}
+import com.github.dronegator.web.WebModel.{H1, M, M1, R1}
 import shapeless._
 import shapeless.ops.hlist.IsHCons
 import shapeless.ops.tuple.IsComposite
@@ -116,7 +116,7 @@ object Scheme extends SchemeLowPriority {
     instance[MS] { modules =>
       val m = isHCons.value.head(modules)
       println(s"Module: $m")
-      schemeRS.value.gen(module.value.routes(m)) ++
+      //      schemeRS.value.gen(module.value.routes(m)) ++
         schemeT.gen(isHCons.value.tail(modules))
 
     }
@@ -136,6 +136,8 @@ object WebApp
 
   def moduless: M1 :: M :: HNil = new M1 :: new M :: HNil
 
-  val scheme = Scheme[M1 :: M :: HNil]
-  println(scheme.gen(moduless))
+  implicit val moduleHasRS = ModuleHasRS.instance[M1, (R1, H1) :: HNil]
+
+  val scheme = Scheme[M1 /*:: M */ :: HNil]
+  println(scheme.gen(modules1))
 }
