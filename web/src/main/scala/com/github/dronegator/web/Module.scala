@@ -38,10 +38,11 @@ object ModuleHasRS {
   def apply[M <: Module[RS1], RS1 <: HList](implicit moduleHasRS: ModuleHasRS.Aux[M, RS1]) =
     moduleHasRS
 
-  implicit def instance[M <: Module[RS1], RS1 <: HList]: Aux[M, RS1] =
+  def instance[M <: Module[RS1], RS1 <: HList](descriptionArg: String): Aux[M, RS1] =
     new ModuleHasRS[M] {
       type RS = RS1
 
+      val description = descriptionArg
       override def routes(module: M): RS =
         module.routes
     }
@@ -51,13 +52,12 @@ object ModuleHasRS {
 trait ModuleHasRS[M <: Module[_]] {
   type RS
 
+  def description: String
+
   def routes(module: M): RS
 }
 
 
 trait Module[RS <: HList] {
-  type RS1 = RS
-  implicit val moduleHasRS = ModuleHasRS.instance[this.type, RS1]
-
-  def routes: RS1
+  def routes: RS
 }
