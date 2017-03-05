@@ -1,6 +1,6 @@
 package com.github.dronegator.web
 
-import com.github.dronegator.web.WebModel.{H1, M1, R1}
+import com.github.dronegator.web.WebModel.{M, M1}
 import shapeless._
 import shapeless.ops.hlist.IsHCons
 import shapeless.ops.tuple.IsComposite
@@ -58,6 +58,13 @@ object WebModel {
 
   }
 
+  class M2 extends Module[(R2, H2) :: HNil] {
+    override def routes: ::[(R2, H2), HNil] =
+      (new R2 -> new H2) ::
+        HNil
+
+  }
+
 }
 
 trait SchemeLowPriority {
@@ -86,10 +93,11 @@ trait SchemeLowPriority {
     }
 
 
-  implicit def schemeModule[RS <: HList, M <: Module[RS]](implicit schemeRS: Scheme[RS]) =
-    instance[M] { m =>
-      schemeRS.gen(m.routes)
-    }
+  //  implicit def schemeModule[RS <: HList, M <: Module[RS]](implicit schemeRS: Scheme[RS]) =
+  //    instance[M] { m =>
+  //
+  //      schemeRS.gen(m.routes)
+  //    }
 
 }
 
@@ -100,19 +108,16 @@ object Scheme extends SchemeLowPriority {
       Map()
     }
 
-  implicit def schemeModules[MS <: HList, M <: Module[_], T <: HList](implicit isHCons: IsHCons.Aux[MS, M, T],
-                                                                      // eq: Module[RS] =:= M,
-                                                                      // module: ModuleHasRS.Aux[RS, M],
-                                                                      //schemeRS: Scheme[RS],
-                                                                      schemeM: Scheme[M],
-                                                                      schemeT: Scheme[T]
-                                                                     ) =
+  implicit def schemeModules[MS <: HList, RS <: HList, M <: Module[_ <: HList], T <: HList](implicit isHCons: Lazy[IsHCons.Aux[MS, M, T]],
+                                                                                            module: Lazy[ModuleHasRS.Aux[M, RS]],
+                                                                                            schemeRS: Lazy[Scheme[RS]],
+                                                                                            schemeT: Scheme[T]
+                                                                                           ) =
     instance[MS] { modules =>
-      val m = isHCons.head(modules)
+      val m = isHCons.value.head(modules)
       println(s"Module: $m")
-
-      schemeM.gen(m) ++
-        schemeT.gen(isHCons.tail(modules))
+      schemeRS.value.gen(module.value.routes(m)) ++
+        schemeT.gen(isHCons.value.tail(modules))
 
     }
 }
@@ -125,19 +130,12 @@ trait Scheme[A] {
 object WebApp
   extends App {
 
-  def modules: M1 :: HNil = new M1 :: HNil
+  def modules: M :: HNil = new M :: HNil
 
-  //implicit val isHCons = the[IsHCons.Aux[(R1, H1) :: HNil, (R1, H1), HNil]]
-  //implicit val r1h1 = Scheme[(R1, H1) :: HNil]
-  ///Scheme.schemeRoutes[(R1, H1) :: HNil, R1, H1, HNil]
+  def modules1: M1 :: HNil = new M1 :: HNil
 
-  //  implicit val hasRs: ModuleHasRS.Aux[(R1, H1) :: HNil, M1] = ??? //ModuleHasRS.instance[(R1, H1) ::HNil]
-  //
-  //  val q: (R1, H1) :: HNil = hasRs.routes(new M1)
+  def moduless: M1 :: M :: HNil = new M1 :: new M :: HNil
 
-  implicit def schemeM1 = Scheme.schemeModule[(R1, H1) :: HNil, M1]
-
-  val scheme = Scheme[M1 :: HNil]
-  //Scheme.schemeModules[M1 :: HNil, M1, HNil]
-  println(scheme.gen(modules))
+  val scheme = Scheme[M1 :: M :: HNil]
+  println(scheme.gen(moduless))
 }
