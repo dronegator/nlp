@@ -108,12 +108,12 @@ object Scheme extends SchemeLowPriority {
                                                                       schemeT: Scheme[T]
                                                                      ) =
     instance[MS] { modules =>
-      //      val m = isHCons.value.head(modules)
-      //      println(s"Module: $m")
-      //
-      //      //schemeRS.gen(m.routes) ++
-      //        schemeT.gen(isHCons.value.tail(modules))
-      ???
+      val m = isHCons.head(modules)
+      println(s"Module: $m")
+
+      schemeM.gen(m) ++
+        schemeT.gen(isHCons.tail(modules))
+
     }
 }
 
@@ -125,7 +125,7 @@ trait Scheme[A] {
 object WebApp
   extends App {
 
-  //def modules: M :: HNil = new M :: HNil
+  def modules: M1 :: HNil = new M1 :: HNil
 
   //implicit val isHCons = the[IsHCons.Aux[(R1, H1) :: HNil, (R1, H1), HNil]]
   //implicit val r1h1 = Scheme[(R1, H1) :: HNil]
@@ -139,5 +139,5 @@ object WebApp
 
   val scheme = Scheme[M1 :: HNil]
   //Scheme.schemeModules[M1 :: HNil, M1, HNil]
-  //println(scheme.gen(modules))
+  println(scheme.gen(modules))
 }
