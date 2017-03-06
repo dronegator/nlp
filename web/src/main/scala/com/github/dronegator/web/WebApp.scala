@@ -62,7 +62,6 @@ object WebModel {
     override def routes: ::[(R2, H2), HNil] =
       (new R2 -> new H2) ::
         HNil
-
   }
 
 }
@@ -78,18 +77,29 @@ trait SchemeLowPriority {
         f(a)
     }
 
-  implicit def schemeRoutes[RS <: HList, R, H, RH, T <: HList](implicit isHCons: IsHCons.Aux[RS, RH, T],
-                                                               isEqRH: IsComposite.Aux[RH, R, H],
-                                                               schemeT: Lazy[Scheme[T]]) =
+  //  implicit def schemeHandler[H <: Handler[_, _, _ <: HList], I, O, P <: HList](implicit handlerHasIOP: HandlerHasIOP.Aux[H, I, O, P]) =
+  //    instance[H] { h =>
+  //      println(handlerHasIOP.description)
+  //      handlerHasIOP.request
+  //      handlerHasIOP.response
+  //      Map()
+  //    }
+
+
+  implicit def schemeRoutes[RS <: HList, R, H, RH, T <: HList, I, O, P <: HList](implicit isHCons: IsHCons.Aux[RS, RH, T],
+                                                                                 isComposite: IsComposite.Aux[RH, R, H],
+                                                                                 //handlerHasIOP: HandlerHasIOP.Aux[H, I, O, P],
+                                                                                 schemeT: Scheme[T]) =
     instance[RS] { routes =>
 
       val rh = isHCons.head(routes)
-      val h = isEqRH.head(rh)
-      val r = isEqRH.tail(rh)
+      val h = isComposite.head(rh)
+      val r = isComposite.tail(rh)
 
       println(s"Route: $r -> $h")
 
-      schemeT.value.gen(isHCons.tail(routes))
+
+      schemeT.gen(isHCons.tail(routes))
     }
 
 
@@ -127,8 +137,21 @@ trait Scheme[A] {
 }
 
 // web/runMain com.github.dronegator.web.WebApp
+
+trait WebDescription {
+  implicit val handlerH1 = HandlerHasIOP.instance[H1, H1Request, H1Response, Id1 :: HNil]("First handler")
+
+  //implicit val handlerH2 = HandlerHasIOP.instance[H2, H2Request, H2Response, Id2 :: HNil]("Second handler")
+
+  implicit val moduleM1 = ModuleHasRS.instance[M1, (R1, H1) :: HNil]("Quite important module")
+
+  implicit val moduleM = ModuleHasRS.instance[M, (R1, H1) :: (R2, H2) :: HNil]("Quite important module")
+}
+
+
 object WebApp
-  extends App {
+  extends App
+    with WebDescription {
 
   def modules: M :: HNil = new M :: HNil
 
@@ -136,10 +159,11 @@ object WebApp
 
   def moduless: M1 :: M :: HNil = new M1 :: new M :: HNil
 
-  implicit val moduleM1 = ModuleHasRS.instance[M1, (R1, H1) :: HNil]("Quite important module")
+  //  implicit val hh1 = Scheme.schemeHandler[H1, H1Request, H1Response, Id1 :: HNil]
 
-  implicit val moduleM = ModuleHasRS.instance[M, (R1, H1) :: (R2, H2) :: HNil]("Quite important module")
+  val qq = IsComposite.isComposite[(R1, H1), HNil, R1, H1]
+  val h1 = Scheme.schemeRoutes[(R1, H1) :: HNil, R1, H1, (R1, H1), HNil, H1Request, H1Response, Id1 :: HNil]
 
-  val scheme = Scheme[M1 :: M :: HNil]
-  println(scheme.gen(moduless))
+  val scheme = Scheme[M1 :: /* M :: */ HNil]
+  //println(scheme.gen(modules1))
 }
