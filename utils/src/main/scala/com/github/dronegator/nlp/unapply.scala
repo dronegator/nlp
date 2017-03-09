@@ -15,7 +15,7 @@ object Match{
     case file :: Nil => Some(new File(file))
   }
 
-  val  File1 = Match[String, File]{
+  val ObligatoryFile = Match[String, File] {
     case file => new File(file)
   }
   

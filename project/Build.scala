@@ -35,7 +35,7 @@ object WordmetrixBuild extends Build {
                 s"""
                    |package com.github.dronegator.nlp.main
                    |
-                 |object Version extends VersionTools {
+                   |object Version extends VersionTools {
                    |  val name = "${name}"
                    |  val version = "${version}"
                    |  val branch = "${currentBranch}"
@@ -56,9 +56,6 @@ object WordmetrixBuild extends Build {
   val indexStream =
     Project(id = "index-stream", base = file("index-stream")).dependsOn(wordmetrix, akkaUtils)
 
-  val repl =
-    Project(id = "repl", base = file("repl")).dependsOn(wordmetrix, akkaUtils, utils)
-
   val ml =
     Project(id = "ml", base = file("ml")).dependsOn(utils)
       .settings(
@@ -67,6 +64,9 @@ object WordmetrixBuild extends Build {
         libraryDependencies += "org.scalanlp" %% "breeze-viz" % "0.12"
       )
       .dependsOn(wordmetrix, akkaUtils, utils)
+
+  val repl =
+    Project(id = "repl", base = file("repl")).dependsOn(wordmetrix, akkaUtils, utils, ml)
 
   val urls =
     "https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js" ::

@@ -169,8 +169,8 @@ trait NNChainMain[N <: NetworkBase]
           }
           .mkString(" ")
 
-        println(f"$w1%10s $w2%10s -> $words")
-        println(f"$w1%10s $w2%10s -> $outputWords")
+        println(f"($t1%03d, $t2%03d) $w1%10s $w2%10s -> $words")
+        println(f"($t1%03d, $t2%03d) $w1%10s $w2%10s -> $outputWords")
     }
 
     // TODO: We have to find a way to represent quality of the service
