@@ -144,10 +144,10 @@ trait NNChainMain[N <: NetworkBase]
       (x :> y).forall(x => x)
   }
 
-  def net(network: N): NN[I, O, _, N]
+  def net(vector: DenseVector[Double], network: N): NN[I, O, _, N]
 
   override def calc(sampling: Iterable[(I, O)]): Unit = {
-    val calculate = net(nn.network(network))
+    val calculate = net(network, nn.network(network))
 
     sampling.foreach {
       case ((t1, t2), output) =>
@@ -224,8 +224,8 @@ object NNChainMainImpl
 
   val nTokenMax = vocabulary.wordMap.keys.max + 1
 
-  def net(network: Network): NN[I, O, _, Network] =
-    new NNChainImpl(network, cfg.nKlassen, nTokenMax)
+  def net(vector: DenseVector[Double], network: Network): NN[I, O, _, Network] =
+    new NNChainImpl(vector, network, cfg.nKlassen, nTokenMax)
 
   override def nn: NNSampleTrait[I, O, Network, _, _] with DiffFunction[DenseVector[Double]] =
     new NNSampleChain(
@@ -267,8 +267,8 @@ object NNChainMainWithConstImpl
 
   val nTokenMax = vocabulary.wordMap.keys.max + 1
 
-  def net(network: NNSampleChainWithConst.Network): NN[I, O, _, NNSampleChainWithConst.Network] =
-    new NNChainWithConstImpl(network, cfg.nKlassen, nTokenMax)
+  def net(vector: DenseVector[Double], network: NNSampleChainWithConst.Network): NN[I, O, _, NNSampleChainWithConst.Network] =
+    new NNChainWithConstImpl(vector, network, cfg.nKlassen, nTokenMax)
 
   override def nn: NNSampleTrait[I, O, NNSampleChainWithConst.Network, _, _] with DiffFunction[DenseVector[Double]] =
     new NNSampleChainWithConst(

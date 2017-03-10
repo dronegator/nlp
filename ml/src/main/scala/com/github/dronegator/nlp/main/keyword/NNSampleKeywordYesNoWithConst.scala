@@ -4,8 +4,8 @@ import breeze.linalg.{DenseMatrix, DenseVector}
 import breeze.numerics._
 import breeze.optimize.DiffFunction
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
+import com.github.dronegator.nlp.main._
 import com.github.dronegator.nlp.main.keyword.NNSampleKeywordYesNoWithConst.{Hidden, Network, Quality}
-import com.github.dronegator.nlp.main.{NN, NNCalcDenseVector, NNQuality, NNSampleTrait}
 
 import scala.util.Random
 
@@ -85,14 +85,13 @@ trait NNKeywordYesNoWithConst
     )
 }
 
-case class NNKeywordYesNoImplWithConst(network: Network, nKlassen: Int)
-  extends NNKeywordYesNoWithConst {
+case class NNKeywordYesNoImplWithConst(vector: DenseVector[Double], network: Network, nKlassen: Int)
+  extends NNKeywordYesNoWithConst
+    with NNForw[(Token, Token), DenseVector[Double], Hidden, Network] {
   require(network.termToKlassen.rows == nKlassen)
 
   val winnerGetsAll = false
 
-  def apply(input: (Token, Token)) =
-    forward(network, input)
 }
 
 class NNSampleKeywordYesNoWithConst(val nKlassen: Int,
@@ -107,6 +106,9 @@ class NNSampleKeywordYesNoWithConst(val nKlassen: Int,
     with NNQuality[DenseVector[Double], Quality]
     with NNCalcDenseVector
     with NNKeywordYesNoWithConst {
+
+  override def net(vector: DenseVector[Double]): NNForw[(Token, Token), DenseVector[Double], Hidden, Network] =
+    NNKeywordYesNoImplWithConst(vector, network(vector), nKlassen)
 
   override def network(vector: DenseVector[Double]): Network =
     Network(

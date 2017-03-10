@@ -91,14 +91,12 @@ trait NNChain
     )
 }
 
-case class NNChainImpl(network: Network, nKlassen: Int, nToken: Int)
-  extends NNChain {
+case class NNChainImpl(vector: DenseVector[Double], network: Network, nKlassen: Int, nToken: Int)
+  extends NNChain
+    with NNForw[I, O, Hidden, Network] {
   require(network.tokenToKlassen.rows == nKlassen)
 
   val winnerGetsAll = false
-
-  def apply(input: I) =
-    forward(network, input)
 }
 
 class NNSampleChain(val nKlassen: Int,
@@ -113,6 +111,9 @@ class NNSampleChain(val nKlassen: Int,
     with NNQuality[O, Quality]
     with NNCalcSparseVector
     with NNChain {
+
+  override def net(vector: DenseVector[Double]): NNChainImpl =
+    NNChainImpl(vector, network(vector), nKlassen, nToken)
 
   override def network(vector: DenseVector[Double]): Network =
     Network(
@@ -157,4 +158,5 @@ class NNSampleChain(val nKlassen: Int,
 
   override def quality: Quality =
     Quality()
+
 }

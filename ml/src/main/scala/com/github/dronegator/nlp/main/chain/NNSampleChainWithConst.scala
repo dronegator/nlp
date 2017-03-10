@@ -92,14 +92,12 @@ trait NNChainWithConst
     )
 }
 
-case class NNChainWithConstImpl(network: Network, nKlassen: Int, nToken: Int)
-  extends NNChainWithConst {
+case class NNChainWithConstImpl(vector: DenseVector[Double], network: Network, nKlassen: Int, nToken: Int)
+  extends NNChainWithConst
+    with NNForw[I, O, Hidden, Network] {
   require(network.tokenToKlassen.rows == nKlassen)
 
   val winnerGetsAll = false
-
-  def apply(input: I) =
-    forward(network, input)
 }
 
 class NNSampleChainWithConst(val nKlassen: Int,
@@ -124,6 +122,8 @@ class NNSampleChainWithConst(val nKlassen: Int,
   val EndOfConstToReclassen = EndOfConstToKlassen + nKlassen
   val EndOfConstToToken = EndOfConstToReclassen + nToken
 
+  override def net(vector: DenseVector[Double]): NNChainWithConstImpl =
+    NNChainWithConstImpl(vector, network(vector), nKlassen, nToken)
 
   override def network(vector: DenseVector[Double]): Network = {
     Network(

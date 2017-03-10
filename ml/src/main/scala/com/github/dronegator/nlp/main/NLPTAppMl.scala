@@ -117,9 +117,9 @@ trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
       matrix <- matrix
       initial <- Try {
         val file = new ObjectInputStream(new FileInputStream(matrix))
-        val nn = file.readObject().asInstanceOf[DenseVector[Double]]
+        val nn = file.readObject().asInstanceOf[NNForw[I, O, _, N]]
         file.close()
-        nn
+        nn.vector
       }.toOption
 
     } yield initial) getOrElse (((genInitial :* 2.0) :- 1.0) :* cfg.range)
@@ -145,7 +145,7 @@ trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
 
           matrix.foreach { matrix =>
             val file = new ObjectOutputStream(new FileOutputStream(matrix))
-            file.writeObject(x.x)
+            file.writeObject(nn.net(x.x))
             file.close()
           }
 

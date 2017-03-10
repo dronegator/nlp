@@ -46,6 +46,16 @@ trait NN[I, O, H, N] {
     forward(n: N, hiddenInit(), input)
 }
 
+trait NNForw[I, O, H, N]
+  extends NN[I, O, H, N] {
+  def network: N
+
+  def vector: DenseVector[Double]
+
+  def apply(input: I): O =
+    forward(network, input)
+}
+
 trait NNSampleTrait[I, O, N, H, Q] {
   self: DiffFunction[DenseVector[Double]]
     with NNQuality[O, Q]
@@ -55,6 +65,8 @@ trait NNSampleTrait[I, O, N, H, Q] {
   lazy val startTime = System.currentTimeMillis()
 
   def network(vector: DenseVector[Double]): N
+
+  def net(vector: DenseVector[Double]): NNForw[I, O, H, N]
 
   def size: Int
 

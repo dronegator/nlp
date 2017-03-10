@@ -157,10 +157,10 @@ trait NNKeywordMain[N <: NetworkBase]
       (x :> y).forall(x => x)
   }
 
-  def net(network: N): NN[(Token, Token), DenseVector[Double], _, N]
+  def net(vector: DenseVector[Double], network: N): NN[(Token, Token), DenseVector[Double], _, N]
 
   override def calc(sampling: Iterable[((Token, Token), O)]): Unit = {
-    val calulate = net(nn.network(network))
+    val calulate = net(network, nn.network(network))
 
     val map = sampling
       .foldLeft(Map[Int, (Double, DenseVector[Double])]()) {
@@ -216,8 +216,8 @@ object NNKeywordMainImpl
       sampling = sampling,
       rate = cfg.windowRate)
 
-  def net(network: Network): NN[(Token, Token), DenseVector[Double], _, Network] =
-    new NNKeywordYesNoImpl(network, cfg.nKlassen)
+  def net(vector: DenseVector[Double], network: Network): NN[(Token, Token), DenseVector[Double], _, Network] =
+    new NNKeywordYesNoImpl(vector, network, cfg.nKlassen)
 
   try {
     report
@@ -255,8 +255,8 @@ object NNKeywordMainWithConst
       sampling = sampling,
       rate = cfg.windowRate)
 
-  def net(network: NNSampleKeywordYesNoWithConst.Network): NN[(Token, Token), DenseVector[Double], _, NNSampleKeywordYesNoWithConst.Network] =
-    new NNKeywordYesNoImplWithConst(network, cfg.nKlassen)
+  def net(vector: DenseVector[Double], network: NNSampleKeywordYesNoWithConst.Network): NN[(Token, Token), DenseVector[Double], _, NNSampleKeywordYesNoWithConst.Network] =
+    new NNKeywordYesNoImplWithConst(vector, network, cfg.nKlassen)
 
   override def nnCross: DiffFunction[DenseVector[Double]] =
     new NNSampleKeywordYesNoWithConst(nKlassen = cfg.nKlassen,
