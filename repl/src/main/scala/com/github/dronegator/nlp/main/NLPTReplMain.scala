@@ -3,11 +3,10 @@ package com.github.dronegator.nlp.main
 import java.io._
 
 import akka.stream.scaladsl.{Sink, Source}
-import breeze.linalg.DenseVector
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{PEnd, PStart}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenPreDef}
-import com.github.dronegator.nlp.main.chain.{NNChainWithConstImpl, NNSampleChainWithConst}
-import com.github.dronegator.nlp.main.keyword.{NNKeywordYesNoImpl, NNSampleKeywordYesNo}
+import com.github.dronegator.nlp.main.chain.NNChainWithConstImpl
+import com.github.dronegator.nlp.main.keyword.NNKeywordYesNoImpl
 import com.github.dronegator.nlp.ml.vocabulary.VocabularyNeural
 import com.github.dronegator.nlp.trace._
 import com.github.dronegator.nlp.utils.Match._
@@ -229,48 +228,27 @@ object NLPTReplMain
     case Next() :: _ =>
       println(s"== tokens to next phrase size = ${vocabulary.map1ToNextPhrase.size}")
 
-    case Neural() :: ObligatoryFile(nnVocabulary) :: OptNRest((nnKeyword, OptNRest((nnChain, _)))) =>
+    case Neural() :: Switches(switches, ObligatoryFile(nnVocabulary) :: _) =>
       println("== Bind a NN to the vocabulary")
-      val nToken = vocabulary.wordMap.keys.max + 1
 
       val nnKeywordImpl =
-        nnKeyword.map { nnKeyword =>
-          val nKlassen = 10
-          val inputStream = new ObjectInputStream(new FileInputStream(nnKeyword))
-          val vector = inputStream.readObject().asInstanceOf[DenseVector[Double]]
-          inputStream.close()
-
-          val nn = new NNSampleKeywordYesNo(
-            nKlassen = nKlassen,
-            nToken = nToken,
-            dropout = 0,
-            winnerGetsAll = false,
-            sampling = Iterable[((Token, Token), DenseVector[Double])](),
-            rate = 0)
-
-          new NNKeywordYesNoImpl(nn.network(vector), nKlassen)
-      }
+        switches.get("nn-keyword")
+          .map { nnKeyword =>
+            val nKlassen = 10
+            val inputStream = new ObjectInputStream(new FileInputStream(nnKeyword))
+            val nn = inputStream.readObject().asInstanceOf[NNKeywordYesNoImpl]
+            inputStream.close()
+            nn
+          }
 
       val nnChainImpl =
-        nnChain.map { nnChain =>
-        val nKlassen = 80
-
-        val inputStream = new ObjectInputStream(new FileInputStream(nnChain))
-        val vector = inputStream.readObject().asInstanceOf[DenseVector[Double]]
-        inputStream.close()
-
-        val nn = new NNSampleChainWithConst(
-          nKlassen = nKlassen,
-          nToken = nToken,
-          dropout = 0,
-          winnerGetsAll = false,
-          0.0, 0.0,
-          sampling = Iterable(),
-          rate = 0
-        )
-
-        new NNChainWithConstImpl(nn.network(vector), nKlassen, nToken)
-      }
+        switches.get("nn-chain")
+          .map { nnChain =>
+            val inputStream = new ObjectInputStream(new FileInputStream(nnChain))
+            val nn = inputStream.readObject().asInstanceOf[NNChainWithConstImpl]
+            inputStream.close()
+            nn
+          }
 
       val vocabularyNeural = new VocabularyNeural(vocabulary, nnKeywordImpl, nnChainImpl)
 
