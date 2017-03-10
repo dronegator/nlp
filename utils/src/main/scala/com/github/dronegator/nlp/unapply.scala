@@ -15,6 +15,11 @@ object Match{
     case file :: Nil => Some(new File(file))
   }
 
+  val OptNRest = Match[List[String], (Option[String], List[String])] {
+    case Nil => (None, Nil)
+    case arg :: rest => (Some(arg), rest)
+  }
+
   val ObligatoryFile = Match[String, File] {
     case file => new File(file)
   }

@@ -10,14 +10,18 @@ import com.github.dronegator.nlp.vocabulary.Vocabulary
 /**
   * Created by cray on 3/9/17.
   */
-case class VocabularyNeural(vocabulary: Vocabulary, nnKeyword: NNKeywordYesNoImpl, nnChain: NNChainWithConstImpl)
+case class VocabularyNeural(vocabulary: Vocabulary, nnKeyword: Option[NNKeywordYesNoImpl], nnChain: Option[NNChainWithConstImpl])
   extends Vocabulary {
 
   lazy val map2ToNext: Map[List[Tokenizer.Token], List[(Double, Tokenizer.Token)]] =
-    new Map2ToNext(nnChain)
+    nnChain
+      .map(new Map2ToNext(_))
+      .getOrElse(vocabulary.map2ToNext)
 
   lazy val meaningMap: Map[(Token, Token), (Probability, Probability)] =
-    new MeaningMap(nnKeyword)
+    nnKeyword
+      .map(new MeaningMap(_))
+      .getOrElse(vocabulary.meaningMap)
 
   override def wordMap = vocabulary.wordMap
 

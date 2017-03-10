@@ -80,7 +80,7 @@ trait NNKeywordMain[N <: NetworkBase]
     cfg
   }
 
-
+  lazy val nTokenMax = vocabulary.wordMap.keys.max + 1
   lazy val nToken = cfg.nToken.getOrElse(vocabulary.wordMap.keys.max)
 
   lazy val vocabulary: Vocabulary = load(new File(fileIn)).time { t =>
@@ -122,7 +122,6 @@ trait NNKeywordMain[N <: NetworkBase]
         case Some(sample) => sample
       }
       .toIterable
-
 
   lazy val sampling: Iterable[((Token, Token), O)] =
     convert(proSampling(sense ++ auxiliary))
@@ -206,12 +205,12 @@ trait NNKeywordMain[N <: NetworkBase]
 
 }
 
-object NNKeywordMain
+object NNKeywordMainImpl
   extends NNKeywordMain[Network] {
   override def nn: NNSampleTrait[(Token, Token), O, Network, _, _] with DiffFunction[DenseVector[Double]] =
     new NNSampleKeywordYesNo(
       nKlassen = cfg.nKlassen,
-      nToken = nToken,
+      nToken = nTokenMax,
       dropout = cfg.dropout,
       winnerGetsAll = cfg.winnerGetsAll,
       sampling = sampling,
@@ -229,7 +228,7 @@ object NNKeywordMain
 
   override def nnCross: DiffFunction[DenseVector[Double]] =
     new NNSampleKeywordYesNo(nKlassen = cfg.nKlassen,
-      nToken = nToken,
+      nToken = nTokenMax,
       dropout = 0,
       winnerGetsAll = false,
       sampling = samplingCross,
@@ -237,7 +236,7 @@ object NNKeywordMain
 
   override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
     new NNSampleKeywordYesNo(nKlassen = cfg.nKlassen,
-      nToken = nToken,
+      nToken = nTokenMax,
       dropout = 0,
       winnerGetsAll = false,
       sampling = samplingDoubleCross,
@@ -250,7 +249,7 @@ object NNKeywordMainWithConst
   override def nn: NNSampleTrait[(Token, Token), O, NNSampleKeywordYesNoWithConst.Network, _, _] with DiffFunction[DenseVector[Double]] =
     new NNSampleKeywordYesNoWithConst(
       nKlassen = cfg.nKlassen,
-      nToken = nToken,
+      nToken = nTokenMax,
       dropout = cfg.dropout,
       winnerGetsAll = cfg.winnerGetsAll,
       sampling = sampling,
@@ -261,7 +260,7 @@ object NNKeywordMainWithConst
 
   override def nnCross: DiffFunction[DenseVector[Double]] =
     new NNSampleKeywordYesNoWithConst(nKlassen = cfg.nKlassen,
-      nToken = nToken,
+      nToken = nTokenMax,
       dropout = 0,
       winnerGetsAll = false,
       sampling = samplingCross,
@@ -269,7 +268,7 @@ object NNKeywordMainWithConst
 
   override def nnDoubleCross: DiffFunction[DenseVector[Double]] =
     new NNSampleKeywordYesNoWithConst(nKlassen = cfg.nKlassen,
-      nToken = nToken,
+      nToken = nTokenMax,
       dropout = 0,
       winnerGetsAll = false,
       sampling = samplingDoubleCross,
