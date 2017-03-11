@@ -79,7 +79,11 @@ trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
           .iterations(nnR, initial)
 
       case Algorithm.AdaDeltaGradientDescent =>
-        new AdaDeltaGradientDescent[DenseVector[Double]](rho = cfg.rfo, maxIter = cfg.maxIter, tolerance = cfg.tolerance)
+        new AdaDeltaGradientDescent[DenseVector[Double]](
+          rho = cfg.rfo,
+          maxIter = cfg.maxIter,
+          tolerance = cfg.tolerance,
+          minImprovementWindow = cfg.minImprovementWindow)
           .iterations(nnR, initial)
 
       case Algorithm.L1Regularization =>
@@ -130,32 +134,32 @@ trait NLPTAppMlTools[C <: MLCfg, I, O, N] {
       println(s"cross sampling size =         ${samplingCross.size}")
       println(s"double cross sampling size =  ${samplingDoubleCross.size}")
 
-    algorithmIterator
-      .scanLeft((0, Option.empty[DenseVector[Double]])) {
-        case ((n, _), x) =>
-          val value = x.value //nn.calculate(x.x)._1
+      algorithmIterator
+        .scanLeft((0, Option.empty[DenseVector[Double]])) {
+          case ((n, _), x) =>
+            val value = x.value //nn.calculate(x.x)._1
 
-          if (n % cfg.crossvalidationFrequency == 0) {
-            val valueCross = nnCross.calculate(x.x)._1
-            val valueDoubleCross = nnDoubleCross.calculate(x.x)._1
-            println(f"${n}%7d value=${math.sqrt(x.value)}%8.6f cross_value=${math.sqrt(valueCross)}%8.6f double_cross_value=${math.sqrt(valueDoubleCross)}%8.6f")
-          } else {
-            println(f"${n}%7d value=${math.sqrt(x.value)}%8.6f")
-          }
+            if (n % cfg.crossvalidationFrequency == 0) {
+              val valueCross = nnCross.calculate(x.x)._1
+              val valueDoubleCross = nnDoubleCross.calculate(x.x)._1
+              println(f"${n}%7d value=${math.sqrt(x.value)}%8.6f cross_value=${math.sqrt(valueCross)}%8.6f double_cross_value=${math.sqrt(valueDoubleCross)}%8.6f")
+            } else {
+              println(f"${n}%7d value=${math.sqrt(x.value)}%8.6f")
+            }
 
-          matrix.foreach { matrix =>
-            val file = new ObjectOutputStream(new FileOutputStream(matrix))
-            file.writeObject(nn.net(x.x))
-            file.close()
-          }
+            matrix.foreach { matrix =>
+              val file = new ObjectOutputStream(new FileOutputStream(matrix))
+              file.writeObject(nn.net(x.x))
+              file.close()
+            }
 
-          (n + 1, Some(x.x))
-      }
-      .collect {
-        case (_, Some(x)) =>
-          x
-      }
-      .last
+            (n + 1, Some(x.x))
+        }
+        .collect {
+          case (_, Some(x)) =>
+            x
+        }
+        .last
     }
     else {
       println("Do not learn")
