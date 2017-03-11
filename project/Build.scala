@@ -8,7 +8,7 @@ object WordmetrixBuild extends Build {
   override lazy val settings = super.settings ++
     Seq(
       version := "0.4",
-      scalaVersion := "2.11.7"
+      scalaVersion := "2.11.8"
     )
 
   val buildTime = System.currentTimeMillis()
