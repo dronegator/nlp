@@ -1,6 +1,6 @@
 package com.github.dronegator.nlp.main.chain
 
-import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, sum}
+import breeze.linalg.{*, DenseMatrix, DenseVector, SparseVector, diag, sum}
 import breeze.numerics._
 import breeze.optimize.DiffFunction
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Token
@@ -163,48 +163,13 @@ class NNSampleChainWithConst(val nKlassen: Int,
         val Network(gTokenToKlassen, klassenToReklassen, gReKlassen2Token, constToKlassen, constToReKlassen, constToToken, _) =
           gradient
 
-        val backerr = result - output
+        val backerr = (result - output) :* result
 
-        //        output.iterator.foreach {
-        //          case (n, x) =>
-        //            if (x < insignificance)
-        //              backerr.update(n, oppression)
-        //        }
+        val matrix = (-result.toDenseVector) * backerr.toDenseVector.t
 
-        //backerr :+= oppression
+        diag(matrix) := backerr :* (-result + 1.0)
 
-        //backerr :/= backerr.iterableSize.toDouble
-
-        //val backOutI = (backerr :* (result :* (-result + 1.0))).toDenseVector
-        //Try Softmax function
-
-
-        val backOutI = DenseVector.fill(nToken)(0.0)
-        def kronekerDelta(i: Int, j: Int) =
-          if (i == j) 1.0 else 0.0
-
-        (0 until nToken)
-          .foreach { j =>
-            val backOutIk = DenseVector.fill(nToken)(0.0)
-
-            (0 until nToken)
-              .foreach { k =>
-                backOutIk.update(k, backerr(j) * result(j) * (kronekerDelta(j, k) - result(k)))
-              }
-
-            backOutI :+= backOutIk
-          }
-
-        //        val matrix = result * (-result.t)
-        //        //matrix :*= -1
-        //        (0 until nToken)
-        //            .foreach { k =>
-        //                matrix.update(k, k, (backerr(k)) * result(k) * (1 - result(k)))
-        //            }
-        //
-        //        backOutI := sum(matrix)
-        //        backOutI :+= (backerr * nToken.toDouble)
-        //        //println(backOutI)
+        val backOutI = sum(matrix(*, ::))
 
         gReKlassen2Token :+= (backOutI * hidden.reKlassenO.t)
 
