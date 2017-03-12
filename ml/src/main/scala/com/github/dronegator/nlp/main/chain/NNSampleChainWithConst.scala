@@ -184,21 +184,27 @@ class NNSampleChainWithConst(val nKlassen: Int,
           if (i == j) 1.0 else 0.0
 
         (0 until nToken)
-          .foreach { k =>
+          .foreach { j =>
             val backOutIk = DenseVector.fill(nToken)(0.0)
 
             (0 until nToken)
-              .foreach { j =>
-                backOutIk.update(j, result(j) * (kronekerDelta(j, k) - result(k)))
+              .foreach { k =>
+                backOutIk.update(k, backerr(j) * result(j) * (kronekerDelta(j, k) - result(k)))
               }
 
-            backOutIk :+= backerr
-
             backOutI :+= backOutIk
-
           }
 
-        //println(backOutI)
+        //        val matrix = result * (-result.t)
+        //        //matrix :*= -1
+        //        (0 until nToken)
+        //            .foreach { k =>
+        //                matrix.update(k, k, (backerr(k)) * result(k) * (1 - result(k)))
+        //            }
+        //
+        //        backOutI := sum(matrix)
+        //        backOutI :+= (backerr * nToken.toDouble)
+        //        //println(backOutI)
 
         gReKlassen2Token :+= (backOutI * hidden.reKlassenO.t)
 
