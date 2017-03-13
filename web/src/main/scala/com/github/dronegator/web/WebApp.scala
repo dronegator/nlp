@@ -4,6 +4,7 @@ import com.github.dronegator.web.WebModel._
 import shapeless._
 import shapeless.ops.hlist.IsHCons
 import shapeless.tag.@@
+import com.github.dronegator.web.Route
 
 import scala.concurrent.Future
 
@@ -28,11 +29,16 @@ object WebModel {
   trait Id2Tag extends Tags
 
   type Id1 = String @@ Id1Tag
+
   type Id2 = String @@ Id2Tag
 
-  class R1 extends Route[Id1 :: HNil]
+  class R1 extends Route[Id1 :: HNil] {
+    override val path: String = "web/id1"
+  }
 
-  class R2 extends Route[Id2 :: Id1 :: HNil]
+  class R2 extends Route[Id2 :: Id1 :: HNil] {
+    override val path: String = "web/id1/id2"
+  }
 
   class H1 extends Handler[H1Request, H1Response, Id1 :: HNil] {
     override def hander(request: H1Request, path: Id1 :: HNil): Future[H1Response] = ???
@@ -66,6 +72,10 @@ object WebModel {
   trait WebAppTrait[MS <: HList] {
     def module: MS
 
+    def description: String
+
+    def version: String
+
     def schema(implicit scheme: Scheme[WebAppTrait[MS]]) =
       scheme.gen(this)
   }
@@ -89,18 +99,33 @@ object Scheme extends SchemeLowPriority {
   implicit def schemeHandler[H <: Handler[_, _, _ <: HList], I, O, P <: HList](implicit handlerHasIOP: HandlerHasIOP.Aux[H, I, O, P]) =
     instance[H] { h =>
       println(handlerHasIOP.description)
-      Map()
+      Map(
+        "get" -> Map(
+          "description" -> handlerHasIOP.description,
+          "parameters" -> Nil,
+          "responses" -> Map(
+            "200" -> Map(
+              "description" -> "Successful response",
+              "schema" -> Map(
+                "title" -> "",
+                "type" -> "object",
+                "properties" -> Map()
+              )
+            )
+          )
+        )
+      )
     }
 
-  implicit def schemeRouteHandler[RH <: Tuple2[R, H], R, H](implicit
+  implicit def schemeRouteHandler[RH <: Tuple2[R, H], R <: Route[_], H](implicit
                                                             isEq: (R, H) =:= RH,
                                                             schemeH: Scheme[H]) =
     instance[RH] { x =>
-
-      x._2
       println(s"h: ${x._2}")
-      schemeH.gen(x._2)
 
+      Map(
+        x._1.path -> schemeH.gen(x._2)
+      )
     }
 
   implicit def schemeHCons[H, T <: HList](implicit isHCons: IsHCons.Aux[H :: T, H, T],
@@ -134,7 +159,15 @@ object Scheme extends SchemeLowPriority {
   implicit def schemeApp[MS <: HList](implicit schemeM: Scheme[MS]) = {
     instance[WebAppTrait[MS]] { app =>
       println(s"WebApp: $app")
-      schemeM.gen(app.module)
+
+      Map(
+        "swagger" -> "2.0",
+        "info" -> Map(
+          "version" -> app.version,
+          "title" -> app.description
+        ),
+        "paths" -> schemeM.gen(app.module)
+      )
     }
   }
 }
@@ -171,9 +204,9 @@ object WebApp
 
   def moduless: MS :: M1 :: M2 :: HNil = new MS :: new M1 :: new M2 :: HNil
 
-//  val scheme = Scheme[MS :: M1 :: M2 ::  HNil]
-//
-//  println(scheme.gen(moduless))
+  //  val scheme = Scheme[MS :: M1 :: M2 ::  HNil]
+  //
+  //  println(scheme.gen(moduless))
 
   //val scheme = Scheme[MS :: HNil]
 
@@ -181,4 +214,7 @@ object WebApp
 
   println(schema)
 
+  override def description: String = "Yet Another Example of Web Service"
+
+  override def version: String = "0.0.1"
 }
