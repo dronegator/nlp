@@ -1,12 +1,13 @@
 package com.github.dronegator.web
 
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import com.github.dronegator.nlp.main.NLPTWebServiceMain._
 import com.github.dronegator.web.WebModel._
 import com.typesafe.scalalogging.LazyLogging
-import shapeless._
+import shapeless.{Path => _, _}
 import shapeless.ops.hlist.IsHCons
 import shapeless.tag.@@
 import spray.json.DefaultJsonProtocol
@@ -38,7 +39,7 @@ object WebModel {
   type Id2 = String @@ Id2Tag
 
   class R1 extends Traverse[Id1 :: HNil] {
-    override val path: String = "web/id1"
+    override val path: String = "web"
   }
 
   class R2 extends Traverse[Id2 :: Id1 :: HNil] {
@@ -46,11 +47,11 @@ object WebModel {
   }
 
   class H1 extends Handler[H1Request, H1Response, Id1 :: HNil] {
-    override def hander(request: H1Request, path: Id1 :: HNil): Future[H1Response] = ???
+    override def handler(request: H1Request, path: Id1 :: HNil): Future[H1Response] = ???
   }
 
   class H2 extends Handler[H2Request, H2Response, Id2 :: HNil] {
-    override def hander(request: H2Request, path: Id2 :: HNil): Future[H2Response] = ???
+    override def handler(request: H2Request, path: Id2 :: HNil): Future[H2Response] = ???
   }
 
   class MS extends Module[(R1, H1) :: (R2, H2) :: HNil] {
@@ -65,7 +66,6 @@ object WebModel {
     override def routes: ::[(R1, H1), HNil] =
       (new R1 -> new H1) ::
         HNil
-
   }
 
   class M2 extends Module[(R2, H2) :: HNil] {
@@ -129,7 +129,7 @@ object Scheme extends SchemeLowPriority {
       println(s"h: ${x._2}")
 
       Map(
-        x._1.path -> schemeH.gen(x._2)
+        s"/${x._1.path}" -> schemeH.gen(x._2)
       )
     }
 
@@ -228,7 +228,7 @@ object WebApp
 
   override def version: String = "0.0.1"
 
-  def route: Route =
+  def schemaRoute: Route =
     path("swagger-ui" / "swagger.json") { ctx =>
       implicit object AnyJsonFormat extends JsonFormat[Any] {
         def write(x: Any): JsValue = x match {
@@ -267,6 +267,24 @@ object WebApp
       pathPrefix("ui") {
         getFromResourceDirectory("ui")
       }
+
+  val route = module.toList[Module[_]]
+    .flatMap {
+      case x: Module[HList] =>
+        println(x.routes.productIterator.toList)
+        x.routes.productIterator.collect {
+          case (r: Traverse[_], h: Handler[_, _, _]) =>
+            (r, h)
+        }
+
+    }
+    .foldLeft(schemaRoute) {
+      case (route: Route, (r: Traverse[_], h)) =>
+        route ~ path(separateOnSlashes(r.path)) { ctx =>
+          ctx.complete(s"$h")
+        }
+
+    }
 
   val bindingFuture = Http().bindAndHandle(route, cfg.host, cfg.port)
 

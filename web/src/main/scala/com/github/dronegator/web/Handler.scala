@@ -44,5 +44,5 @@ trait HandlerHasIOP[H <: Handler[_, _, _]] {
 }
 
 trait Handler[I, O, P <: HList] {
-  def hander(request: I, path: P): Future[O]
+  def handler(request: I, path: P): Future[O]
 }
