@@ -42,7 +42,7 @@ object WebModel {
     override def hander(request: H2Request, path: Id2 :: HNil): Future[H2Response] = ???
   }
 
-  class M extends Module[(R1, H1) :: (R2, H2) :: HNil] {
+  class MS extends Module[(R1, H1) :: (R2, H2) :: HNil] {
     override def routes: ::[(R1, H1), ::[(R2, H2), HNil]] =
       (new R1 -> new H1) ::
         (new R2 -> new H2) ::
@@ -63,6 +63,13 @@ object WebModel {
         HNil
   }
 
+  trait WebAppTrait[MS <: HList] {
+    def module: MS
+
+    def schema(implicit scheme: Scheme[WebAppTrait[MS]]) =
+      scheme.gen(this)
+  }
+
 }
 
 trait SchemeLowPriority {
@@ -75,40 +82,6 @@ trait SchemeLowPriority {
       override def gen(a: A): Map[String, Any] =
         f(a)
     }
-
-  //  implicit def schemeHandler[H <: Handler[_, _, _ <: HList], I, O, P <: HList](implicit handlerHasIOP: HandlerHasIOP.Aux[H, I, O, P]) =
-  //    instance[H] { h =>
-  //      println(handlerHasIOP.description)
-  //      handlerHasIOP.request
-  //      handlerHasIOP.response
-  //      Map()
-  //    }
-
-
-  //  implicit def schemeRoutes[RS <: HList, R, H, RH, T <: HList, I, O, P <: HList](//implicit //isHCons: IsHCons.Aux[RS, RH, T],
-  //                                                                                 //isComposite: IsComposite.Aux[RH, R, H],
-  //                                                                                 //handlerHasIOP: Lazy[HandlerHasIOP.Aux[H, I, O, P]]/*,
-  //                                                                                 /*schemeT: Scheme[T]*/) =
-  //    instance[RS] { routes =>
-
-  //      val rh = isHCons.head(routes)
-  //      val h = isComposite.head(rh)
-  //      val r = isComposite.tail(rh)
-  //
-  //      println(s"Route: $r -> $h")
-  //
-  //
-  //      schemeT.gen(isHCons.tail(routes))
-  //      ???
-  //    }
-  //
-
-  //  implicit def schemeModule[RS <: HList, M <: Module[RS]](implicit schemeRS: Scheme[RS]) =
-  //    instance[M] { m =>
-  //
-  //      schemeRS.gen(m.routes)
-  //    }
-
 }
 
 object Scheme extends SchemeLowPriority {
@@ -157,6 +130,13 @@ object Scheme extends SchemeLowPriority {
         schemeT.gen(isHCons.value.tail(modules))
 
     }
+
+  implicit def schemeApp[MS <: HList](implicit schemeM: Scheme[MS]) = {
+    instance[WebAppTrait[MS]] { app =>
+      println(s"WebApp: $app")
+      schemeM.gen(app.module)
+    }
+  }
 }
 
 trait Scheme[A] {
@@ -168,46 +148,37 @@ trait Scheme[A] {
 trait WebDescription {
   implicit val handlerH1 = HandlerHasIOP.instance[H1, H1Request, H1Response, Id1 :: HNil]("First handler")
 
+  implicit val moduleM1 = ModuleHasRS.instance[M1, (R1, H1) :: HNil]("Module number 1")
+
   implicit val handlerH2 = HandlerHasIOP.instance[H2, H2Request, H2Response, Id2 :: HNil]("Second handler")
 
-  implicit val moduleM1 = ModuleHasRS.instance[M1, (R1, H1) :: HNil]("Quite important module")
+  implicit val moduleM2 = ModuleHasRS.instance[M2, (R2, H2) :: HNil]("Module number 2")
 
-  implicit val moduleM = ModuleHasRS.instance[M, (R1, H1) :: (R2, H2) :: HNil]("Quite important module")
+  implicit val moduleMS = ModuleHasRS.instance[MS, (R1, H1) :: (R2, H2) :: HNil]("Complex module with both handlers")
 }
 
 
 object WebApp
   extends App
+    with WebAppTrait[MS :: M1 :: M2 :: HNil]
     with WebDescription {
 
-  def modules: M :: HNil = new M :: HNil
+  def modules: MS :: HNil = new MS :: HNil
 
   def modules1: M1 :: HNil = new M1 :: HNil
 
-  def moduless: M1 :: M :: HNil = new M1 :: new M :: HNil
+  def modules2: M2 :: HNil = new M2 :: HNil
 
-  //  implicit val hh1 = Scheme.schemeHandler[H1, H1Request, H1Response, Id1 :: HNil]
+  def moduless: MS :: M1 :: M2 :: HNil = new MS :: new M1 :: new M2 :: HNil
 
-  //val qq: IsComposite.Aux[(R1, H1), R1, H1] = the[IsComposite.Aux[(R1, H1), R1, H1]]
-  //val qq: IsComposite.Aux[(String, Int), String, Int] = the[IsComposite.Aux[(String, Int), String, Int]]
+//  val scheme = Scheme[MS :: M1 :: M2 ::  HNil]
+//
+//  println(scheme.gen(moduless))
 
+  //val scheme = Scheme[MS :: HNil]
 
-  //  def a[A, B, C](a: A)(implicit isComposite: IsComposite.Aux[A, B, C]) = {
-  //    println(isComposite.head(a))
-  //    println(isComposite.tail(a))
-  //    isComposite
-  //  }
-  //
-  //
-  //  val ai: IsComposite.Aux[(Int, String), Int, String] = a[(Int, String), Int, String]((1, "qq"))
+  override def module = new MS :: new M1 :: new M2 :: HNil
 
-  //val h1 = Scheme.schemeRoutes[(R1, H1) :: HNil, R1, H1, (R1, H1), HNil, H1Request, H1Response, Id1 :: HNil]
+  println(schema)
 
-  val qq1 = the[Scheme[(R1, H1)]]
-
-  val qq2 = the[Scheme[(R1, H1) :: HNil]]
-
-  println(qq2.gen(modules1.head.routes))
-  val scheme = Scheme[M1 ::  M ::  HNil]
-  println(scheme.gen(moduless))
 }
