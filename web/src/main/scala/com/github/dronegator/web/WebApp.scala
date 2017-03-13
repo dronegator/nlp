@@ -1,10 +1,15 @@
 package com.github.dronegator.web
 
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server._
+import com.github.dronegator.nlp.main.NLPTWebServiceMain._
 import com.github.dronegator.web.WebModel._
+import com.typesafe.scalalogging.LazyLogging
 import shapeless._
 import shapeless.ops.hlist.IsHCons
 import shapeless.tag.@@
-import com.github.dronegator.web.Route
+import spray.json.DefaultJsonProtocol
 
 import scala.concurrent.Future
 
@@ -32,11 +37,11 @@ object WebModel {
 
   type Id2 = String @@ Id2Tag
 
-  class R1 extends Route[Id1 :: HNil] {
+  class R1 extends Traverse[Id1 :: HNil] {
     override val path: String = "web/id1"
   }
 
-  class R2 extends Route[Id2 :: Id1 :: HNil] {
+  class R2 extends Traverse[Id2 :: Id1 :: HNil] {
     override val path: String = "web/id1/id2"
   }
 
@@ -117,9 +122,9 @@ object Scheme extends SchemeLowPriority {
       )
     }
 
-  implicit def schemeRouteHandler[RH <: Tuple2[R, H], R <: Route[_], H](implicit
-                                                            isEq: (R, H) =:= RH,
-                                                            schemeH: Scheme[H]) =
+  implicit def schemeRouteHandler[RH <: Tuple2[R, H], R <: Traverse[_], H](implicit
+                                                                           isEq: (R, H) =:= RH,
+                                                                           schemeH: Scheme[H]) =
     instance[RH] { x =>
       println(s"h: ${x._2}")
 
@@ -190,11 +195,16 @@ trait WebDescription {
   implicit val moduleMS = ModuleHasRS.instance[MS, (R1, H1) :: (R2, H2) :: HNil]("Complex module with both handlers")
 }
 
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import spray.json._
+
 
 object WebApp
   extends App
+    with LazyLogging
     with WebAppTrait[MS :: M1 :: M2 :: HNil]
-    with WebDescription {
+    with WebDescription
+    with DefaultJsonProtocol {
 
   def modules: MS :: HNil = new MS :: HNil
 
@@ -217,4 +227,56 @@ object WebApp
   override def description: String = "Yet Another Example of Web Service"
 
   override def version: String = "0.0.1"
+
+  def route: Route =
+    path("swagger-ui" / "swagger.json") { ctx =>
+      implicit object AnyJsonFormat extends JsonFormat[Any] {
+        def write(x: Any): JsValue = x match {
+          case n: Int => JsNumber(n)
+          case s: String => JsString(s)
+          case b: Boolean if b == true => JsTrue
+          case b: Boolean if b == false => JsFalse
+          case m: Map[String, _] =>
+            JsObject(m
+              .map {
+                case (x, y) =>
+                  x -> write(y)
+              }
+              .toMap)
+          case a: Seq[_] =>
+            JsArray(a
+              .map { y =>
+                write(y)
+              }
+              .toVector)
+        }
+
+        def read(value: JsValue) = value match {
+          case JsNumber(n) => n.intValue()
+          case JsString(s) => s
+          case JsTrue => true
+          case JsFalse => false
+        }
+      }
+
+      ctx.complete(Future.successful(schema.toJson))
+    } ~
+      pathPrefix("swagger-ui") {
+        getFromResourceDirectory("swagger-ui")
+      } ~
+      pathPrefix("ui") {
+        getFromResourceDirectory("ui")
+      }
+
+  val bindingFuture = Http().bindAndHandle(route, cfg.host, cfg.port)
+
+  logger.info(s"Server online at http://${cfg.host}:${cfg.port}/\nPress RETURN to stop...")
+
+  Console.readLine() // for the future transformations
+
+  bindingFuture
+    .flatMap(_.unbind()) // trigger unbinding from the port
+    .onComplete(_ ⇒ system.shutdown())
+
+  logger.info(s"Server shutdown")
 }

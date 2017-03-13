@@ -5,7 +5,7 @@ import shapeless.HList
 /**
   * Created by cray on 3/5/17.
   */
-trait Route[A <: HList] {
+trait Traverse[A <: HList] {
   val path: String //TODO: Just  for awhile
 
 }
