@@ -38,7 +38,8 @@ object model {
   }
 
   class H1 extends Handler[H1Request, H1Response, Id1 :: HNil] {
-    override def handler(request: H1Request, path: Id1 :: HNil): Future[H1Response] = ???
+    override def handler(request: H1Request, path: Id1 :: HNil): Future[H1Response] =
+      Future.successful(H1Response(""""""))
   }
 
   class H2 extends Handler[H2Request, H2Response, Id2 :: HNil] {

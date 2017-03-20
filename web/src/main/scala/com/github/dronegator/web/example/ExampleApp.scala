@@ -2,7 +2,6 @@ package com.github.dronegator.web.example
 
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server._
 import com.github.dronegator.nlp.main.NLPTWebServiceMain._
 import com.github.dronegator.web._
 import com.github.dronegator.web.example.model._
@@ -18,6 +17,7 @@ object ExampleApp
     with LazyLogging
     with WebAppTrait[MS :: M1 :: M2 :: HNil]
     with SchemaRoute[MS :: M1 :: M2 :: HNil]
+    with WebServiceRoute[MS :: M1 :: M2 :: HNil]
     with Description
     with DefaultJsonProtocol {
 
@@ -37,23 +37,9 @@ object ExampleApp
 
   println(schema)
 
-  val route = module.toList[Module[_]]
-    .flatMap {
-      case x: Module[HList] =>
-        println(x.routes.productIterator.toList)
-        x.routes.productIterator.collect {
-          case (r: Traverse[_], h: Handler[_, _, _]) =>
-            (r, h)
-        }
-
-    }
-    .foldLeft(schemaRoute) {
-      case (route: Route, (r: Traverse[_], h)) =>
-        route ~ path(separateOnSlashes(r.path)) { ctx =>
-          ctx.complete(s"$h")
-        }
-
-    }
+  val route =
+    schemaRoute ~
+      webServiceRoute
 
   val bindingFuture = Http().bindAndHandle(route, cfg.host, cfg.port)
 

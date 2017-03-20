@@ -17,4 +17,6 @@ trait Description {
   implicit val moduleM2 = ModuleHasRS.instance[M2, (R2, H2) :: HNil]("Module number 2")
 
   implicit val moduleMS = ModuleHasRS.instance[MS, (R1, H1) :: (R2, H2) :: HNil]("Complex module with both handlers")
+
+
 }
