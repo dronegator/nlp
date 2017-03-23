@@ -35,6 +35,12 @@ object ExampleApp
 
   override def module = new MS :: new M1 :: new M2 :: HNil
 
+  implicit val qRS = the[GenRoute[(R2, H2) :: HNil]]
+
+  implicit val qM2 = the[GenRoute[M2]]
+
+  implicit val qq = the[GenRoute[M2 :: HNil]]
+
   println(schema)
 
   val route =

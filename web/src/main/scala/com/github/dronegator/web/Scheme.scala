@@ -47,9 +47,9 @@ trait SchemeTrait extends SchemeLowPriority {
       )
     }
 
-  implicit def schemeRouteHandler[RH <: Tuple2[R, H], R <: Traverse[_], H](implicit
-                                                                           isEq: (R, H) =:= RH,
-                                                                           schemeH: Scheme[H]) =
+  implicit def schemeTraverseHandler[RH <: Tuple2[R, H], R <: Traverse[_], H](implicit
+                                                                              isEq: (R, H) =:= RH,
+                                                                              schemeH: Scheme[H]) =
     instance[RH] { x =>
       println(s"h: ${x._2}")
 
