@@ -38,12 +38,18 @@ object model {
   }
 
   class H1 extends Handler[H1Request, H1Response, Id1 :: HNil] {
-    override def handler(request: H1Request, path: Id1 :: HNil): Future[H1Response] =
-      Future.successful(H1Response(""""""))
+    override def handler(request: H1Request, path: Id1 :: HNil): Future[H1Response] = {
+      println(request)
+      Future.successful(H1Response(request.query))
+    }
+
   }
 
   class H2 extends Handler[H2Request, H2Response, Id2 :: HNil] {
-    override def handler(request: H2Request, path: Id2 :: HNil): Future[H2Response] = ???
+    override def handler(request: H2Request, path: Id2 :: HNil): Future[H2Response] = {
+      println(request)
+      Future.successful(H2Response(request.query))
+    }
   }
 
   class MS extends Module[(R1, H1) :: (R2, H2) :: HNil] {

@@ -39,3 +39,6 @@ libraryDependencies += "com.softwaremill.macwire" %% "proxy" % "2.2.3"
 libraryDependencies += "io.spray" %%  "spray-json" % "1.3.2"
 
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2"
+
+libraryDependencies += "com.github.fommil" %% "spray-json-shapeless" % "1.3.0"
+

@@ -1,0 +1,78 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "0.0.1",
+    "title": "Yet Another Example of Web Service"
+  },
+  "paths": {
+    "/web": {
+      "get": {
+        "description": "First handler",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "title": "",
+              "type": "object",
+              "properties": {
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "First handler",
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "body",
+            "description": "Pet to add to the store",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "query"
+              ],
+              "properties": {
+                "query": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "title": "",
+              "type": "object",
+              "properties": {
+              }
+            }
+          }
+        }
+      }
+    },
+    "/web/id1/id2": {
+      "get": {
+        "description": "Second handler",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "title": "",
+              "type": "object",
+              "properties": {
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
