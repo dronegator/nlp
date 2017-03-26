@@ -27,7 +27,8 @@ trait SchemeLowPriority {
 trait SchemeTrait extends SchemeLowPriority {
 
   implicit def schemeHandler[H <: Handler[_, _, _ <: HList], I, O, P <: HList](implicit handlerHasIOP: HandlerHasIOP.Aux[H, I, O, P],
-                                                                               caseClassSchemeI: CaseClassScheme[I]) =
+                                                                               caseClassSchemeI: CaseClassScheme[I],
+                                                                               caseClassSchemeO: CaseClassScheme[O]) =
     instance[H] { h =>
       println(handlerHasIOP.description)
       Map(
@@ -41,14 +42,11 @@ trait SchemeTrait extends SchemeLowPriority {
               "required" -> true,
               "schema" -> caseClassSchemeI.scheme
             ) :: Nil),
+          "produces" -> ("application/json" :: Nil),
           "responses" -> Map(
             "200" -> Map(
               "description" -> "Successful response",
-              "schema" -> Map(
-                "title" -> "",
-                "type" -> "object",
-                "properties" -> Map()
-              )
+              "schema" -> caseClassSchemeO.scheme
             )
           )
         )
