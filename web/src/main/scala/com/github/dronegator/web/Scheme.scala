@@ -6,8 +6,6 @@ import shapeless.{::, HList, HNil, Lazy}
 /**
   * Created by cray on 3/20/17.
   */
-
-
 trait Scheme[A] {
   def gen(a: A): Map[String, Any]
 }

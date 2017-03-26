@@ -9,6 +9,9 @@ import spray.json._
 trait AnyJsonFormat extends JsonFormat[Any] {
   def write(x: Any): JsValue = x match {
     case n: Int => JsNumber(n)
+    case l: Long => JsNumber(l)
+    case d: Double => JsNumber(d)
+    case f: Float => JsNumber(f)
     case s: String => JsString(s)
     case b: Boolean if b == true => JsTrue
     case b: Boolean if b == false => JsFalse

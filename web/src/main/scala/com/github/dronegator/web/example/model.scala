@@ -11,7 +11,13 @@ import scala.concurrent.Future
   */
 object model {
 
-  case class H1Request(query: String)
+  case class Q(b: Boolean,
+               n: Int,
+               d1: Double,
+               l: Long,
+               s: String)
+
+  case class H1Request(query: String, q: Q, d: Double, q1: Q, d1: Double, n: Int, l: Long)
 
   case class H1Response(data: String)
 

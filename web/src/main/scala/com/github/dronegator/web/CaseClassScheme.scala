@@ -26,6 +26,50 @@ object CaseClassScheme {
       )
     }
 
+  implicit def caseClassSchemeInt =
+    createCaseClassScheme[Int] {
+      Map(
+        "type" -> "integer",
+        "format" -> "int32",
+        "example" -> 0
+      )
+    }
+
+  implicit def caseClassSchemeLong =
+    createCaseClassScheme[Long] {
+      Map(
+        "type" -> "integer",
+        "format" -> "int64",
+        "example" -> 0
+      )
+    }
+
+  implicit def caseClassSchemeFloat =
+    createCaseClassScheme[Float] {
+      Map(
+        "type" -> "number",
+        "format" -> "float",
+        "example" -> 0.0
+      )
+    }
+
+  implicit def caseClassSchemeDouble =
+    createCaseClassScheme[Double] {
+      Map(
+        "type" -> "number",
+        "format" -> "double",
+        "example" -> 0.0
+      )
+    }
+
+  implicit def caseClassSchemeBoolean =
+    createCaseClassScheme[Boolean] {
+      Map(
+        "type" -> "boolean",
+        "example" -> false
+      )
+    }
+
   implicit def caseClassSchemeField[K <: Symbol, V](implicit witness: Witness.Aux[K],
                                                     caseClassScheme: CaseClassScheme[V]) =
     createCaseClassScheme[FieldType[K, V]] {
@@ -49,16 +93,14 @@ object CaseClassScheme {
     }
 
   implicit def caseClassSchemeA[A, Repr <: HList](implicit labelledGeneric: LabelledGeneric.Aux[A, Repr],
-                                                  caseClassScheme: CaseClassScheme[Repr]) =
+                                                  caseClassScheme: Lazy[CaseClassScheme[Repr]]) =
     createCaseClassScheme[A] {
       Map(
         "type" -> "object",
         //"required" -> List(),
-        "properties" -> caseClassScheme.scheme
+        "properties" -> caseClassScheme.value.scheme
       )
-
     }
-
 }
 
 trait CaseClassScheme[A] {
