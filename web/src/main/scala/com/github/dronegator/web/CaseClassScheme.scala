@@ -42,11 +42,10 @@ object CaseClassScheme {
                                                                caseClassSchemeH: CaseClassScheme[H],
                                                                caseClassSchemeT: CaseClassScheme[T]) =
     createCaseClassScheme[A] {
-      Map[String, Any](
-        "properties" ->
-          (caseClassSchemeH.scheme ::
-            caseClassSchemeT.scheme.getOrElse("properties", Nil).asInstanceOf[List[Map[String, Any]]])
-      )
+
+      caseClassSchemeH.scheme ++
+        caseClassSchemeT.scheme
+
     }
 
   implicit def caseClassSchemeA[A, Repr <: HList](implicit labelledGeneric: LabelledGeneric.Aux[A, Repr],
@@ -54,9 +53,10 @@ object CaseClassScheme {
     createCaseClassScheme[A] {
       Map(
         "type" -> "object",
-        "required" -> List()
-      ) ++
-        caseClassScheme.scheme
+        //"required" -> List(),
+        "properties" -> caseClassScheme.scheme
+      )
+
     }
 
 }
