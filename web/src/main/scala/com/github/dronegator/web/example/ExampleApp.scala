@@ -15,6 +15,8 @@ import shapeless.{Path => _, _}
   */
 import spray.json._
 
+
+
 object ExampleApp
   extends App
     with Concurent
@@ -30,6 +32,18 @@ object ExampleApp
   override def description: String = "Yet Another Example of Web Service"
 
   override def version: String = "0.0.1"
+
+  val qq = the[CaseClassScheme[H1Request]]
+
+  println(qq.scheme)
+
+  case class B(bs: String)
+
+  case class A(b: B, as: String)
+
+  val qa = the[CaseClassScheme[A]]
+
+  println(qa.scheme)
 
   def modules: MS :: HNil = new MS :: HNil
 
