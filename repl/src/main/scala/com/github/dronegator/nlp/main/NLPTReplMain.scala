@@ -5,9 +5,6 @@ import java.io._
 import akka.stream.scaladsl.{Sink, Source}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.TokenPreDef.{PEnd, PStart}
 import com.github.dronegator.nlp.component.tokenizer.Tokenizer.{Token, TokenPreDef}
-import com.github.dronegator.nlp.main.chain.NNChainWithConstImpl
-import com.github.dronegator.nlp.main.keyword.NNKeywordYesNoImpl
-import com.github.dronegator.nlp.ml.vocabulary.VocabularyNeural
 import com.github.dronegator.nlp.trace._
 import com.github.dronegator.nlp.utils.Match._
 import com.github.dronegator.nlp.utils._
