@@ -39,10 +39,11 @@ lazy val indexStream =
 
 lazy val repl =
   Project(id = "repl", base = file("repl"))
-    .dependsOn(wordmetrix, akkaUtils, utils)
+    .dependsOn(wordmetrix, akkaUtils, utils, ml)
 
 lazy val ml =
-  Project(id = "ml", base = file("ml")).dependsOn(utils)
+  Project(id = "ml", base = file("ml"))
+    .dependsOn(wordmetrix, akkaUtils, utils)
 
 lazy val www =
   Project(id = "web", base = file("web"))

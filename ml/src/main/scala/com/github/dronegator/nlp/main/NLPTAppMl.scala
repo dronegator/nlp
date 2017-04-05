@@ -20,7 +20,7 @@ import scala.util.{Random, Try}
 sealed trait Algorithm extends EnumEntry with Lowercase
 
 object Algorithm extends Enum[Algorithm] {
-  override def values: Seq[Algorithm] = findValues
+  override def values = findValues
 
   case object LBFGS extends Algorithm
 
