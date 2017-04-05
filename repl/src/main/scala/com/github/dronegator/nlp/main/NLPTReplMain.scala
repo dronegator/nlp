@@ -42,7 +42,7 @@ object NLPTReplMain
   sealed trait SubCommand extends EnumEntry with Lowercase with SubCommand.Overall
 
   object SubCommand extends Enum[SubCommand] {
-    override def values: Seq[SubCommand] = findValues
+    override def values = findValues
 
     trait Overall {
       def unapply(name: String) = withNameOption(name) filter (this == _) isDefined
@@ -70,7 +70,7 @@ object NLPTReplMain
       with Command.Extractor
 
   object Command extends Enum[Command] {
-    override def values: Seq[Command] = findValues
+    override def values = findValues
 
     trait Extractor {
       def unapply(name: String) = withNameOption(name) filter (x => x == this) isDefined

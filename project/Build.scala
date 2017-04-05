@@ -1,3 +1,4 @@
+import com.timushev.sbt.updates.UpdatesKeys._
 import com.typesafe.sbt.SbtGit.git
 import sbt.Keys._
 import sbt._
@@ -7,24 +8,21 @@ object WordmetrixBuild extends Build {
 
   override lazy val settings = super.settings ++
     Seq(
-      version := "0.4",
-      scalaVersion := "2.11.7"
+      //version := "0.4",
+      scalaVersion := "2.11.9",
+      dependencyUpdatesExclusions := moduleFilter(organization = "org.scala-lang")
     )
 
   val buildTime = System.currentTimeMillis()
 
   val utils =
-    Project(id = "utils", base = file("utils"))
-      .settings(
-        libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2"
-      )
-      .dependsOn()
+    Project(id = "utils", base = file("utils")).dependsOn()
 
   val wordmetrix =
     Project(id = "wordmetrix", base = file("wordmetrix"))
       .settings(
-        libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.7",
-        libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.4.0"
+        libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3",
+        libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0"
       )
       .settings(
         sourceGenerators in Compile <+=
@@ -35,7 +33,7 @@ object WordmetrixBuild extends Build {
                 s"""
                    |package com.github.dronegator.nlp.main
                    |
-                   |object Version extends VersionTools {
+                 |object Version extends VersionTools {
                    |  val name = "${name}"
                    |  val version = "${version}"
                    |  val branch = "${currentBranch}"
@@ -56,17 +54,16 @@ object WordmetrixBuild extends Build {
   val indexStream =
     Project(id = "index-stream", base = file("index-stream")).dependsOn(wordmetrix, akkaUtils)
 
+  val repl =
+    Project(id = "repl", base = file("repl")).dependsOn(wordmetrix, akkaUtils, utils)
+
   val ml =
     Project(id = "ml", base = file("ml")).dependsOn(utils)
       .settings(
-        libraryDependencies += "org.scalanlp" %% "breeze" % "0.12",
-        libraryDependencies += "org.scalanlp" %% "breeze-natives" % "0.12",
-        libraryDependencies += "org.scalanlp" %% "breeze-viz" % "0.12"
+        libraryDependencies += "org.scalanlp" %% "breeze" % "0.13",
+        libraryDependencies += "org.scalanlp" %% "breeze-natives" % "0.13",
+        libraryDependencies += "org.scalanlp" %% "breeze-viz" % "0.13"
       )
-      .dependsOn(wordmetrix, akkaUtils, utils)
-
-  val repl =
-    Project(id = "repl", base = file("repl")).dependsOn(wordmetrix, akkaUtils, utils, ml)
 
   val urls =
     "https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js" ::

@@ -1,8 +1,8 @@
 package com.github.dronegator.nlp.main
 
 import java.util.UUID
+
 import com.github.dronegator.nlp.main.phrase.PhraseResponse._
-import com.github.dronegator.nlp.component.tokenizer.Tokenizer.Phrase
 import com.github.dronegator.nlp.main.phrase.Suggest
 import enumeratum._
 import spray.json.{DefaultJsonProtocol, DeserializationException, JsString, JsValue, JsonFormat}
@@ -17,7 +17,7 @@ package object websocket {
   sealed trait EventType extends EnumEntry
 
   object EventType extends Enum[EventType] {
-    override def values: Seq[EventType] = findValues
+    override def values = findValues
 
     case object Advice extends EventType
 
