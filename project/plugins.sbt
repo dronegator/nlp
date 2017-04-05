@@ -13,3 +13,5 @@ addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.8.2")
 addSbtPlugin("com.scalakata" % "sbt-scalakata" % "1.1.5")
 
 addSbtPlugin("com.sksamuel.sbt-versions" % "sbt-versions" % "0.2.0")
+
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.0")

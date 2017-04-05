@@ -1,3 +1,4 @@
+import com.timushev.sbt.updates.UpdatesKeys._
 import com.typesafe.sbt.SbtGit.git
 import sbt.Keys._
 import sbt._
@@ -7,8 +8,9 @@ object WordmetrixBuild extends Build {
 
   override lazy val settings = super.settings ++
     Seq(
-      version := "0.4",
-      scalaVersion := "2.11.8"
+      //version := "0.4",
+      scalaVersion := "2.11.9",
+      dependencyUpdatesExclusions := moduleFilter(organization = "org.scala-lang")
     )
 
   val buildTime = System.currentTimeMillis()
@@ -19,8 +21,8 @@ object WordmetrixBuild extends Build {
   val wordmetrix =
     Project(id = "wordmetrix", base = file("wordmetrix"))
       .settings(
-        libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.7",
-        libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.4.0"
+        libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3",
+        libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0"
       )
       .settings(
         sourceGenerators in Compile <+=
@@ -58,9 +60,9 @@ object WordmetrixBuild extends Build {
   val ml =
     Project(id = "ml", base = file("ml")).dependsOn(utils)
       .settings(
-        libraryDependencies += "org.scalanlp" %% "breeze" % "0.12",
-        libraryDependencies += "org.scalanlp" %% "breeze-natives" % "0.12",
-        libraryDependencies += "org.scalanlp" %% "breeze-viz" % "0.12"
+        libraryDependencies += "org.scalanlp" %% "breeze" % "0.13",
+        libraryDependencies += "org.scalanlp" %% "breeze-natives" % "0.13",
+        libraryDependencies += "org.scalanlp" %% "breeze-viz" % "0.13"
       )
 
   val urls =

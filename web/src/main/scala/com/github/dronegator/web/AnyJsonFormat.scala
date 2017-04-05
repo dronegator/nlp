@@ -40,7 +40,5 @@ trait AnyJsonFormat extends JsonFormat[Any] {
 
 
 object AnyJsonFormat {
-
   implicit object Format extends AnyJsonFormat
-
 }
