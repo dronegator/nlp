@@ -44,3 +44,21 @@ libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2"
 
 libraryDependencies += "com.github.fommil" %% "spray-json-shapeless" % "1.3.0"
 
+val urls =
+  "https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js" ::
+    "https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.0/jquery-ui.min.js" ::
+    "https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.0/themes/smoothness/jquery-ui.css" :: Nil
+
+resourceGenerators in Compile <+=
+  (resourceManaged in Compile, name, version) map { (dir, n, v) =>
+    for {
+      url <- urls.map(new URL(_))
+      fileName <- url.getPath.split("/").lastOption
+      fileExt <- fileName.split("\\.").lastOption
+    } yield {
+      val file = dir / "ui" / fileExt / fileName
+      println(s"Download $url into $file")
+      IO.download(url, file)
+      file
+    }
+  }
