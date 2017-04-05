@@ -24,4 +24,30 @@ libraryDependencies += "com.typesafe" % "config" % "1.3.1"
 
 libraryDependencies += "com.github.kxbmap" %% "configs" % "0.4.4"
 
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
+
+libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0"
+
+val buildTime = System.currentTimeMillis()
+
+sourceGenerators in Compile <+=
+  (sourceManaged in Compile, name, version, git.gitCurrentBranch, git.gitHeadCommit) map {
+    (dir, name, version, currentBranch, headCommit) =>
+      val file = dir / "com" / "github" / "dronegator" / "nlp" / "Version.scala"
+      IO.write(file,
+        s"""
+           |package com.github.dronegator.nlp.main
+           |
+                 |object Version extends VersionTools {
+           |  val name = "${name}"
+           |  val version = "${version}"
+           |  val branch = "${currentBranch}"
+           |  val commit = "${headCommit getOrElse "Unknown"}"
+           |  val buildTime = "$buildTime"
+           |}
+            """.stripMargin)
+      Seq(file)
+  }
+
+
 //enablePlugins(ScalaKataPlugin)
